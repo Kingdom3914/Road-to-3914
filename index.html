@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Road to 3914 · KvK & Migration Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;background:#0B1019;color:#E8ECF3;font-family:'Barlow',system-ui,sans-serif}
+  #stage{width:100%;overflow:hidden}
+  #poster{width:1600px;height:1180px;box-sizing:border-box;padding:48px;background:#0F1522;display:flex;flex-direction:column;gap:40px;transform-origin:top left}
+  .abs{position:absolute}
+  .eyebrow{font-size:14px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#9AA6BA}
+  h1{margin:0;font-family:'Cinzel',serif;font-size:60px;font-weight:700;line-height:1;color:#E8B84A}
+  h2{margin:0;font-family:'Cinzel',serif;font-size:26px;font-weight:700;color:#E8B84A}
+  .next{background:#161E2E;border:1px solid #2E3B54;border-radius:14px;padding:18px 24px;min-width:340px;display:flex;flex-direction:column;gap:6px}
+  .lane-label{height:96px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+  .lane-label b{font-size:18px}
+  .lane-label span{font-size:14px;color:#9AA6BA}
+  .month{top:28px;height:44px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;letter-spacing:.14em;color:#B8C2D3}
+  .shade{top:28px;height:428px;background:#131A28}
+  .divider{left:0;width:1272px;height:1px;background:#263247}
+  .pop{top:106px;width:60px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .pop i{width:14px;height:14px;background:#F0555A;transform:rotate(45deg)}
+  .pop span{font-size:13px;font-weight:600;white-space:nowrap}
+  .bar{height:32px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;box-sizing:border-box;font-size:14px;font-weight:700;color:#0F1522}
+  .tick{width:120px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .tick i{width:12px;height:12px;border-radius:50%;border:3px solid;box-sizing:border-box}
+  .tick span{font-size:13px;white-space:nowrap}
+  .chip{top:466px;width:160px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#0F1522}
+  .card{background:#161E2E;border:1px solid #263247;border-radius:10px;padding:12px 16px;display:flex;gap:14px;align-items:center}
+  .card .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .card .d{font-size:13px;font-weight:600;color:#9AA6BA}
+  .card .t{font-size:16px;font-weight:600}
+  .card .c{font-size:13px;font-weight:700;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="stage">
+<div id="poster">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:32px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="eyebrow">Rise of Kingdoms · Kingdom 3914 · RB3 League</div>
+      <h1>Road to 3914</h1>
+      <div style="font-size:18px;color:#B8C2D3">Migration &amp; KvK calendar · August 2026 – February 2027</div>
+    </div>
+    <div class="next">
+      <div style="font-size:13px;font-weight:700;letter-spacing:.2em;color:#E8B84A">NEXT UP</div>
+      <div id="nextTitle" style="font-size:22px;font-weight:600"></div>
+      <div style="font-size:16px;color:#B8C2D3"><span id="nextDate"></span> · <span id="nextCount" style="color:#E8B84A;font-weight:600"></span></div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:32px">
+    <div style="width:200px;flex:none;display:flex;flex-direction:column">
+      <div style="height:72px"></div>
+      <div class="lane-label"><b style="color:#F0555A">KvK pop-ups</b><span>Monthly event window</span></div>
+      <div class="lane-label"><b style="color:#F5C542">Kingdom 1875</b><span>Current KvK</span></div>
+      <div class="lane-label"><b style="color:#D86CF2">Kingdom 2359</b><span>KvK league</span></div>
+      <div class="lane-label"><b style="color:#3DD68C">Kingdom 3914</b><span>Our new home</span></div>
+    </div>
+
+    <div style="position:relative;width:1272px;height:500px;flex:none">
+      <div class="abs shade" style="left:0;width:186px"></div>
+      <div class="abs shade" style="left:366px;width:186px"></div>
+      <div class="abs shade" style="left:732px;width:186px"></div>
+      <div class="abs shade" style="left:1104px;width:168px"></div>
+      <div class="abs month" style="left:0;width:186px">AUG</div>
+      <div class="abs month" style="left:186px;width:180px">SEP</div>
+      <div class="abs month" style="left:366px;width:186px">OCT</div>
+      <div class="abs month" style="left:552px;width:180px">NOV</div>
+      <div class="abs month" style="left:732px;width:186px">DEC</div>
+      <div class="abs month" style="left:918px;width:186px;color:#E8B84A">JAN ’27</div>
+      <div class="abs month" style="left:1104px;width:168px">FEB</div>
+      <div class="abs divider" style="top:72px"></div>
+      <div class="abs divider" style="top:168px"></div>
+      <div class="abs divider" style="top:264px"></div>
+      <div class="abs divider" style="top:360px"></div>
+      <div class="abs divider" style="top:456px"></div>
+
+      <div class="abs pop" style="left:66px"><i></i><span>17 Aug</span></div>
+      <div class="abs pop" style="left:234px"><i></i><span>14 Sep</span></div>
+      <div class="abs pop" style="left:402px"><i></i><span>12 Oct</span></div>
+      <div class="abs pop" style="left:570px"><i></i><span>9 Nov</span></div>
+      <div class="abs pop" style="left:738px"><i></i><span>7 Dec</span></div>
+      <div class="abs pop" style="left:906px"><i></i><span>4 Jan</span></div>
+      <div class="abs pop" style="left:1074px"><i></i><span>1 Feb ×2</span></div>
+
+      <div class="abs bar" style="left:0;top:200px;width:480px;background:#F5C542;border-radius:0 8px 8px 0">KvK in progress</div>
+      <div class="abs" style="left:492px;top:206px;font-size:14px;font-weight:600;color:#F5C542">Ends 20 Oct</div>
+
+      <div class="abs bar" style="left:432px;top:296px;width:396px;background:#D86CF2"><span>Registers 12 Oct</span><span>KvK ends 17 Dec</span></div>
+      <div class="abs tick" style="left:876px;top:304px"><i style="border-color:#D86CF2"></i><span style="color:#D9C2E6">4 Jan · 1st KvK reg</span></div>
+      <div class="abs tick" style="left:1044px;top:304px"><i style="border-color:#D86CF2"></i><span style="color:#D9C2E6">1 Feb · 2nd KvK reg</span></div>
+
+      <div class="abs" style="left:486px;top:407px;width:114px;border-top:2px dashed #3DD68C"></div>
+      <div class="abs" style="left:504px;top:378px;font-size:12px;color:#9AA6BA">settle in</div>
+      <div class="abs bar" style="left:600px;top:392px;width:396px;background:#3DD68C"><span>Registers 9 Nov</span><span>KvK ends 14 Jan</span></div>
+      <div class="abs tick" style="left:1044px;top:400px"><i style="border-color:#3DD68C"></i><span style="color:#BDE9D2">1 Feb · 1st KvK reg</span></div>
+
+      <div class="abs" style="left:485px;top:72px;height:384px;border-left:2px dashed #4C8DFF"></div>
+      <div class="abs" style="left:1001px;top:72px;height:384px;border-left:2px dashed #2FD4E8"></div>
+      <div class="abs chip" style="left:406px;background:#4C8DFF">21 Oct · Migration 1</div>
+      <div class="abs chip" style="left:922px;background:#2FD4E8">15 Jan · Migration 2</div>
+
+      <div id="todayLine" class="abs" style="top:20px;width:2px;height:436px;background:#E8B84A;display:none"></div>
+      <div id="todayChip" class="abs" style="top:0;width:72px;height:22px;border-radius:11px;background:#E8B84A;display:none;align-items:center;justify-content:center;font-size:11px;font-weight:700;letter-spacing:.14em;color:#0F1522">TODAY</div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:16px">
+      <h2>Key dates</h2>
+      <div style="font-size:14px;color:#9AA6BA">Countdowns update live · past dates fade out</div>
+    </div>
+    <div id="cards" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px"></div>
+  </div>
+</div>
+</div>
+
+<script>
+  var RED='#F0555A',Y='#F5C542',MAG='#D86CF2',GRN='#3DD68C',BLUE='#4C8DFF',CYAN='#2FD4E8';
+  var RAW=[
+    [2026,7,17,'KvK pop-up',RED],
+    [2026,8,14,'KvK pop-up',RED],
+    [2026,9,12,'2359 registers for KvK',MAG],
+    [2026,9,20,'1875 KvK ends',Y],
+    [2026,9,21,'1st migration to 3914',BLUE],
+    [2026,10,9,'3914 registration',GRN],
+    [2026,11,7,'KvK pop-up',RED],
+    [2026,11,17,'2359 KvK ends',MAG],
+    [2027,0,4,'2359 · 1st KvK registration',MAG],
+    [2027,0,14,'3914 KvK ends',GRN],
+    [2027,0,15,'2nd migration to 3914',CYAN],
+    [2027,1,1,'3914 · 1st KvK registration',GRN],
+    [2027,1,1,'2359 · 2nd KvK registration',MAG]
+  ];
+  var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var DAY=86400000;
+
+  function render(){
+    var now=new Date(), today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    var html='', next=null;
+    RAW.forEach(function(r){
+      var d=new Date(r[0],r[1],r[2]), n=Math.round((d-today)/DAY);
+      var cd=n<0?'Done':n===0?'Today':n===1?'Tomorrow':'In '+n+' days';
+      var label=DAYS[d.getDay()]+' '+r[2]+' '+MONTHS[r[1]]+' '+r[0];
+      var col=n<0?'#9AA6BA':n<=7?'#E8B84A':'#B8C2D3';
+      if(n>=0&&!next) next={t:r[3],d:label,c:cd};
+      html+='<div class="card" style="opacity:'+(n<0?0.45:1)+'"><div class="dot" style="background:'+r[4]+'"></div>'+
+            '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><div class="d">'+label+'</div><div class="t">'+r[3]+'</div></div>'+
+            '<div class="c" style="color:'+col+'">'+cd+'</div></div>';
+    });
+    document.getElementById('cards').innerHTML=html;
+    if(!next) next={t:'All dates complete',d:'Welcome to 3914',c:''};
+    document.getElementById('nextTitle').textContent=next.t;
+    document.getElementById('nextDate').textContent=next.d;
+    document.getElementById('nextCount').textContent=next.c;
+    var off=Math.round((today-new Date(2026,7,1))/DAY), x=off*6;
+    var show=off>=0&&off<=212;
+    var line=document.getElementById('todayLine'), chip=document.getElementById('todayChip');
+    line.style.display=show?'block':'none'; chip.style.display=show?'flex':'none';
+    line.style.left=(x-1)+'px'; chip.style.left=(x-36)+'px';
+  }
+
+  function fit(){
+    var p=document.getElementById('poster'), s=Math.min(1,window.innerWidth/1600);
+    p.style.transform='scale('+s+')';
+    document.getElementById('stage').style.height=(1180*s)+'px';
+  }
+
+  render(); fit();
+  window.addEventListener('resize',fit);
+  setInterval(render,60000);
+</script>
+</body>
+</html>
