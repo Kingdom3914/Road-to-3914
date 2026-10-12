@@ -96,7 +96,7 @@
     </div>
     <div class="countdown" aria-live="polite">
       <div class="cd-label">NEXT UP</div>
-      <div class="cd-title" id="cdTitle"></div>
+      <div class="cd-title" id="cdTitle">Loading dates…</div>
       <div class="cd-date" id="cdDate"></div>
       <div class="cd-digits">
         <div class="cd-unit"><span class="cd-num" id="cdD">0</span><div class="cd-cap">DAYS</div></div>
@@ -140,7 +140,7 @@
     <div class="cards" id="cards"></div>
   </section>
 
-  <footer class="foot">All dates are server time (UTC 00:00). Pop-ups run on a 28-day cycle, so 1 Mar 2027 is projected (est.), not confirmed.</footer>
+  <footer class="foot">All dates are server time (UTC 00:00). Dates marked (est.) are projected, not confirmed. Dates are managed in the Kingdoms and Calendar tabs of the kingdom sheet.</footer>
 </main>
 
 <script src="config.js"></script>
@@ -150,7 +150,8 @@
 <script>
 (function () {
   "use strict";
-  var V = window.KVK, DAY = V.DAY, R0 = V.R0, R1 = V.R1, K = V.K, KC = V.KC, EVENTS = V.EVENTS, POPS = V.POPS, EST = V.EST, MIGS = V.MIGS;
+  KVK.init().then(function (V) {
+  var DAY = V.DAY, R0 = V.R0, R1 = V.R1, K = V.K, KC = V.KC, EVENTS = V.EVENTS, POPS = V.POPS, MIGS = V.MIGS;
   var fd = V.fd, fw = V.fw, days = V.days, MON = V.MON;
   function X(t) { return ((Math.max(R0, Math.min(R1, t)) - R0) / (R1 - R0) * 100).toFixed(3) + '%'; }
   var filter = 'all', nextEvt = null;
@@ -178,7 +179,7 @@
 
   function renderTimeline(now) {
     var lab = '<div style="height:44px"></div><div class="tl-lab"><b style="color:var(--red)">KvK pop-ups</b><span>Every 28 days</span></div>';
-    K.forEach(function (k) { lab += '<div class="tl-lab"><b style="color:' + k.c + '">' + k.name + '</b><span>' + k.sub + '</span></div>'; });
+    K.forEach(function (k) { lab += '<div class="tl-lab"><b style="color:' + k.c + '">' + Site.esc(k.name) + '</b><span>' + Site.esc(k.sub) + '</span></div>'; });
     lab += '<div style="height:44px;border-top:1px solid var(--line)"></div>';
     document.getElementById('labels').innerHTML = lab;
 
@@ -195,7 +196,7 @@
     var nextPop = POPS.filter(function (p) { return p + DAY > now; })[0];
     h += '<div class="lane">';
     POPS.forEach(function (p) {
-      var est = p === EST;
+      var est = !!V.estSet[p];
       h += '<div class="mk' + (p === nextPop ? ' pulse' : '') + '" style="left:' + X(p) + ';color:var(--red);transform:none"><div class="diamond' + (est ? ' est' : '') + '" style="background:var(--red)"></div></div>';
       h += '<div class="mk-lab" style="left:' + X(p) + '"><b>' + fd(p) + (est ? ' (est.)' : '') + '</b></div>';
     });
@@ -211,7 +212,7 @@
         if (mk.t === 'reg') { inner = '<div class="dotm" style="background:' + k.c + '"></div>'; l = '<b>Registered</b>' + fd(mk.d); }
         else if (mk.t === 'opt') { inner = '<div class="ring" style="border-color:' + k.c + '"></div>'; l = '<b>Can register or skip</b>' + fd(mk.d); }
         else { inner = '<div class="must" style="background:' + k.c + '">MUST</div>'; l = '<b>Must register</b>' + fd(mk.d) + (mk.est ? ' (est.)' : ''); }
-        h += '<div class="mk' + (isNext ? ' pulse' : '') + '" style="left:' + X(mk.d) + ';color:' + k.c + '" title="' + k.name + ' · ' + fd(mk.d, true) + '">' + inner + '</div>';
+        h += '<div class="mk' + (isNext ? ' pulse' : '') + '" style="left:' + X(mk.d) + ';color:' + k.c + '" title="' + Site.esc(k.name) + ' · ' + fd(mk.d, true) + '">' + inner + '</div>';
         h += '<div class="mk-lab" style="left:' + X(mk.d) + ';color:' + k.c + '">' + l + '</div>';
       });
       h += '</div>';
@@ -230,15 +231,15 @@
 
   function renderRule() {
     document.getElementById('ruleRows').innerHTML = K.map(function (k) {
-      return '<tr><td><span class="kname"><span class="kdot" style="background:' + k.c + '"></span>' + k.name + '</span></td>' +
-        '<td>' + fd(k.end, true) + '</td><td>' + fd(k.opt, true) + '</td>' +
-        '<td style="color:' + k.c + ';font-weight:700">' + fd(k.must, true) + (k.must === EST ? ' (est.)' : '') + '</td>' +
-        '<td>' + days(k.end, k.opt) + ' days, or up to ' + days(k.end, k.must) + ' if skipped</td></tr>';
+      return '<tr><td><span class="kname"><span class="kdot" style="background:' + k.c + '"></span>' + Site.esc(k.name) + '</span></td>' +
+        '<td>' + (k.end ? fd(k.end, true) : '—') + '</td><td>' + (k.opt ? fd(k.opt, true) : '—') + '</td>' +
+        '<td style="color:' + k.c + ';font-weight:700">' + (k.must ? fd(k.must, true) + (k.mustEst ? ' (est.)' : '') : '—') + '</td>' +
+        '<td>' + (k.opt ? days(k.end, k.opt) + ' days' + (k.must ? ', or up to ' + days(k.end, k.must) + ' if skipped' : '') : 'Add the next pop-up dates in the sheet') + '</td></tr>';
     }).join('');
   }
 
   function renderFilters() {
-    var F = [['all', 'All'], ['3914', '3914'], ['2359', '2359'], ['1875', '1875'], ['pop', 'Pop-ups'], ['mig', 'Migrations']];
+    var F = [['all', 'All']].concat(K.slice().reverse().map(function (k) { return [k.id, k.id]; })).concat([['pop', 'Pop-ups'], ['mig', 'Migrations']]);
     document.getElementById('filters').innerHTML = F.map(function (f) {
       var dot = f[0] === 'all' ? '' : '<span class="kdot" style="background:' + KC[f[0]] + '"></span>';
       return '<button class="fbtn" type="button" data-f="' + f[0] + '" aria-pressed="' + (filter === f[0]) + '">' + dot + f[1] + '</button>';
@@ -256,7 +257,7 @@
       var col = past ? 'var(--muted)' : n <= 7 ? 'var(--gold)' : 'var(--soft)';
       return '<div class="card' + (past ? ' past' : '') + (nextEvt && e.d === nextEvt.d ? ' next' : '') + '" style="animation-delay:' + (i * 0.04) + 's">' +
         '<div class="dots">' + e.g.map(function (g) { return '<span class="kdot" style="background:' + KC[g] + '"></span>'; }).join('') + '</div>' +
-        '<div style="min-width:0"><div class="d">' + fw(e.d) + '</div><div class="t">' + e.t + '</div><div class="x">' + e.x + '</div></div>' +
+        '<div style="min-width:0"><div class="d">' + fw(e.d) + '</div><div class="t">' + Site.esc(e.t) + '</div><div class="x">' + Site.esc(e.x) + '</div></div>' +
         '<div class="c" style="color:' + col + '">' + cd + '</div></div>';
     }).join('');
   }
@@ -288,6 +289,7 @@
 
   renderLegend(); renderRule(); renderFilters(); renderAll(); tick();
   setInterval(tick, 1000);
+  });
 })();
 </script>
 </body>

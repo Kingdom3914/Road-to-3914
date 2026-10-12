@@ -157,5 +157,23 @@ var Core = (function () {
     };
   }
 
-  return { state: state, checkBid: checkBid, toTime: toTime };
+  /* KvK calendar from the Kingdoms and Calendar tabs */
+  function calendar(t) {
+    var yes = /^(y|yes|true|1|x)$/i;
+    var ks = (t.kingdoms || []).filter(function (k) { return str(k.Kingdom); }).map(function (k) {
+      return {
+        id: str(k.Kingdom), name: str(k.Name) || ('Kingdom ' + str(k.Kingdom)), sub: str(k.Subtitle), color: str(k.Color),
+        start: toTime(k['KvK start']), end: toTime(k['KvK end']), buildup: toTime(k['Build-up from'])
+      };
+    });
+    var ds = (t.calendar || []).filter(function (d) { return toTime(d.Date); }).map(function (d) {
+      return {
+        d: toTime(d.Date), t: str(d.Title), x: str(d.Details), type: str(d.Type).toLowerCase(),
+        k: splitList(d.Kingdoms), est: yes.test(str(d.Estimated))
+      };
+    });
+    return { kingdoms: ks, dates: ds };
+  }
+
+  return { state: state, checkBid: checkBid, calendar: calendar, toTime: toTime };
 })();

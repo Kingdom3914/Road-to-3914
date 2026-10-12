@@ -76,7 +76,7 @@
     </div>
     <div class="countdown" aria-live="polite">
       <div class="cd-label">NEXT KINGDOM DATE</div>
-      <div class="cd-title" id="cdTitle">—</div>
+      <div class="cd-title" id="cdTitle">Loading dates…</div>
       <div class="cd-date" id="cdDate"></div>
       <div class="cd-digits">
         <div class="cd-unit"><span class="cd-num" id="cdD">0</span><div class="cd-cap">DAYS</div></div>
@@ -197,9 +197,11 @@
     });
   }
 
-  renderKvk(); tick(); load();
+  var kvkReady = false;
+  KVK.init().then(function () { kvkReady = true; nextEvt = null; renderKvk(); tick(); });
+  load();
   setInterval(function () {
-    tick();
+    if (kvkReady) tick();
     Array.prototype.forEach.call(document.querySelectorAll('[data-until]'), function (el) {
       el.textContent = S.shortLeft(Number(el.getAttribute('data-until')) - Date.now());
     });
