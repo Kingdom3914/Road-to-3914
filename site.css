@@ -30,8 +30,8 @@ h2{font-size:23px}
 .navlinks a[aria-current=page]{background:rgba(232,184,74,.14);color:var(--gold)}
 .navlinks svg{width:18px;height:18px}
 @media(max-width:680px){
-  .navlinks{margin-left:0;width:100%;padding-bottom:8px}
-  .navlinks a{flex:1;justify-content:center;font-size:14px;padding:8px 6px}
+  .navlinks{margin-left:0;width:100%;padding-bottom:8px;gap:2px}
+  .navlinks a{flex:1;flex-direction:column;justify-content:center;gap:3px;font-size:12px;padding:6px 2px;min-width:0;text-align:center;line-height:1.1}
   .wrap{padding:0 16px}
 }
 .demo-banner{background:rgba(76,141,255,.12);border-bottom:1px solid rgba(76,141,255,.35);color:#B9D0FF;font-size:13.5px}
