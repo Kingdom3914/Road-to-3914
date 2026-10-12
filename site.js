@@ -48,7 +48,7 @@
     el.innerHTML =
       '<header class="topbar"><div class="wrap">' +
         '<a class="brand" href="index.html"><span class="crest" aria-hidden="true"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h18l-2-10-5 4-2-6-2 6-5-4z"/><path d="M5 21h14"/></svg></span>' +
-        '<span><b>' + esc(C.KINGDOM) + '</b><small>' + esc(C.TAGLINE) + '</small></span></a>' +
+        '<span><b data-text="kingdom_name">' + esc(C.KINGDOM) + '</b><small data-text="tagline">' + esc(C.TAGLINE) + '</small></span></a>' +
         '<nav class="navlinks" aria-label="Main">' + links.map(function (l) {
           return '<a href="' + l[0] + '"' + (page === l[1] ? ' aria-current="page"' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[l[1]] + '</svg>' + l[2] + '</a>';
         }).join('') + '</nav>' +
@@ -70,13 +70,30 @@
 
   /* ---------- backend connection ---------- */
   function api(payload) {
-    if (!C.API_URL) return demoCall(payload);
-    return fetch(C.API_URL, {
+    var req = !C.API_URL ? demoCall(payload) : fetch(C.API_URL, {
       method: 'POST', redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload || {})
     }).then(function (r) { return r.json(); });
+    return req.then(function (res) { if (res && res.text) setText(res.text, true); return res; });
   }
+
+  /* ---------- editable site text (Site text tab of the sheet) ---------- */
+  var text = {}, textHandlers = [];
+  function applyText() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-text]'), function (el) {
+      var v = text[el.getAttribute('data-text')];
+      if (v != null && String(v).trim() !== '') el.textContent = v;
+    });
+    if (text.kingdom_name) document.title = document.title.replace(/^[^·]+·/, text.kingdom_name + ' ·');
+    textHandlers.forEach(function (fn) { try { fn(text); } catch (e) {} });
+  }
+  function setText(map, save) {
+    text = map || {};
+    if (save) store.set('k3914-text', JSON.stringify(text));
+    applyText();
+  }
+  function onText(fn) { textHandlers.push(fn); try { fn(text); } catch (e) {} }
 
   /* ---------- demo backend (sample data, saved on this device) ---------- */
   var demo = null;
@@ -147,6 +164,8 @@
     clear: function () { store.del('k3914-session'); }
   };
 
-  window.Site = { esc: esc, n: n, date: date, dateTime: dateTime, ago: ago, left: left, shortLeft: shortLeft, pad: pad, store: store, toast: toast, api: api, session: session, config: C, demo: !C.API_URL };
+  window.Site = { onText: onText, esc: esc, n: n, date: date, dateTime: dateTime, ago: ago, left: left, shortLeft: shortLeft, pad: pad, store: store, toast: toast, api: api, session: session, config: C, demo: !C.API_URL };
   nav();
+  try { var cached = JSON.parse(store.get('k3914-text') || 'null'); if (cached) setText(cached, false); } catch (e) {}
+  document.addEventListener('DOMContentLoaded', applyText);
 })();

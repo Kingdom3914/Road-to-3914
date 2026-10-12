@@ -65,9 +65,9 @@
 
   <section class="hero" aria-label="Welcome">
     <div class="hero-text">
-      <div class="eyebrow">Rise of Kingdoms · RB3 League</div>
-      <h1 id="kName">Kingdom 3914</h1>
-      <p class="lead">One kingdom, one calendar, one place for every announcement, KvK date and MGE &amp; GH bid.</p>
+      <div class="eyebrow" data-text="home_eyebrow">Rise of Kingdoms · RB3 League</div>
+      <h1 data-text="kingdom_name">Kingdom 3914</h1>
+      <p class="lead" data-text="home_intro">One kingdom, one calendar, one place for every announcement, KvK date and MGE &amp; GH bid.</p>
       <div class="cta">
         <a class="btn gold" href="events.html">Bid in MGE &amp; GH</a>
         <a class="btn ghost" href="calendar.html">Full KvK calendar</a>
@@ -89,17 +89,17 @@
 
   <section class="grid2">
     <div class="panel">
-      <div class="sec-head"><h2>Kingdom announcements</h2><p>From leadership</p></div>
+      <div class="sec-head"><h2 data-text="home_announcements_title">Kingdom announcements</h2><p data-text="home_announcements_note">From leadership</p></div>
       <div class="ann" id="announcements"><div class="skeleton" style="height:110px"></div><div class="skeleton" style="height:110px"></div></div>
     </div>
     <div class="panel">
-      <div class="sec-head"><h2>Latest news</h2></div>
+      <div class="sec-head"><h2 data-text="home_news_title">Latest news</h2></div>
       <div class="news" id="news"><div class="skeleton" style="height:64px;margin-bottom:10px"></div><div class="skeleton" style="height:64px"></div></div>
     </div>
   </section>
 
   <section class="panel">
-    <div class="sec-head"><h2>KvK timeline</h2><a href="calendar.html">Open full calendar →</a></div>
+    <div class="sec-head"><h2 data-text="home_timeline_title">KvK timeline</h2><a href="calendar.html">Open full calendar →</a></div>
     <div class="status" id="status"></div>
     <div class="grid2" style="margin-top:20px">
       <div>
@@ -124,8 +124,10 @@
 (function () {
   "use strict";
   var S = window.Site, C = S.config, esc = S.esc;
-  document.getElementById('kName').textContent = C.KINGDOM;
-  if (C.DISCORD) { var d = document.getElementById('discordBtn'); d.href = C.DISCORD; d.hidden = false; d.target = '_blank'; d.rel = 'noopener'; }
+  S.onText(function (t) {
+    var link = (t.discord_link || C.DISCORD || '').trim(), d = document.getElementById('discordBtn');
+    if (/^https?:\/\//i.test(link)) { d.href = link; d.hidden = false; d.target = '_blank'; d.rel = 'noopener'; } else d.hidden = true;
+  });
 
   /* ---------- KvK countdown + status ---------- */
   var nextEvt = null, last = {}, kvkDay = null;

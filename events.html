@@ -127,9 +127,9 @@
 <main class="wrap page">
   <div class="head">
     <div>
-      <div class="eyebrow">Kingdom auctions</div>
-      <h1>MGE &amp; GH Bidding</h1>
-      <p>Bid with your kingdom credits. The highest bid when the timer ends wins the rank.</p>
+      <div class="eyebrow" data-text="events_eyebrow">Kingdom auctions</div>
+      <h1 data-text="events_title">MGE &amp; GH Bidding</h1>
+      <p data-text="events_subtitle">Bid with your kingdom credits. The highest bid when the timer ends wins the rank.</p>
     </div>
     <div class="seg-tabs" role="group" aria-label="Event type" id="typeTabs"></div>
   </div>
@@ -535,7 +535,14 @@
     if ($('confScrim').classList.contains('on')) $('confScrim').classList.remove('on'); else closeSheets();
   });
 
-  $('rules').innerHTML = (C.RULES || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
+  function renderRules(t) {
+    var keys = Object.keys(t || {}).filter(function (k) { return /^rule_\d+$/.test(k) && String(t[k]).trim(); })
+      .sort(function (a, b) { return Number(a.split('_')[1]) - Number(b.split('_')[1]); });
+    var list = keys.length ? keys.map(function (k) { return t[k]; }) : (C.RULES || []);
+    $('rules').innerHTML = list.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
+  }
+  renderRules({});
+  S.onText(renderRules);
 
   /* ---------- start ---------- */
   load();

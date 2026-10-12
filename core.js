@@ -59,8 +59,9 @@ var Core = (function () {
     var received = 0, ledger = [];
     t.credits.forEach(function (c) {
       if (str(c.GovID) !== gov) return;
-      var a = num(c.Amount); received += a;
-      ledger.push({ time: toTime(c.Date), amount: a, reason: str(c.Reason) });
+      var hasBal = c.Balance !== undefined;
+      var a = hasBal ? num(c.Balance) : num(c.Amount); received += a;
+      ledger.push({ time: hasBal ? 0 : toTime(c.Date), amount: a, reason: hasBal ? 'Credits from leadership' : str(c.Reason) });
     });
     var spent = 0, reserved = 0, positions = [];
     evs.forEach(function (ev) {
@@ -175,5 +176,19 @@ var Core = (function () {
     return { kingdoms: ks, dates: ds };
   }
 
-  return { state: state, checkBid: checkBid, calendar: calendar, toTime: toTime };
+  /* Credit totals for every player (used to fill the Credits tab) */
+  function balances(t, now) {
+    var evs = events(t, now), out = {};
+    t.players.forEach(function (p) { var g = str(p.GovID); if (g) out[g] = balance(g, evs, t); });
+    return out;
+  }
+
+  /* Website wording from the Site text tab */
+  function texts(t) {
+    var o = {};
+    (t.sitetext || []).forEach(function (r) { var k = str(r.Key); if (k) o[k] = str(r.Text); });
+    return o;
+  }
+
+  return { state: state, checkBid: checkBid, calendar: calendar, balances: balances, texts: texts, toTime: toTime };
 })();
