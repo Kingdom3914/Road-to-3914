@@ -2,431 +2,210 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Road to 3914 · KvK & Migration Calendar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kingdom 3914 · Home</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
 <style>
-  :root{
-    --bg:#0B1019; --panel:#121A29; --panel2:#172133; --line:#263247; --text:#E8ECF3; --muted:#9AA6BA; --soft:#B8C2D3;
-    --gold:#E8B84A; --red:#F0555A; --k1875:#F5C542; --k2359:#D86CF2; --k3914:#3DD68C; --mig1:#4C8DFF; --mig2:#2FD4E8;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Barlow',system-ui,sans-serif;line-height:1.4}
-  .wrap{max-width:1440px;margin:0 auto;padding:40px 24px 64px;display:flex;flex-direction:column;gap:28px}
-  h1,h2{font-family:'Cinzel',serif;color:var(--gold);margin:0}
-  h1{font-size:clamp(36px,6vw,64px);line-height:1}
-  h2{font-size:24px}
-  .eyebrow{font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px}
-  .sec-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:18px}
-  .sec-head p{margin:0;color:var(--muted);font-size:15px}
+  .hero{position:relative;overflow:hidden;border-radius:20px;border:1px solid var(--line);background:radial-gradient(120% 140% at 100% 0%,rgba(232,184,74,.16),transparent 55%),radial-gradient(90% 120% at 0% 100%,rgba(61,214,140,.10),transparent 60%),var(--panel);padding:36px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:end}
+  .hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:32px 32px;-webkit-mask-image:radial-gradient(80% 90% at 100% 0,#000,transparent 70%);mask-image:radial-gradient(80% 90% at 100% 0,#000,transparent 70%);pointer-events:none}
+  .hero>*{position:relative}
+  .hero-text{display:flex;flex-direction:column;gap:14px;animation:fadeUp .6s ease both}
+  .hero-text p.lead{font-size:18px;color:var(--soft);max-width:560px}
+  .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  @media(max-width:860px){.hero{grid-template-columns:1fr;padding:24px}}
 
-  /* Hero */
-  .hero{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px}
-  .hero-text{display:flex;flex-direction:column;gap:10px}
-  .countdown{background:linear-gradient(var(--panel2),var(--panel2)) padding-box;border:1px solid #3a4a68;border-radius:16px;padding:18px 22px;min-width:min(100%,420px);position:relative;overflow:hidden}
-  .countdown::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(232,184,74,.10) 50%,transparent 70%);transform:translateX(-100%);animation:sheen 4s ease-in-out infinite}
-  .cd-label{font-size:12px;font-weight:700;letter-spacing:.22em;color:var(--gold)}
-  .cd-title{font-size:21px;font-weight:600;margin:4px 0 2px}
-  .cd-date{font-size:14px;color:var(--soft)}
-  .cd-digits{display:flex;gap:10px;margin-top:14px}
-  .cd-unit{flex:1;background:#0F1522;border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
-  .cd-num{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:700;line-height:1;color:var(--text);display:inline-block}
-  .cd-num.tick{animation:tick .35s ease-out}
-  .cd-cap{font-size:11px;letter-spacing:.16em;color:var(--muted);margin-top:4px}
+  .grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
 
-  /* Status cards */
-  .status{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-  .st{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;animation:fadeUp .6s ease both}
-  .st-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .st-name{font-size:19px;font-weight:700}
-  .st-sub{font-size:13px;color:var(--muted)}
-  .phase{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;white-space:nowrap}
-  .phase .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:blink 1.6s ease-in-out infinite}
-  .st-main{font-size:15px;color:var(--soft)}
-  .st-main b{color:var(--text)}
-  .prog{height:8px;background:#0F1522;border-radius:4px;overflow:hidden}
-  .prog i{display:block;height:100%;border-radius:4px;transform-origin:left;animation:grow 1.2s cubic-bezier(.2,.8,.2,1) both .3s}
-  .st-next{font-size:13px;color:var(--muted)}
+  .ann{display:flex;flex-direction:column;gap:12px}
+  .ann-card{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 18px 18px 22px;animation:fadeUp .5s ease both;overflow:hidden}
+  .ann-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold)}
+  .ann-card.pinned{border-color:rgba(232,184,74,.5);background:linear-gradient(100deg,rgba(232,184,74,.08),transparent 60%),var(--panel2)}
+  .ann-meta{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  .ann-card h3{font-size:18px;margin-bottom:4px}
+  .ann-card p{color:var(--soft);font-size:15px;white-space:pre-line}
+  .pin{font-size:11px;font-weight:800;letter-spacing:.1em;color:#18130A;background:var(--gold);padding:2px 7px;border-radius:5px}
 
-  /* Legend */
-  .legend{display:flex;flex-wrap:wrap;gap:10px 22px;margin-bottom:18px}
-  .lg{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--soft)}
-  .sw{width:28px;height:14px;border-radius:4px;flex:none}
+  .news{display:flex;flex-direction:column}
+  .news-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line2);animation:fadeUp .5s ease both}
+  .news-item:last-child{border-bottom:none}
+  .news-date{flex:none;width:52px;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 0;height:max-content}
+  .news-date b{display:block;font-family:'Barlow Condensed',sans-serif;font-size:22px;line-height:1}
+  .news-date span{font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+  .news-item h3{font-size:16px;margin-bottom:2px}
+  .news-item p{color:var(--soft);font-size:14.5px;white-space:pre-line}
 
-  /* Timeline */
-  .tl{display:grid;grid-template-columns:150px minmax(0,1fr);gap:0 16px}
-  .tl-labels{display:flex;flex-direction:column}
-  .tl-lab{height:92px;display:flex;flex-direction:column;justify-content:center;gap:2px;border-top:1px solid var(--line)}
-  .tl-lab b{font-size:16px}
-  .tl-lab span{font-size:12px;color:var(--muted)}
-  .tl-scroll{overflow-x:auto;scrollbar-color:#2E3B54 transparent}
-  .tl-track{position:relative;min-width:1100px}
-  .axis{position:relative;height:44px}
-  .mon{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--soft)}
-  .shade{position:absolute;top:44px;bottom:44px;background:rgba(255,255,255,.025)}
-  .lane{position:relative;height:92px;border-top:1px solid var(--line)}
-  .seg{position:absolute;top:14px;height:30px;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform-origin:left;animation:grow 1s cubic-bezier(.2,.8,.2,1) both}
-  .seg span{overflow:hidden;text-overflow:ellipsis}
-  .seg.kvk{color:#0F1522}
-  .seg.open{border-top-left-radius:0;border-bottom-left-radius:0}
-  .seg.skip{background-size:28px 28px !important;animation:grow 1s cubic-bezier(.2,.8,.2,1) both, stripes 1.6s linear infinite}
-  .mk{position:absolute;top:29px;transform:translate(-50%,-50%);z-index:3}
-  .mk-lab{position:absolute;top:50px;transform:translateX(-50%);text-align:center;font-size:12px;line-height:1.25;white-space:nowrap;z-index:3}
-  .mk-lab b{display:block;font-size:12.5px}
-  .ring{width:18px;height:18px;border-radius:50%;border:3px dashed;background:#0F1522}
-  .dotm{width:16px;height:16px;border-radius:50%;border:3px solid #0F1522;box-shadow:0 0 0 2px currentColor}
-  .must{font-size:11px;font-weight:800;letter-spacing:.12em;padding:4px 8px;border-radius:6px;color:#0F1522;border:2px solid #0F1522}
-  .diamond{width:15px;height:15px;transform:translate(-50%,-50%) rotate(45deg)}
-  .diamond.est{background:transparent !important;border:2px dashed var(--red)}
-  .pulse::before{content:"";position:absolute;inset:-8px;border-radius:50%;border:2px solid currentColor;animation:ping 1.8s ease-out infinite}
-  .must.pulse::before{border-radius:10px}
-  .mig{position:absolute;top:44px;bottom:44px;width:2px;transform:translateX(-1px);background-size:2px 14px;animation:march 1s linear infinite;z-index:2}
-  .chiprow{position:relative;height:44px;border-top:1px solid var(--line)}
-  .chip{position:absolute;top:8px;transform:translateX(-50%);height:28px;padding:0 12px;border-radius:14px;display:flex;align-items:center;font-size:12.5px;font-weight:700;color:#0F1522;white-space:nowrap}
-  .today{position:absolute;top:30px;bottom:44px;width:2px;background:var(--gold);transform:translateX(-1px);z-index:4;box-shadow:0 0 12px rgba(232,184,74,.6)}
-  .today-tag{position:absolute;top:4px;transform:translateX(-50%);background:var(--gold);color:#0F1522;font-size:11px;font-weight:800;letter-spacing:.14em;padding:3px 10px;border-radius:10px;z-index:5}
-  .today-tag::after{content:"";position:absolute;left:50%;bottom:-4px;width:8px;height:8px;background:var(--gold);transform:translateX(-50%) rotate(45deg)}
-  .swipe{display:none;font-size:12px;color:var(--muted);margin-top:8px}
+  .live{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .live-card{display:flex;flex-direction:column;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px;text-decoration:none;color:var(--text);transition:border-color .15s,transform .15s;animation:fadeUp .5s ease both}
+  .live-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+  .live-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .type{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.1em;color:var(--gold)}
+  .live-card h3{font-size:18px}
+  .live-stats{display:flex;gap:18px;font-size:13px;color:var(--muted)}
+  .live-stats b{display:block;font-family:'Barlow Condensed',sans-serif;font-size:22px;color:var(--text);line-height:1.1}
+  .leader{font-size:14px;color:var(--soft)}
+  .leader b{color:var(--gold)}
 
-  /* Off-season rule */
-  .rule{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin-bottom:20px}
-  .step{flex:1 1 170px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;animation:fadeUp .6s ease both}
-  .step b{font-size:15px}
-  .step span{font-size:13px;color:var(--muted)}
-  .arrow{align-self:center;color:var(--gold);font-size:22px;animation:nudge 1.4s ease-in-out infinite}
-  table{width:100%;border-collapse:collapse;font-size:14px}
-  th{text-align:left;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line)}
-  td{padding:12px;border-bottom:1px solid var(--line)}
-  .tbl{overflow-x:auto}
-  .kname{display:flex;align-items:center;gap:8px;font-weight:700}
-  .kdot{width:10px;height:10px;border-radius:50%;flex:none}
-
-  /* Key dates */
-  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-  .fbtn{font:inherit;font-size:13px;font-weight:600;color:var(--soft);background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-height:40px;cursor:pointer;display:flex;align-items:center;gap:8px}
-  .fbtn[aria-pressed="true"]{background:var(--gold);color:#0F1522;border-color:var(--gold)}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
-  .card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start;animation:fadeUp .5s ease both}
-  .card.past{opacity:.45}
-  .card.next{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 24px rgba(232,184,74,.15)}
-  .dots{display:flex;flex-direction:column;gap:4px;padding-top:4px}
-  .card .d{font-size:12.5px;font-weight:600;color:var(--muted)}
-  .card .t{font-size:16px;font-weight:600}
-  .card .x{font-size:13px;color:var(--soft)}
-  .card .c{margin-left:auto;font-size:12.5px;font-weight:700;white-space:nowrap;padding-top:2px}
-  .foot{font-size:13px;color:var(--muted)}
-
-  @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-  @keyframes stripes{to{background-position:56px 0}}
-  @keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
-  @keyframes march{to{background-position:0 14px}}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-  @keyframes blink{50%{opacity:.35}}
-  @keyframes tick{from{transform:translateY(-6px);opacity:.3}to{transform:none;opacity:1}}
-  @keyframes sheen{0%,60%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-  @keyframes nudge{50%{transform:translateX(4px)}}
-  @media (max-width:760px){
-    .tl{grid-template-columns:96px minmax(0,1fr);gap:0 8px}
-    .tl-lab b{font-size:14px}
-    .swipe{display:block}
-    .wrap{padding:28px 16px 48px}
-    .arrow{display:none}
-  }
-  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important}}
+  .upnext{display:flex;flex-direction:column}
+  .up-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line2)}
+  .up-row:last-child{border-bottom:none}
+  .up-dots{display:flex;gap:3px}
+  .up-dots i{width:9px;height:9px;border-radius:50%}
+  .up-row .t{flex:1;min-width:0;font-weight:600;font-size:15px}
+  .up-row .d{font-size:13px;color:var(--muted);white-space:nowrap}
+  .up-row .c{font-size:13px;font-weight:700;color:var(--gold);white-space:nowrap;min-width:70px;text-align:right}
 </style>
 </head>
-<body>
-<div class="wrap">
+<body data-page="home">
+<div id="site-nav"></div>
 
-  <header class="hero">
+<main class="wrap page">
+
+  <section class="hero" aria-label="Welcome">
     <div class="hero-text">
-      <div class="eyebrow">Rise of Kingdoms · Kingdom 3914 · RB3 League</div>
-      <h1>Road to 3914</h1>
-      <div style="font-size:17px;color:var(--soft)">Migration, KvK &amp; off-season calendar · Aug 2026 – Mar 2027</div>
+      <div class="eyebrow">Rise of Kingdoms · RB3 League</div>
+      <h1 id="kName">Kingdom 3914</h1>
+      <p class="lead">One kingdom, one calendar, one place for every announcement, KvK date and MGE &amp; GH bid.</p>
+      <div class="cta">
+        <a class="btn gold" href="events.html">Bid in MGE &amp; GH</a>
+        <a class="btn ghost" href="calendar.html">Full KvK calendar</a>
+        <a class="btn ghost" id="discordBtn" href="#" hidden>Join Discord</a>
+      </div>
     </div>
     <div class="countdown" aria-live="polite">
-      <div class="cd-label">NEXT UP</div>
-      <div class="cd-title" id="cdTitle"></div>
+      <div class="cd-label">NEXT KINGDOM DATE</div>
+      <div class="cd-title" id="cdTitle">—</div>
       <div class="cd-date" id="cdDate"></div>
       <div class="cd-digits">
         <div class="cd-unit"><span class="cd-num" id="cdD">0</span><div class="cd-cap">DAYS</div></div>
-        <div class="cd-unit"><span class="cd-num" id="cdH">0</span><div class="cd-cap">HRS</div></div>
-        <div class="cd-unit"><span class="cd-num" id="cdM">0</span><div class="cd-cap">MIN</div></div>
-        <div class="cd-unit"><span class="cd-num" id="cdS">0</span><div class="cd-cap">SEC</div></div>
+        <div class="cd-unit"><span class="cd-num" id="cdH">00</span><div class="cd-cap">HRS</div></div>
+        <div class="cd-unit"><span class="cd-num" id="cdM">00</span><div class="cd-cap">MIN</div></div>
+        <div class="cd-unit"><span class="cd-num" id="cdS">00</span><div class="cd-cap">SEC</div></div>
       </div>
     </div>
-  </header>
+  </section>
 
-  <section aria-label="Kingdom status">
+  <section class="grid2">
+    <div class="panel">
+      <div class="sec-head"><h2>Kingdom announcements</h2><p>From leadership</p></div>
+      <div class="ann" id="announcements"><div class="skeleton" style="height:110px"></div><div class="skeleton" style="height:110px"></div></div>
+    </div>
+    <div class="panel">
+      <div class="sec-head"><h2>Latest news</h2></div>
+      <div class="news" id="news"><div class="skeleton" style="height:64px;margin-bottom:10px"></div><div class="skeleton" style="height:64px"></div></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="sec-head"><h2>KvK timeline</h2><a href="calendar.html">Open full calendar →</a></div>
     <div class="status" id="status"></div>
-  </section>
-
-  <section class="panel">
-    <div class="sec-head"><h2>Timeline</h2><p>Each lane shows what a kingdom is doing day by day.</p></div>
-    <div class="legend" id="legend"></div>
-    <div class="tl">
-      <div class="tl-labels" id="labels"></div>
-      <div class="tl-scroll"><div class="tl-track" id="track"></div></div>
+    <div class="grid2" style="margin-top:20px">
+      <div>
+        <div class="eyebrow" style="margin-bottom:6px">Coming up</div>
+        <div class="upnext" id="upnext"></div>
+      </div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:6px">Live bidding</div>
+        <div class="live" id="live"><div class="skeleton" style="height:150px"></div></div>
+      </div>
     </div>
-    <div class="swipe">Swipe the timeline sideways →</div>
   </section>
 
-  <section class="panel">
-    <div class="sec-head"><h2>How the off-season works</h2><p>A kingdom may skip one registration after KvK, never two.</p></div>
-    <div class="rule">
-      <div class="step"><b style="color:var(--text)">KvK ends</b><span>Off-season starts the same day.</span></div>
-      <div class="arrow" aria-hidden="true">→</div>
-      <div class="step"><b style="color:var(--text)">1st pop-up · optional</b><span>Register now, or skip and stay in off-season.</span></div>
-      <div class="arrow" aria-hidden="true">→</div>
-      <div class="step"><b style="color:var(--gold)">2nd pop-up · mandatory</b><span>Registration is required. Off-season ends at the latest here.</span></div>
-    </div>
-    <div class="tbl"><table>
-      <thead><tr><th>Kingdom</th><th>KvK ends</th><th>1st pop-up (optional)</th><th>2nd pop-up (must register)</th><th>Off-season</th></tr></thead>
-      <tbody id="ruleRows"></tbody>
-    </table></div>
-  </section>
+  <footer class="foot">All dates and times are server time (UTC). <span id="updated"></span></footer>
+</main>
 
-  <section class="panel">
-    <div class="sec-head"><h2>Key dates</h2><p>Past dates fade out; the next one glows.</p></div>
-    <div class="filters" id="filters" role="group" aria-label="Filter key dates"></div>
-    <div class="cards" id="cards"></div>
-  </section>
-
-  <p class="foot">All dates are server time (UTC 00:00). Pop-ups run on a 28-day cycle, so 1 Mar 2027 is projected (est.), not confirmed.</p>
-</div>
-
+<script src="config.js"></script>
+<script src="core.js"></script>
+<script src="site.js"></script>
+<script src="kvk.js"></script>
 <script>
-  var DAY=86400000;
-  function U(y,m,d){return Date.UTC(y,m-1,d)}
-  var R0=U(2026,8,1), R1=U(2027,3,15);
-  function X(t){return ((Math.max(R0,Math.min(R1,t))-R0)/(R1-R0)*100).toFixed(3)+'%'}
-  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  function fd(t,y){var d=new Date(t);return d.getUTCDate()+' '+MON[d.getUTCMonth()]+(y?' '+d.getUTCFullYear():'')}
-  function fw(t){var d=new Date(t);return WD[d.getUTCDay()]+' '+fd(t,true)}
-  function days(a,b){return Math.round((b-a)/DAY)}
+(function () {
+  "use strict";
+  var S = window.Site, C = S.config, esc = S.esc;
+  document.getElementById('kName').textContent = C.KINGDOM;
+  if (C.DISCORD) { var d = document.getElementById('discordBtn'); d.href = C.DISCORD; d.hidden = false; d.target = '_blank'; d.rel = 'noopener'; }
 
-  var POPS=[U(2026,8,17),U(2026,9,14),U(2026,10,12),U(2026,11,9),U(2026,12,7),U(2027,1,4),U(2027,2,1),U(2027,3,1)];
-  var EST=U(2027,3,1);
-  var MIGS=[{d:U(2026,10,21),c:'var(--mig1)',l:'Migration 1 · 21 Oct'},{d:U(2027,1,15),c:'var(--mig2)',l:'Migration 2 · 15 Jan'}];
-
-  var K=[
-    {id:'1875',name:'Kingdom 1875',sub:'Current KvK',c:'#F5C542',rgb:'245,197,66',
-      segs:[{t:'kvk',a:R0,b:U(2026,10,20),open:1,l:'KvK'},{t:'off',a:U(2026,10,20),b:U(2026,11,9),l:'Off-season'},{t:'skip',a:U(2026,11,9),b:U(2026,12,7),l:'Off-season if skipped'}],
-      marks:[{t:'opt',d:U(2026,11,9)},{t:'must',d:U(2026,12,7)}], end:U(2026,10,20),opt:U(2026,11,9),must:U(2026,12,7)},
-    {id:'2359',name:'Kingdom 2359',sub:'KvK league',c:'#D86CF2',rgb:'216,108,242',
-      segs:[{t:'kvk',a:U(2026,10,12),b:U(2026,12,17),l:'KvK (registered 12 Oct)'},{t:'off',a:U(2026,12,17),b:U(2027,1,4),l:'Off-season'},{t:'skip',a:U(2027,1,4),b:U(2027,2,1),l:'Off-season if skipped'}],
-      marks:[{t:'reg',d:U(2026,10,12)},{t:'opt',d:U(2027,1,4)},{t:'must',d:U(2027,2,1)}], end:U(2026,12,17),opt:U(2027,1,4),must:U(2027,2,1)},
-    {id:'3914',name:'Kingdom 3914',sub:'Our new home',c:'#3DD68C',rgb:'61,214,140',
-      segs:[{t:'pre',a:U(2026,10,21),b:U(2026,11,9),l:'Migration & build-up'},{t:'kvk',a:U(2026,11,9),b:U(2027,1,14),l:'KvK (registered 9 Nov)'},{t:'off',a:U(2027,1,14),b:U(2027,2,1),l:'Off-season'},{t:'skip',a:U(2027,2,1),b:U(2027,3,1),l:'Off-season if skipped'}],
-      marks:[{t:'reg',d:U(2026,11,9)},{t:'opt',d:U(2027,2,1)},{t:'must',d:U(2027,3,1),est:1}], end:U(2027,1,14),opt:U(2027,2,1),must:U(2027,3,1)}
-  ];
-  var KC={'1875':'#F5C542','2359':'#D86CF2','3914':'#3DD68C',pop:'#F0555A',mig:'#4C8DFF'};
-
-  var EVENTS=[
-    {d:U(2026,8,17),t:'KvK pop-up',x:'Registration window',g:['pop']},
-    {d:U(2026,9,14),t:'KvK pop-up',x:'Registration window',g:['pop']},
-    {d:U(2026,10,12),t:'Pop-up · 2359 registers',x:'2359 signs up for KvK',g:['pop','2359']},
-    {d:U(2026,10,20),t:'1875 KvK ends',x:'1875 enters off-season',g:['1875']},
-    {d:U(2026,10,21),t:'Migration 1 → 3914',x:'First migration window into 3914',g:['mig']},
-    {d:U(2026,11,9),t:'Pop-up · 3914 registers',x:'3914 signs up for KvK · 1875 may register or skip',g:['pop','3914','1875']},
-    {d:U(2026,12,7),t:'Pop-up · 1875 must register',x:'2nd pop-up after its KvK — mandatory',g:['pop','1875']},
-    {d:U(2026,12,17),t:'2359 KvK ends',x:'2359 enters off-season',g:['2359']},
-    {d:U(2027,1,4),t:'Pop-up · 2359 1st registration',x:'Optional — 2359 may register or skip',g:['pop','2359']},
-    {d:U(2027,1,14),t:'3914 KvK ends',x:'3914 enters off-season',g:['3914']},
-    {d:U(2027,1,15),t:'Migration 2 → 3914',x:'Second migration window into 3914',g:['mig']},
-    {d:U(2027,2,1),t:'Pop-up · 3914 1st · 2359 2nd',x:'3914 optional (can skip) · 2359 must register',g:['pop','3914','2359']},
-    {d:U(2027,3,1),t:'Pop-up (est.) · 3914 must register',x:'Projected from the 28-day cycle',g:['pop','3914']}
-  ];
-
-  var filter='all', nextEvt=null;
-
-  function segStyle(k,s){
-    if(s.t==='kvk') return 'background:'+k.c;
-    if(s.t==='off') return 'background:rgba('+k.rgb+',.22);color:'+k.c+';box-shadow:inset 0 0 0 1px rgba('+k.rgb+',.55)';
-    if(s.t==='skip') return 'background:repeating-linear-gradient(45deg,rgba('+k.rgb+',.20) 0 10px,rgba('+k.rgb+',.05) 10px 20px);color:'+k.c+';box-shadow:inset 0 0 0 1px rgba('+k.rgb+',.35)';
-    return 'background:rgba(76,141,255,.16);color:#9DBFFF;box-shadow:inset 0 0 0 1px rgba(76,141,255,.5)';
-  }
-
-  function renderLegend(){
-    var L=[
-      ['<span class="sw" style="background:var(--k3914)"></span>','KvK'],
-      ['<span class="sw" style="background:rgba(61,214,140,.22);box-shadow:inset 0 0 0 1px rgba(61,214,140,.55)"></span>','Off-season'],
-      ['<span class="sw" style="background:repeating-linear-gradient(45deg,rgba(61,214,140,.25) 0 5px,rgba(61,214,140,.05) 5px 10px);box-shadow:inset 0 0 0 1px rgba(61,214,140,.35)"></span>','Off-season if 1st pop-up skipped'],
-      ['<span style="width:15px;height:15px;border-radius:50%;border:3px dashed var(--k3914)"></span>','Optional registration'],
-      ['<span class="must" style="background:var(--k3914);font-size:9px;padding:2px 5px">MUST</span>','Mandatory registration'],
-      ['<span style="width:12px;height:12px;background:var(--red);transform:rotate(45deg)"></span>','KvK pop-up'],
-      ['<span style="width:3px;height:16px;background:var(--mig1)"></span>','Migration'],
-      ['<span style="width:3px;height:16px;background:var(--gold)"></span>','Today']
-    ];
-    document.getElementById('legend').innerHTML=L.map(function(i){return '<div class="lg">'+i[0]+i[1]+'</div>'}).join('');
-  }
-
-  function renderTimeline(now){
-    var lab='<div style="height:44px"></div><div class="tl-lab"><b style="color:var(--red)">KvK pop-ups</b><span>Every 28 days</span></div>';
-    K.forEach(function(k){lab+='<div class="tl-lab"><b style="color:'+k.c+'">'+k.name+'</b><span>'+k.sub+'</span></div>'});
-    lab+='<div style="height:44px;border-top:1px solid var(--line)"></div>';
-    document.getElementById('labels').innerHTML=lab;
-
-    var h='<div class="axis">';
-    var shades='';
-    var m=new Date(R0), i=0;
-    while(m.getTime()<R1){
-      var a=m.getTime(), n=Date.UTC(m.getUTCFullYear(),m.getUTCMonth()+1,1), b=Math.min(n,R1);
-      var lbl=MON[m.getUTCMonth()].toUpperCase()+(m.getUTCMonth()===0?' ’'+String(m.getUTCFullYear()).slice(2):'');
-      h+='<div class="mon" style="left:'+X(a)+';width:calc('+X(b)+' - '+X(a)+')">'+lbl+'</div>';
-      if(i%2===0) shades+='<div class="shade" style="left:'+X(a)+';width:calc('+X(b)+' - '+X(a)+')"></div>';
-      m=new Date(n); i++;
-    }
-    h+='</div>'+shades;
-
-    // pop-up lane
-    var nextPop=POPS.filter(function(p){return p+DAY>now})[0];
-    h+='<div class="lane">';
-    POPS.forEach(function(p){
-      var est=p===EST, isNext=p===nextPop;
-      h+='<div class="mk'+(isNext?' pulse':'')+'" style="left:'+X(p)+';color:var(--red);top:29px;transform:none"><div class="diamond'+(est?' est':'')+'" style="background:var(--red)"></div></div>';
-      h+='<div class="mk-lab" style="left:'+X(p)+';color:var(--text)"><b>'+fd(p)+(est?' (est.)':'')+'</b></div>';
-    });
-    h+='</div>';
-
-    K.forEach(function(k,ki){
-      h+='<div class="lane">';
-      k.segs.forEach(function(s,si){
-        h+='<div class="seg '+s.t+(s.open?' open':'')+'" style="left:'+X(s.a)+';width:calc('+X(s.b)+' - '+X(s.a)+');'+segStyle(k,s)+';animation-delay:'+(0.15+ki*0.25+si*0.18)+'s"><span>'+s.l+'</span></div>';
-      });
-      k.marks.forEach(function(mk){
-        var isNext=mk.d+DAY>now && (nextEvt && nextEvt.d===mk.d);
-        var inner, lab;
-        if(mk.t==='reg'){inner='<div class="dotm" style="background:'+k.c+';color:'+k.c+'"></div>';lab='<b>Registered</b>'+fd(mk.d)}
-        else if(mk.t==='opt'){inner='<div class="ring" style="border-color:'+k.c+'"></div>';lab='<b>Can register or skip</b>'+fd(mk.d)}
-        else {inner='<div class="must" style="background:'+k.c+'">MUST</div>';lab='<b>Must register</b>'+fd(mk.d)+(mk.est?' (est.)':'')}
-        h+='<div class="mk'+(isNext?' pulse':'')+'" style="left:'+X(mk.d)+';color:'+k.c+'" title="'+k.name+' · '+fd(mk.d,true)+'">'+inner+'</div>';
-        h+='<div class="mk-lab" style="left:'+X(mk.d)+';color:'+k.c+'">'+lab+'</div>';
-      });
-      h+='</div>';
-    });
-
-    h+='<div class="chiprow">';
-    MIGS.forEach(function(g){h+='<div class="chip" style="left:'+X(g.d)+';background:'+g.c+'">'+g.l+'</div>'});
-    h+='</div>';
-    MIGS.forEach(function(g){h+='<div class="mig" style="left:'+X(g.d)+';background-image:linear-gradient('+g.c+' 60%,transparent 60%)"></div>'});
-
-    if(now>=R0 && now<=R1){
-      h+='<div class="today" style="left:'+X(now)+'"></div><div class="today-tag" style="left:'+X(now)+'">TODAY</div>';
-    }
-    document.getElementById('track').innerHTML=h;
-
-    // scroll so today is visible on small screens
-    var sc=document.querySelector('.tl-scroll');
-    if(sc.scrollWidth>sc.clientWidth){
-      var p=(now-R0)/(R1-R0)*sc.scrollWidth - sc.clientWidth*0.3;
-      sc.scrollLeft=Math.max(0,p);
-    }
-  }
-
-  function phaseOf(k,now){
-    for(var i=0;i<k.segs.length;i++){var s=k.segs[i]; if(now>=s.a && now<s.b) return s;}
-    return null;
-  }
-
-  function renderStatus(now){
-    var html='';
-    K.forEach(function(k,ki){
-      var s=phaseOf(k,now), chip, main, pct=null, next;
-      if(!s){
-        var first=k.segs[0];
-        if(now<first.a){chip='Preparing';main='Next phase starts <b>'+fd(first.a,true)+'</b> · in '+days(now,first.a)+' days';}
-        else {chip='Back in the KvK cycle';main='Off-season is over. Registration deadline was <b>'+fd(k.must,true)+'</b>';}
-      } else {
-        var left=Math.max(0,Math.ceil((s.b-now)/DAY));
-        if(s.t==='kvk'){chip='In KvK';main='KvK ends <b>'+fd(s.b,true)+'</b> · '+left+' days left';}
-        else if(s.t==='off'){chip='Off-season';main='Optional registration <b>'+fd(s.b,true)+'</b> · in '+left+' days';}
-        else if(s.t==='skip'){chip='Off-season · must register';main='Mandatory registration <b>'+fd(s.b,true)+'</b> · in '+left+' days';}
-        else {chip='Migration & build-up';main='KvK registration <b>'+fd(s.b,true)+'</b> · in '+left+' days';}
-        if(!s.open) pct=Math.min(100,Math.max(2,(now-s.a)/(s.b-s.a)*100));
-      }
-      var up=EVENTS.filter(function(e){return e.d+DAY>now && e.g.indexOf(k.id)>-1})[0];
-      next=up?'Next: '+up.t+' · '+fd(up.d,true):'No more dates on this calendar';
-      html+='<div class="st" style="animation-delay:'+(ki*0.12)+'s">'+
-        '<div class="st-top"><div><div class="st-name" style="color:'+k.c+'">'+k.name+'</div><div class="st-sub">'+k.sub+'</div></div>'+
-        '<div class="phase" style="color:'+k.c+';background:rgba('+k.rgb+',.14)"><span class="dot"></span>'+chip+'</div></div>'+
-        '<div class="st-main">'+main+'</div>'+
-        (pct!==null?'<div class="prog" aria-hidden="true"><i style="width:'+pct.toFixed(1)+'%;background:'+k.c+'"></i></div>':'')+
-        '<div class="st-next">'+next+'</div></div>';
-    });
-    document.getElementById('status').innerHTML=html;
-  }
-
-  function renderRule(){
-    document.getElementById('ruleRows').innerHTML=K.map(function(k){
-      return '<tr><td><span class="kname"><span class="kdot" style="background:'+k.c+'"></span>'+k.name+'</span></td>'+
-        '<td>'+fd(k.end,true)+'</td><td>'+fd(k.opt,true)+'</td>'+
-        '<td style="color:'+k.c+';font-weight:700">'+fd(k.must,true)+(k.must===EST?' (est.)':'')+'</td>'+
-        '<td>'+days(k.end,k.opt)+' days, or up to '+days(k.end,k.must)+' if skipped</td></tr>';
-    }).join('');
-  }
-
-  function renderFilters(){
-    var F=[['all','All'],['3914','3914'],['2359','2359'],['1875','1875'],['pop','Pop-ups'],['mig','Migrations']];
-    document.getElementById('filters').innerHTML=F.map(function(f){
-      var dot=f[0]==='all'?'':'<span class="kdot" style="background:'+KC[f[0]]+'"></span>';
-      return '<button class="fbtn" data-f="'+f[0]+'" aria-pressed="'+(filter===f[0])+'">'+dot+f[1]+'</button>';
-    }).join('');
-    Array.prototype.forEach.call(document.querySelectorAll('.fbtn'),function(b){
-      b.addEventListener('click',function(){filter=b.getAttribute('data-f');renderFilters();renderCards(Date.now());});
-    });
-  }
-
-  function renderCards(now){
-    var list=EVENTS.filter(function(e){return filter==='all'||e.g.indexOf(filter)>-1});
-    document.getElementById('cards').innerHTML=list.map(function(e,i){
-      var n=Math.floor((e.d-now)/DAY)+1, past=e.d+DAY<=now, today=!past&&now>=e.d;
-      var cd=past?'Done':today?'Today':n===1?'Tomorrow':'In '+n+' days';
-      var col=past?'var(--muted)':n<=7?'var(--gold)':'var(--soft)';
-      var isNext=nextEvt&&e.d===nextEvt.d;
-      return '<div class="card'+(past?' past':'')+(isNext?' next':'')+'" style="animation-delay:'+(i*0.04)+'s">'+
-        '<div class="dots">'+e.g.map(function(g){return '<span class="kdot" style="background:'+KC[g]+'"></span>'}).join('')+'</div>'+
-        '<div style="min-width:0"><div class="d">'+fw(e.d)+'</div><div class="t">'+e.t+'</div><div class="x">'+e.x+'</div></div>'+
-        '<div class="c" style="color:'+col+'">'+cd+'</div></div>';
-    }).join('');
-  }
-
-  var last={};
-  function setNum(id,v){
-    v=String(v).padStart(id==='cdD'?1:2,'0');
-    if(last[id]===v) return; last[id]=v;
-    var el=document.getElementById(id); el.textContent=v;
+  /* ---------- KvK countdown + status ---------- */
+  var nextEvt = null, last = {};
+  function setNum(id, v) {
+    if (last[id] === v) return; last[id] = v;
+    var el = document.getElementById(id); el.textContent = v;
     el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick');
   }
-  function tick(){
-    var now=Date.now();
-    if(!nextEvt || nextEvt.d+DAY<=now){ renderAll(); return; }
-    var diff=Math.max(0,nextEvt.d-now);
-    document.getElementById('cdTitle').textContent=nextEvt.t;
-    document.getElementById('cdDate').textContent=fw(nextEvt.d)+' · 00:00 UTC'+(diff===0?' · happening today':'');
-    setNum('cdD',Math.floor(diff/DAY));
-    setNum('cdH',Math.floor(diff%DAY/3600000));
-    setNum('cdM',Math.floor(diff%3600000/60000));
-    setNum('cdS',Math.floor(diff%60000/1000));
+  function renderKvk() {
+    var now = Date.now();
+    nextEvt = KVK.nextEvent(now);
+    document.getElementById('status').innerHTML = KVK.statusHTML(now);
+    var list = KVK.EVENTS.filter(function (e) { return e.d + KVK.DAY > now; }).slice(0, 5);
+    document.getElementById('upnext').innerHTML = list.length ? list.map(function (e) {
+      var n = Math.floor((e.d - now) / KVK.DAY) + 1, today = now >= e.d;
+      return '<div class="up-row"><div class="up-dots">' + e.g.map(function (g) { return '<i style="background:' + KVK.KC[g] + '"></i>'; }).join('') + '</div>' +
+        '<div class="t">' + esc(e.t) + '</div><div class="d">' + KVK.fd(e.d) + '</div><div class="c">' + (today ? 'Today' : n === 1 ? 'Tomorrow' : 'in ' + n + 'd') + '</div></div>';
+    }).join('') : '<div class="empty">No upcoming dates.</div>';
+  }
+  function tick() {
+    var now = Date.now();
+    if (!nextEvt || nextEvt.d + KVK.DAY <= now) renderKvk();
+    if (!nextEvt) { document.getElementById('cdTitle').textContent = 'All dates complete'; return; }
+    var diff = Math.max(0, nextEvt.d - now), l = S.left(diff);
+    document.getElementById('cdTitle').textContent = nextEvt.t;
+    document.getElementById('cdDate').textContent = KVK.fw(nextEvt.d) + ' · 00:00 UTC' + (diff === 0 ? ' · happening today' : '');
+    setNum('cdD', String(l.d)); setNum('cdH', S.pad(l.h)); setNum('cdM', S.pad(l.m)); setNum('cdS', S.pad(l.s));
   }
 
-  var lastDay=null;
-  function renderAll(){
-    var now=Date.now();
-    nextEvt=EVENTS.filter(function(e){return e.d+DAY>now})[0]||null;
-    if(!nextEvt){document.getElementById('cdTitle').textContent='All dates complete — welcome to 3914';}
-    renderStatus(now); renderTimeline(now); renderCards(now);
-    lastDay=Math.floor(now/DAY);
+  /* ---------- news, announcements, live bidding from the sheet ---------- */
+  var data = null;
+  function renderNews() {
+    var items = data.news || [];
+    var ann = items.filter(function (x) { return /announce/i.test(x.type) || x.pinned; });
+    var news = items.filter(function (x) { return ann.indexOf(x) < 0; });
+    document.getElementById('announcements').innerHTML = ann.length ? ann.slice(0, 4).map(function (a, i) {
+      return '<article class="ann-card' + (a.pinned ? ' pinned' : '') + '" style="animation-delay:' + (i * 0.08) + 's">' +
+        '<div class="ann-meta">' + (a.pinned ? '<span class="pin">PINNED</span>' : '') + '<span>' + (a.time ? S.date(a.time) : '') + '</span></div>' +
+        '<h3>' + esc(a.title) + '</h3>' + (a.body ? '<p>' + esc(a.body) + '</p>' : '') + '</article>';
+    }).join('') : '<div class="empty"><b>No announcements yet</b>Leadership posts appear here.</div>';
+    document.getElementById('news').innerHTML = news.length ? news.slice(0, 8).map(function (a, i) {
+      var d = new Date(a.time || Date.now());
+      return '<article class="news-item" style="animation-delay:' + (i * 0.06) + 's"><div class="news-date"><b>' + d.getUTCDate() + '</b><span>' + KVK.MON[d.getUTCMonth()] + '</span></div>' +
+        '<div><h3>' + esc(a.title) + '</h3>' + (a.body ? '<p>' + esc(a.body) + '</p>' : '') + '</div></article>';
+    }).join('') : '<div class="empty"><b>No news yet</b>Check back soon.</div>';
+  }
+  function renderLive() {
+    var now = Date.now();
+    var evs = (data.events || []).filter(function (e) { return e.phase !== 'closed'; });
+    document.getElementById('live').innerHTML = evs.length ? evs.map(function (e, i) {
+      var r1 = e.ranks[0] || {};
+      var target = e.phase === 'open' ? e.closes : e.opens;
+      return '<a class="live-card" href="events.html?event=' + encodeURIComponent(e.id) + '" style="animation-delay:' + (i * 0.08) + 's">' +
+        '<div class="live-top"><span class="type">' + esc(e.type) + '</span><span class="pill ' + e.phase + '"><i></i>' + (e.phase === 'open' ? 'Bidding open' : 'Opens soon') + '</span></div>' +
+        '<h3>' + esc(e.title || e.id) + '</h3>' +
+        '<div class="live-stats"><span><b class="num" data-until="' + target + '">' + S.shortLeft(target - now) + '</b>' + (e.phase === 'open' ? 'left' : 'until open') + '</span>' +
+        '<span><b class="num">' + e.bidders + '</b>bidders</span><span><b class="num">' + e.bids + '</b>bids</span></div>' +
+        '<div class="leader">' + (r1.bid ? 'Rank 1: <b>' + esc(r1.leader) + '</b> · ' + S.n(r1.bid) + ' credits' : 'Rank 1 has no bids yet') + '</div></a>';
+    }).join('') : '<div class="empty"><b>No live auctions</b>The next MGE or GH bidding will show here.</div>';
+  }
+  function load() {
+    S.api({ action: 'state' }).then(function (res) {
+      if (!res || !res.ok) throw new Error(res && res.error || 'No response');
+      data = res; renderNews(); renderLive();
+      document.getElementById('updated').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '.';
+    }).catch(function (err) {
+      var msg = '<div class="empty"><b>Couldn’t load</b>' + esc(err.message) + '</div>';
+      if (!data) { document.getElementById('announcements').innerHTML = msg; document.getElementById('news').innerHTML = ''; document.getElementById('live').innerHTML = msg; }
+    });
   }
 
-  renderLegend(); renderRule(); renderFilters(); renderAll(); tick();
-  setInterval(function(){
-    if(Math.floor(Date.now()/DAY)!==lastDay) renderAll();
-    if(nextEvt) tick();
-  },1000);
+  renderKvk(); tick(); load();
+  setInterval(function () {
+    tick();
+    Array.prototype.forEach.call(document.querySelectorAll('[data-until]'), function (el) {
+      el.textContent = S.shortLeft(Number(el.getAttribute('data-until')) - Date.now());
+    });
+  }, 1000);
+  setInterval(function () { if (!document.hidden) load(); }, Math.max(15, C.REFRESH_SECONDS || 15) * 2000);
+})();
 </script>
 </body>
 </html>

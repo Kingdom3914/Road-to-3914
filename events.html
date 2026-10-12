@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kingdom 3914 · MGE &amp; GH Bidding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px}
+  .head p{color:var(--soft);font-size:16px;margin-top:8px}
+  .seg-tabs{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+  .seg-tabs button{min-width:110px;min-height:46px;border:none;border-radius:10px;background:transparent;color:var(--soft);font-weight:700;font-size:16px;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;gap:8px}
+  .seg-tabs button[aria-pressed="true"]{background:var(--gold);color:#18130A}
+  .seg-tabs .cnt{font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(61,214,140,.18);color:var(--green)}
+  .seg-tabs button[aria-pressed="true"] .cnt{background:rgba(24,19,10,.18);color:#18130A}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}
+  .side{display:flex;flex-direction:column;gap:20px;position:sticky;top:84px}
+  @media(max-width:980px){.layout{grid-template-columns:1fr}.side{position:static;order:-1}}
+  .main{display:flex;flex-direction:column;gap:20px;min-width:0}
+
+  /* event hero */
+  .ev{position:relative;overflow:hidden;border-radius:18px;border:1px solid var(--line);background:radial-gradient(110% 130% at 100% 0%,rgba(232,184,74,.14),transparent 55%),var(--panel);padding:24px;animation:fadeUp .5s ease both}
+  .ev-top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .ev-type{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.14em;color:var(--gold)}
+  .ev h2{font-size:26px;margin:4px 0 4px}
+  .ev .subj{color:var(--soft);font-size:15px}
+  .ev-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .ev-pick button{font-size:13px;font-weight:600;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--soft);min-height:38px}
+  .ev-pick button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+  .ev .cd-digits{max-width:460px}
+  .ev-meta{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:16px;font-size:14px;color:var(--muted)}
+  .ev-meta b{color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:19px}
+
+  /* rank list */
+  .chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--line);color:var(--soft);background:var(--panel);min-height:40px}
+  .chip[aria-pressed="true"]{background:var(--panel2);border-color:var(--gold);color:var(--gold)}
+  .ranks{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+  .rank{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;animation:fadeUp .45s ease both;transition:border-color .2s}
+  .rank.t1{border-color:rgba(232,184,74,.55);background:linear-gradient(90deg,rgba(232,184,74,.08),transparent 60%),var(--panel)}
+  .rank.t2{border-color:rgba(194,200,210,.4)}
+  .rank.t3{border-color:rgba(201,145,90,.45)}
+  .rank.leading{box-shadow:inset 4px 0 0 var(--green)}
+  .rank.outbid{box-shadow:inset 4px 0 0 var(--red)}
+  .rank.flash{animation:flash 1.2s ease}
+  .rk{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;line-height:1;text-align:center;color:var(--muted)}
+  .rank.t1 .rk{color:var(--gold)} .rank.t2 .rk{color:var(--silver)} .rank.t3 .rk{color:var(--bronze)}
+  .rk small{display:block;font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--muted);margin-top:3px}
+  .rank .reward{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank .amt{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1.1}
+  .rank .amt span{font-family:'Barlow',sans-serif;font-size:12px;font-weight:500;color:var(--muted)}
+  .rank .who{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank .who b{color:var(--text);font-weight:600}
+  .ra{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+
+  /* account */
+  .acct h2{font-size:20px}
+  .signin{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+  .signin .hint{font-size:13px;color:var(--muted)}
+  .err{display:none;padding:10px 12px;border-radius:10px;font-size:13.5px;background:rgba(240,85,90,.12);color:#FF9A9D;border:1px solid rgba(240,85,90,.35)}
+  .err.on{display:block}
+  .who-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .who-row .nm{font-size:20px;font-weight:700}
+  .who-row .id{font-size:13px;color:var(--muted)}
+  .avail{margin-top:16px;background:#0D1320;border:1px solid var(--line);border-radius:14px;padding:16px}
+  .avail .lbl{font-size:12px;font-weight:700;letter-spacing:.18em;color:var(--muted)}
+  .avail .big{font-family:'Barlow Condensed',sans-serif;font-size:46px;font-weight:700;line-height:1;color:var(--gold);margin-top:4px}
+  .avail .big .unit{font-family:'Barlow',sans-serif;font-size:14px;color:var(--muted);font-weight:500}
+  .bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line2);margin-top:12px}
+  .bar i{display:block;height:100%;transform-origin:left;animation:grow 1s cubic-bezier(.2,.8,.2,1) both}
+  .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .mini div{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 8px}
+  .mini span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+  .mini span i{width:8px;height:8px;border-radius:2px}
+  .mini b{display:block;font-family:'Barlow Condensed',sans-serif;font-size:20px;margin-top:2px}
+
+  .rows{display:flex;flex-direction:column}
+  .row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line2);font-size:14px}
+  .row:last-child{border-bottom:none}
+  .row .main-t{flex:1;min-width:0}
+  .row .main-t p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row small{color:var(--muted);font-size:12px}
+  .row .v{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;white-space:nowrap}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .badge{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:3px 7px;border-radius:6px;background:var(--panel2);color:var(--gold);flex:none}
+  .rules{margin:0;padding:0;list-style:none;counter-reset:r}
+  .rules li{counter-increment:r;position:relative;padding:10px 0 10px 30px;border-bottom:1px solid var(--line2);font-size:14px;color:var(--soft)}
+  .rules li:last-child{border-bottom:none}
+  .rules li::before{content:counter(r);position:absolute;left:0;top:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--gold);font-size:16px}
+  details summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  details summary::-webkit-details-marker{display:none}
+  details summary::after{content:"+";color:var(--gold);font-size:22px;font-weight:700}
+  details[open] summary::after{content:"–"}
+
+  /* bid sheet */
+  .scrim{position:fixed;inset:0;z-index:200;background:rgba(5,8,13,.72);display:none;align-items:flex-end;justify-content:center}
+  .scrim.on{display:flex}
+  .sheet{width:100%;max-width:480px;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;animation:rise .25s cubic-bezier(.2,.8,.3,1)}
+  @media(min-width:700px){.scrim{align-items:center}.sheet{border-radius:18px;border-bottom:1px solid var(--line)}}
+  @keyframes rise{from{transform:translateY(24px);opacity:.5}to{transform:none;opacity:1}}
+  .grip{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+  .sheet h2{font-size:22px}
+  .sheet .sub{color:var(--muted);font-size:14px;margin:4px 0 14px}
+  .kv{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line2);font-size:14px}
+  .kv:last-child{border-bottom:none}
+  .kv span{color:var(--muted)}
+  .kv b{font-family:'Barlow Condensed',sans-serif;font-size:21px}
+  .box{background:#0D1320;border:1px solid var(--line);border-radius:12px;padding:4px 14px}
+  .bid-input{width:100%;margin-top:14px;background:#0D1320;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:700;min-height:60px}
+  .bid-input:focus{border-color:var(--gold);outline:none}
+  .quick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+  .quick button{border:1px solid var(--line);background:var(--panel2);border-radius:10px;min-height:44px;font-weight:700;font-size:14px}
+  .quick button:hover{border-color:var(--gold);color:var(--gold)}
+  .sheet-cta{display:flex;gap:8px;margin-top:16px}
+  .sheet-cta .btn{flex:1}
+  .fine{font-size:12.5px;color:var(--muted);margin-top:12px}
+  @keyframes flash{0%{border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,184,74,.35)}100%{}}
+</style>
+</head>
+<body data-page="events">
+<div id="site-nav"></div>
+
+<main class="wrap page">
+  <div class="head">
+    <div>
+      <div class="eyebrow">Kingdom auctions</div>
+      <h1>MGE &amp; GH Bidding</h1>
+      <p>Bid with your kingdom credits. The highest bid when the timer ends wins the rank.</p>
+    </div>
+    <div class="seg-tabs" role="group" aria-label="Event type" id="typeTabs"></div>
+  </div>
+
+  <div class="layout">
+    <div class="main">
+      <section id="evHero"><div class="skeleton" style="height:230px;border-radius:18px"></div></section>
+      <section>
+        <div class="sec-head" style="margin-bottom:10px"><h2 id="ranksTitle">Ranks</h2><p id="ranksNote"></p></div>
+        <div class="chips" id="chips" role="group" aria-label="Filter ranks"></div>
+        <div class="ranks" id="ranks" style="margin-top:10px"></div>
+      </section>
+      <section class="panel">
+        <div class="sec-head"><h2>Recent bids</h2><p id="feedNote">Updates automatically</p></div>
+        <div class="rows" id="feed"></div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <section class="panel acct" id="acct"></section>
+      <section class="panel" id="myPanel" hidden>
+        <div class="sec-head" style="margin-bottom:6px"><h2 style="font-size:20px">My active bids</h2></div>
+        <div class="rows" id="myBids"></div>
+      </section>
+      <section class="panel" id="histPanel" hidden>
+        <details>
+          <summary><h2 style="font-size:20px">Credit history</h2></summary>
+          <div class="rows" id="ledger" style="margin-top:8px"></div>
+        </details>
+      </section>
+      <section class="panel">
+        <details>
+          <summary><h2 style="font-size:20px">Bidding rules</h2></summary>
+          <ol class="rules" id="rules" style="margin-top:8px"></ol>
+        </details>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<!-- bid sheet -->
+<div class="scrim" id="bidScrim" role="dialog" aria-modal="true" aria-labelledby="bidTitle">
+  <div class="sheet">
+    <div class="grip"></div>
+    <h2 id="bidTitle">Place bid</h2>
+    <p class="sub" id="bidSub"></p>
+    <div class="box">
+      <div class="kv"><span>Current bid</span><b id="bCur">—</b></div>
+      <div class="kv"><span>Minimum next bid</span><b id="bMin" style="color:var(--gold)">—</b></div>
+      <div class="kv"><span>Available for this rank</span><b id="bAvail">—</b></div>
+    </div>
+    <label for="bidInput" class="sr" style="position:absolute;left:-9999px">Your bid</label>
+    <input class="bid-input" type="number" id="bidInput" inputmode="numeric" min="1" step="1">
+    <div class="quick" id="quick"></div>
+    <div class="kv" style="margin-top:10px"><span>Credits left after this bid</span><b id="bAfter">—</b></div>
+    <div class="err" id="bidErr" style="margin-top:10px"></div>
+    <div class="sheet-cta">
+      <button class="btn ghost" type="button" id="bidCancel">Cancel</button>
+      <button class="btn gold" type="button" id="bidNext">Review bid</button>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="confScrim" role="dialog" aria-modal="true" aria-labelledby="confTitle">
+  <div class="sheet" style="max-width:420px">
+    <div class="grip"></div>
+    <h2 id="confTitle">Confirm your bid</h2>
+    <p class="sub">Check the numbers before you commit.</p>
+    <div class="box">
+      <div class="kv"><span>Event</span><b id="cEv" style="font-size:16px;font-family:Barlow">—</b></div>
+      <div class="kv"><span>Rank</span><b id="cRank">—</b></div>
+      <div class="kv"><span>Reward</span><b id="cReward" style="font-size:15px;font-family:Barlow">—</b></div>
+      <div class="kv"><span>Your bid</span><b id="cAmt" style="color:var(--gold)">—</b></div>
+    </div>
+    <p class="fine">Credits stay reserved while you lead. If someone outbids you, they come back to you automatically.</p>
+    <div class="err" id="confErr" style="margin-top:10px"></div>
+    <div class="sheet-cta">
+      <button class="btn ghost" type="button" id="confBack">Back</button>
+      <button class="btn gold" type="button" id="confGo">Confirm bid</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="core.js"></script>
+<script src="site.js"></script>
+<script>
+(function () {
+  "use strict";
+  var S = window.Site, C = S.config, esc = S.esc, n = S.n;
+  var $ = function (id) { return document.getElementById(id); };
+
+  var st = {
+    data: null, sess: S.session.get(), type: 'MGE', eventId: null, filter: 'all',
+    busy: false, current: null, prevLead: null, authMsg: ''
+  };
+  var qs = new URLSearchParams(location.search);
+  if (qs.get('event')) st.eventId = qs.get('event');
+  if (qs.get('type')) { st.type = qs.get('type').toUpperCase(); st.typeChosen = true; }
+
+  /* ---------- helpers ---------- */
+  function events() { return (st.data && st.data.events) || []; }
+  function order(e) { return e.phase === 'open' ? 0 : e.phase === 'upcoming' ? 1 : 2; }
+  function eventsOfType(t) {
+    return events().filter(function (e) { return e.type === t; }).sort(function (a, b) { return order(a) - order(b) || a.closes - b.closes; });
+  }
+  function currentEvent() {
+    var list = eventsOfType(st.type);
+    var e = list.filter(function (x) { return x.id === st.eventId; })[0];
+    if (!e) { e = list[0] || null; st.eventId = e ? e.id : null; }
+    return e;
+  }
+  function me() { return st.data && st.data.me; }
+  function minNext(e, r) { return r.bid > 0 ? Math.max(r.min, r.bid + e.increment) : Math.max(r.min, 1); }
+  function availFor(r) { var m = me(); if (!m) return 0; return m.available + (r.mine === 'leading' ? r.bid : 0); }
+  function tier(k) { return k === 1 ? 't1' : k === 2 ? 't2' : k === 3 ? 't3' : ''; }
+
+  /* ---------- loading ---------- */
+  function load(silent) {
+    var p = { action: 'state' };
+    if (st.sess) { p.gov = st.sess.gov; p.pin = st.sess.pin; }
+    return S.api(p).then(function (res) {
+      if (!res || !res.ok) throw new Error((res && res.error) || 'No response from server');
+      if (res.authError && st.sess) { st.sess = null; S.session.clear(); st.authMsg = res.authError; }
+      apply(res);
+    }).catch(function (err) {
+      if (!silent || !st.data) S.toast('Could not load bids', err.message, 'warn');
+    });
+  }
+
+  function apply(res) {
+    var old = st.prevLead;
+    st.data = res;
+    // outbid alerts: compare what I led before vs now
+    var now = {};
+    if (res.me) res.me.positions.forEach(function (p) { if (p.leading) now[p.event + '#' + p.rank] = p; });
+    if (old && res.me) {
+      Object.keys(old).forEach(function (k) {
+        if (!now[k]) {
+          var p = old[k];
+          var ev = (res.events || []).filter(function (e) { return e.id === p.event; })[0];
+          var r = ev && ev.ranks[p.rank - 1];
+          if (ev && r && ev.phase === 'open') {
+            S.toast("You've been outbid", (r.leader || 'Someone') + ' leads ' + ev.type + ' rank #' + p.rank + ' with ' + n(r.bid) + ' credits.', 'warn',
+              { label: 'Rebid on #' + p.rank, fn: function () { st.type = ev.type; st.eventId = ev.id; render(); openBid(p.rank); } });
+          }
+        }
+      });
+    }
+    st.prevLead = res.me ? now : null;
+    var all = res.events || [];
+    if (st.eventId) {
+      var m = all.filter(function (x) { return x.id === st.eventId; })[0];
+      if (m) st.type = m.type;
+    } else if (!st.typeChosen && !all.some(function (x) { return x.type === st.type; })) {
+      var other = all.filter(function (x) { return x.phase !== 'closed'; })[0];
+      if (other) st.type = other.type;
+    }
+    render();
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    renderTabs(); renderHero(); renderRanks(); renderFeed(); renderAccount();
+  }
+
+  function renderTabs() {
+    $('typeTabs').innerHTML = ['MGE', 'GH'].map(function (t) {
+      var open = eventsOfType(t).filter(function (e) { return e.phase === 'open'; }).length;
+      return '<button type="button" data-type="' + t + '" aria-pressed="' + (st.type === t) + '">' + t + (open ? '<span class="cnt">LIVE</span>' : '') + '</button>';
+    }).join('');
+  }
+
+  function renderHero() {
+    var e = currentEvent();
+    if (!e) {
+      $('evHero').innerHTML = '<div class="ev"><div class="ev-type">' + esc(st.type) + '</div><h2>No ' + esc(st.type) + ' bidding right now</h2><p class="subj">When leadership opens the next ' + esc(st.type) + ' auction it will appear here.</p></div>';
+      return;
+    }
+    var list = eventsOfType(st.type);
+    var label = e.phase === 'open' ? 'Bidding open' : e.phase === 'upcoming' ? 'Opens soon' : 'Bidding closed';
+    var target = e.phase === 'open' ? e.closes : e.phase === 'upcoming' ? e.opens : 0;
+    var committed = e.ranks.reduce(function (t, r) { return t + r.bid; }, 0);
+    $('evHero').innerHTML = '<div class="ev">' +
+      '<div class="ev-top"><div><div class="ev-type">' + esc(e.type) + ' AUCTION</div><h2>' + esc(e.title || e.id) + '</h2>' +
+      (e.subject ? '<p class="subj">' + esc(e.subject) + '</p>' : '') + '</div>' +
+      '<div><span class="pill ' + e.phase + '"><i></i>' + label + '</span></div></div>' +
+      (target ? '<div class="cd-label" style="margin-top:18px">' + (e.phase === 'open' ? 'CLOSES IN' : 'OPENS IN') + ' · ' + esc(S.dateTime(target)) + '</div>' +
+        '<div class="cd-digits" data-target="' + target + '">' + ['DAYS', 'HRS', 'MIN', 'SEC'].map(function (c, i) {
+          return '<div class="cd-unit"><span class="cd-num" data-u="' + i + '">00</span><div class="cd-cap">' + c + '</div></div>';
+        }).join('') + '</div>'
+        : '<p class="subj" style="margin-top:14px">Closed ' + esc(S.dateTime(e.closes)) + '. Winners are final.</p>') +
+      '<div class="ev-meta"><span><b>' + e.bidders + '</b> bidders</span><span><b>' + e.bids + '</b> bids</span><span><b>' + n(committed) + '</b> credits on the board</span><span>Min. step <b>' + n(e.increment) + '</b></span></div>' +
+      (list.length > 1 ? '<div class="ev-pick">' + list.map(function (x) {
+        return '<button type="button" data-ev="' + esc(x.id) + '" aria-pressed="' + (x.id === e.id) + '">' + esc(x.title || x.id) + ' · ' + (x.phase === 'open' ? 'open' : x.phase) + '</button>';
+      }).join('') + '</div>' : '') +
+      '</div>';
+    tickHero();
+  }
+
+  function rankCard(e, r, i) {
+    var label = r.rank === 1 ? 'GOLD' : r.rank === 2 ? 'SILVER' : r.rank === 3 ? 'BRONZE' : 'RANK';
+    var tag = r.mine === 'leading' ? '<span class="tag win">WINNING</span>' : r.mine === 'outbid' ? '<span class="tag out">OUTBID</span>' : '';
+    var btn;
+    if (e.phase === 'closed') btn = r.bid ? '<span class="tag" style="background:var(--panel2);color:var(--muted)">WON</span>' : '';
+    else if (e.phase === 'upcoming') btn = '<button class="btn ghost sm" type="button" disabled>Soon</button>';
+    else btn = '<button class="btn ' + (r.mine === 'outbid' ? 'red' : r.mine === 'leading' ? 'ghost' : 'gold') + ' sm" type="button" data-bid="' + r.rank + '">' +
+      (r.mine === 'leading' ? 'Raise' : r.mine === 'outbid' ? 'Rebid' : 'Bid') + '</button>';
+    return '<article class="rank ' + tier(r.rank) + ' ' + (r.mine || '') + '" id="rank-' + r.rank + '" style="animation-delay:' + Math.min(i * 0.03, 0.45) + 's">' +
+      '<div class="rk">' + r.rank + '<small>' + label + '</small></div>' +
+      '<div style="min-width:0"><p class="reward">' + esc(r.reward || 'Rank ' + r.rank) + '</p>' +
+      '<p class="amt">' + (r.bid ? n(r.bid) + ' <span>credits</span>' : '<span style="font-size:15px">No bids · min ' + n(r.min) + '</span>') + '</p>' +
+      '<p class="who">' + (r.bid ? '<b>' + esc(r.leader) + '</b> · ' : '') + r.count + ' bid' + (r.count === 1 ? '' : 's') + '</p></div>' +
+      '<div class="ra">' + tag + btn + '</div></article>';
+  }
+
+  function renderRanks() {
+    var e = currentEvent();
+    var F = [['all', 'All ranks'], ['top3', 'Top 3'], ['free', 'No bids yet'], ['mine', 'My bids']];
+    $('chips').innerHTML = F.map(function (f) { return '<button class="chip" type="button" data-filter="' + f[0] + '" aria-pressed="' + (st.filter === f[0]) + '">' + f[1] + '</button>'; }).join('');
+    if (!e) { $('ranks').innerHTML = ''; $('ranksNote').textContent = ''; return; }
+    $('ranksTitle').textContent = e.type + ' ranks';
+    $('ranksNote').textContent = e.ranks.length + ' ranks · highest bid wins';
+    var list = e.ranks.filter(function (r) {
+      return st.filter === 'top3' ? r.rank <= 3 : st.filter === 'free' ? !r.bid : st.filter === 'mine' ? !!r.mine : true;
+    });
+    $('ranks').innerHTML = list.length ? list.map(function (r, i) { return rankCard(e, r, i); }).join('')
+      : '<div class="panel empty" style="grid-column:1/-1"><b>Nothing here</b>' + (st.filter === 'mine' && !me() ? 'Sign in to see your bids.' : 'No ranks match this filter.') + '</div>';
+  }
+
+  function renderFeed() {
+    var f = ((st.data && st.data.feed) || []).filter(function (x) { return x.type === st.type; }).slice(0, 10);
+    $('feed').innerHTML = f.length ? f.map(function (x) {
+      return '<div class="row"><span class="badge">#' + x.rank + '</span><div class="main-t"><p><b>' + esc(x.name) + '</b> bid ' + n(x.amount) + '</p><small>' + esc(x.type) + ' · ' + S.ago(x.time) + '</small></div></div>';
+    }).join('') : '<div class="empty">No ' + esc(st.type) + ' bids yet. Be the first.</div>';
+  }
+
+  function renderAccount() {
+    var m = me();
+    if (!m) {
+      $('acct').innerHTML = '<h2>Sign in to bid</h2>' +
+        '<form class="signin" id="signin" autocomplete="on">' +
+        '<div class="field"><label for="gov">Governor ID</label><input id="gov" name="username" inputmode="numeric" autocomplete="username" required></div>' +
+        '<div class="field"><label for="pin">PIN</label><input id="pin" name="password" type="password" inputmode="numeric" autocomplete="current-password" required></div>' +
+        '<div class="err' + (st.authMsg ? ' on' : '') + '" id="signErr">' + esc(st.authMsg) + '</div>' +
+        '<button class="btn gold" type="submit" id="signBtn">Sign in</button>' +
+        '<p class="hint">' + (S.demo ? 'Demo: use ID <b>1001</b> and PIN <b>1234</b>.' : 'No PIN yet? Ask an officer in Discord.') + '</p></form>';
+      $('myPanel').hidden = true; $('histPanel').hidden = true;
+      return;
+    }
+    var tot = Math.max(1, m.available + m.reserved + m.spent);
+    $('acct').innerHTML = '<div class="who-row"><div><div class="nm">' + esc(m.name) + '</div><div class="id">' + (m.alliance ? esc(m.alliance) + ' · ' : '') + 'ID ' + esc(m.gov) + '</div></div>' +
+      '<button class="btn ghost sm" type="button" id="signOut">Sign out</button></div>' +
+      '<div class="avail"><div class="lbl">AVAILABLE CREDITS</div><div class="big"><span class="num" id="availNum">' + n(m.available) + '</span> <span class="unit">credits</span></div>' +
+      '<div class="bar" aria-hidden="true"><i style="width:' + (Math.max(0, m.available) / tot * 100) + '%;background:var(--gold)"></i><i style="width:' + (m.reserved / tot * 100) + '%;background:var(--blue);animation-delay:.15s"></i><i style="width:' + (m.spent / tot * 100) + '%;background:#5B6476;animation-delay:.3s"></i></div>' +
+      '<div class="mini"><div><span><i style="background:var(--blue)"></i>Reserved</span><b>' + n(m.reserved) + '</b></div>' +
+      '<div><span><i style="background:#5B6476"></i>Spent</span><b>' + n(m.spent) + '</b></div>' +
+      '<div><span><i style="background:var(--gold)"></i>Total</span><b>' + n(m.received) + '</b></div></div></div>';
+    var pos = m.positions || [];
+    $('myPanel').hidden = false;
+    $('myBids').innerHTML = pos.length ? pos.map(function (p) {
+      return '<div class="row"><span class="badge">' + esc(p.type) + ' #' + p.rank + '</span><div class="main-t"><p>' + (p.leading ? '<span class="tag win">WINNING</span>' : '<span class="tag out">OUTBID</span>') + ' ' + n(p.leading ? p.bid : p.myBid) + '</p>' +
+        '<small>' + (p.leading ? 'Your bid is on top' : 'Top bid now ' + n(p.bid)) + '</small></div>' +
+        (p.leading ? '' : '<button class="btn red sm" type="button" data-rebid="' + esc(p.event) + '|' + p.rank + '">Rebid</button>') + '</div>';
+    }).join('') : '<div class="empty" style="padding:14px 0">No active bids yet.</div>';
+    $('histPanel').hidden = false;
+    $('ledger').innerHTML = (m.ledger || []).length ? m.ledger.map(function (l) {
+      return '<div class="row"><div class="main-t"><p>' + esc(l.reason || 'Credit adjustment') + '</p><small>' + (l.time ? S.date(l.time) : '') + '</small></div><div class="v ' + (l.amount < 0 ? 'neg' : 'pos') + '">' + (l.amount > 0 ? '+' : '') + n(l.amount) + '</div></div>';
+    }).join('') : '<div class="empty" style="padding:14px 0">No credit history yet.</div>';
+  }
+
+  /* ---------- countdown ---------- */
+  function tickHero() {
+    var box = document.querySelector('[data-target]'); if (!box) return;
+    var target = Number(box.getAttribute('data-target')), ms = target - Date.now();
+    if (ms <= 0) { load(true); box.removeAttribute('data-target'); return; }
+    var l = S.left(ms), v = [String(l.d).padStart(2, '0'), S.pad(l.h), S.pad(l.m), S.pad(l.s)];
+    Array.prototype.forEach.call(box.querySelectorAll('[data-u]'), function (el) {
+      var nv = v[Number(el.getAttribute('data-u'))];
+      if (el.textContent !== nv) { el.textContent = nv; el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick'); }
+    });
+  }
+
+  /* ---------- sign in ---------- */
+  function signIn(gov, pin) {
+    var btn = $('signBtn'); btn.disabled = true; btn.textContent = 'Signing in…';
+    S.api({ action: 'state', gov: gov, pin: pin }).then(function (res) {
+      if (!res || !res.ok) throw new Error((res && res.error) || 'No response');
+      if (res.authError || !res.me) { st.authMsg = res.authError || 'Wrong governor ID or PIN.'; apply(res); return; }
+      st.sess = { gov: gov, pin: pin }; S.session.set(gov, pin); st.authMsg = '';
+      st.prevLead = null; apply(res);
+      S.toast('Welcome, ' + res.me.name, 'You have ' + n(res.me.available) + ' credits available.', 'good');
+    }).catch(function (err) { st.authMsg = err.message; renderAccount(); });
+  }
+
+  /* ---------- bidding ---------- */
+  function openBid(rank) {
+    var e = currentEvent(); if (!e) return;
+    var r = e.ranks[rank - 1]; if (!r) return;
+    if (!me()) {
+      S.toast('Sign in first', 'Enter your governor ID and PIN to bid.', 'warn');
+      var g = $('gov'); if (g) { g.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(function () { g.focus(); }, 300); }
+      return;
+    }
+    if (e.phase !== 'open') { S.toast('Bidding not open', 'This auction is not accepting bids.', 'warn'); return; }
+    st.current = { ev: e, r: r };
+    var need = minNext(e, r), av = availFor(r);
+    $('bidTitle').textContent = e.type + ' · rank #' + r.rank;
+    $('bidSub').textContent = r.reward || ('Rank ' + r.rank);
+    $('bCur').textContent = r.bid ? n(r.bid) + (r.mine === 'leading' ? ' (yours)' : '') : 'No bids';
+    $('bMin').textContent = n(need);
+    $('bAvail').textContent = n(av);
+    $('bidInput').value = need;
+    $('quick').innerHTML = [e.increment, e.increment * 2, e.increment * 5].map(function (x) { return '<button type="button" data-inc="' + x + '">+' + n(x) + '</button>'; }).join('') + '<button type="button" data-inc="max">Max</button>';
+    showErr('bidErr', '');
+    updateAfter();
+    $('bidScrim').classList.add('on');
+    setTimeout(function () { $('bidInput').focus(); $('bidInput').select(); }, 80);
+  }
+  function closeSheets() { $('bidScrim').classList.remove('on'); $('confScrim').classList.remove('on'); st.current = null; }
+  function updateAfter() {
+    if (!st.current) return;
+    var v = parseInt($('bidInput').value, 10), after = availFor(st.current.r) - (isNaN(v) ? 0 : v);
+    $('bAfter').textContent = n(after);
+    $('bAfter').style.color = after < 0 ? 'var(--red)' : 'var(--green)';
+  }
+  function validate() {
+    var c = st.current; if (!c) return 'Pick a rank first.';
+    var v = parseInt($('bidInput').value, 10), need = minNext(c.ev, c.r), av = availFor(c.r);
+    if (isNaN(v) || v <= 0) return 'Enter a bid of at least ' + n(need) + ' credits.';
+    if (v < need) return 'Rank #' + c.r.rank + ' needs at least ' + n(need) + ' credits.';
+    if (v > av) return 'Not enough credits. You have ' + n(av) + ' available for this rank.';
+    return '';
+  }
+  function showErr(id, msg) { var b = $(id); b.textContent = msg; b.className = 'err' + (msg ? ' on' : ''); }
+
+  function submitBid() {
+    var c = st.current, amount = parseInt($('bidInput').value, 10);
+    if (!c || st.busy) return;
+    st.busy = true; $('confGo').disabled = true; $('confGo').textContent = 'Placing bid…';
+    S.api({ action: 'bid', gov: st.sess.gov, pin: st.sess.pin, event: c.ev.id, rank: c.r.rank, amount: amount }).then(function (res) {
+      if (!res || !res.ok) {
+        showErr('confErr', (res && res.error) || 'Bid failed.');
+        load(true);
+        return;
+      }
+      var rank = c.r.rank;
+      closeSheets();
+      st.prevLead = null; apply(res);
+      var el = $('rank-' + rank); if (el) { el.classList.add('flash'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      S.toast('Bid placed', 'You lead rank #' + rank + ' with ' + n(amount) + ' credits.', 'good');
+    }).catch(function (err) { showErr('confErr', err.message); })
+      .then(function () { st.busy = false; $('confGo').disabled = false; $('confGo').textContent = 'Confirm bid'; });
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener('click', function (ev) {
+    var t;
+    if ((t = ev.target.closest('[data-type]'))) { st.type = t.getAttribute('data-type'); st.typeChosen = true; st.eventId = null; st.filter = 'all'; render(); return; }
+    if ((t = ev.target.closest('[data-ev]'))) { st.eventId = t.getAttribute('data-ev'); render(); return; }
+    if ((t = ev.target.closest('[data-filter]'))) { st.filter = t.getAttribute('data-filter'); renderRanks(); return; }
+    if ((t = ev.target.closest('[data-bid]'))) { openBid(parseInt(t.getAttribute('data-bid'), 10)); return; }
+    if ((t = ev.target.closest('[data-rebid]'))) {
+      var p = t.getAttribute('data-rebid').split('|'), e = events().filter(function (x) { return x.id === p[0]; })[0];
+      if (e) { st.type = e.type; st.eventId = e.id; render(); openBid(parseInt(p[1], 10)); }
+      return;
+    }
+    if ((t = ev.target.closest('[data-inc]'))) {
+      var inc = t.getAttribute('data-inc'), av = availFor(st.current.r);
+      var cur = parseInt($('bidInput').value, 10) || minNext(st.current.ev, st.current.r);
+      $('bidInput').value = inc === 'max' ? av : cur + parseInt(inc, 10);
+      updateAfter(); showErr('bidErr', ''); return;
+    }
+    if (ev.target.id === 'signOut') { S.session.clear(); st.sess = null; st.prevLead = null; st.authMsg = ''; load(); return; }
+  });
+  document.addEventListener('submit', function (ev) {
+    if (ev.target.id !== 'signin') return;
+    ev.preventDefault();
+    var gov = $('gov').value.trim(), pin = $('pin').value.trim();
+    if (!gov || !pin) { st.authMsg = 'Enter your governor ID and PIN.'; renderAccount(); return; }
+    signIn(gov, pin);
+  });
+  $('bidInput').addEventListener('input', function () { updateAfter(); showErr('bidErr', ''); });
+  $('bidInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('bidNext').click(); });
+  $('bidCancel').onclick = closeSheets;
+  $('bidNext').onclick = function () {
+    var e = validate(); if (e) { showErr('bidErr', e); return; }
+    var c = st.current;
+    $('cEv').textContent = c.ev.title || c.ev.id;
+    $('cRank').textContent = '#' + c.r.rank;
+    $('cReward').textContent = c.r.reward || '—';
+    $('cAmt').textContent = n(parseInt($('bidInput').value, 10));
+    showErr('confErr', '');
+    $('confScrim').classList.add('on');
+  };
+  $('confBack').onclick = function () { $('confScrim').classList.remove('on'); };
+  $('confGo').onclick = submitBid;
+  Array.prototype.forEach.call(document.querySelectorAll('.scrim'), function (s) {
+    s.addEventListener('click', function (e) { if (e.target === s) { if (s.id === 'confScrim') s.classList.remove('on'); else closeSheets(); } });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if ($('confScrim').classList.contains('on')) $('confScrim').classList.remove('on'); else closeSheets();
+  });
+
+  $('rules').innerHTML = (C.RULES || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
+
+  /* ---------- start ---------- */
+  load();
+  setInterval(tickHero, 1000);
+  setInterval(function () {
+    if (!document.hidden && !$('bidScrim').classList.contains('on') && !st.busy) load(true);
+  }, Math.max(10, C.REFRESH_SECONDS || 15) * 1000);
+})();
+</script>
+</body>
+</html>

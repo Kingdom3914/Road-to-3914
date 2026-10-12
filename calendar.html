@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kingdom 3914 · KvK Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .hero{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px}
+  .hero-text{display:flex;flex-direction:column;gap:10px}
+  .hero .countdown{min-width:min(100%,420px)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px 22px;margin-bottom:18px}
+  .lg{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--soft)}
+  .sw{width:28px;height:14px;border-radius:4px;flex:none}
+
+  .tl{display:grid;grid-template-columns:150px minmax(0,1fr);gap:0 16px}
+  .tl-labels{display:flex;flex-direction:column}
+  .tl-lab{height:92px;display:flex;flex-direction:column;justify-content:center;gap:2px;border-top:1px solid var(--line)}
+  .tl-lab b{font-size:16px}
+  .tl-lab span{font-size:12px;color:var(--muted)}
+  .tl-scroll{overflow-x:auto;scrollbar-color:#2E3B54 transparent}
+  .tl-track{position:relative;min-width:1100px}
+  .axis{position:relative;height:44px}
+  .mon{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--soft)}
+  .shade{position:absolute;top:44px;bottom:44px;background:rgba(255,255,255,.025)}
+  .lane{position:relative;height:92px;border-top:1px solid var(--line)}
+  .seg{position:absolute;top:14px;height:30px;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;transform-origin:left;animation:grow 1s cubic-bezier(.2,.8,.2,1) both}
+  .seg span{overflow:hidden;text-overflow:ellipsis}
+  .seg.kvk{color:#0F1522}
+  .seg.open{border-top-left-radius:0;border-bottom-left-radius:0}
+  .seg.skip{background-size:28px 28px !important;animation:grow 1s cubic-bezier(.2,.8,.2,1) both,stripes 1.6s linear infinite}
+  .mk{position:absolute;top:29px;transform:translate(-50%,-50%);z-index:3}
+  .mk-lab{position:absolute;top:50px;transform:translateX(-50%);text-align:center;font-size:12px;line-height:1.25;white-space:nowrap;z-index:3}
+  .mk-lab b{display:block;font-size:12.5px}
+  .ring{width:18px;height:18px;border-radius:50%;border:3px dashed;background:#0F1522}
+  .dotm{width:16px;height:16px;border-radius:50%;border:3px solid #0F1522;box-shadow:0 0 0 2px currentColor}
+  .must{font-size:11px;font-weight:800;letter-spacing:.12em;padding:4px 8px;border-radius:6px;color:#0F1522;border:2px solid #0F1522}
+  .diamond{width:15px;height:15px;transform:translate(-50%,-50%) rotate(45deg)}
+  .diamond.est{background:transparent !important;border:2px dashed var(--red)}
+  .pulse::before{content:"";position:absolute;inset:-8px;border-radius:50%;border:2px solid currentColor;animation:ping 1.8s ease-out infinite}
+  .mig{position:absolute;top:44px;bottom:44px;width:2px;transform:translateX(-1px);background-size:2px 14px;animation:march 1s linear infinite;z-index:2}
+  .chiprow{position:relative;height:44px;border-top:1px solid var(--line)}
+  .chip{position:absolute;top:8px;transform:translateX(-50%);height:28px;padding:0 12px;border-radius:14px;display:flex;align-items:center;font-size:12.5px;font-weight:700;color:#0F1522;white-space:nowrap}
+  .today{position:absolute;top:30px;bottom:44px;width:2px;background:var(--gold);transform:translateX(-1px);z-index:4;box-shadow:0 0 12px rgba(232,184,74,.6)}
+  .today-tag{position:absolute;top:4px;transform:translateX(-50%);background:var(--gold);color:#0F1522;font-size:11px;font-weight:800;letter-spacing:.14em;padding:3px 10px;border-radius:10px;z-index:5}
+  .swipe{display:none;font-size:12px;color:var(--muted);margin-top:8px}
+
+  .rule{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin-bottom:20px}
+  .step{flex:1 1 170px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;animation:fadeUp .6s ease both}
+  .step b{font-size:15px}
+  .step span{font-size:13px;color:var(--muted)}
+  .arrow{align-self:center;color:var(--gold);font-size:22px;animation:nudge 1.4s ease-in-out infinite}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line)}
+  td{padding:12px;border-bottom:1px solid var(--line)}
+  .tbl{overflow-x:auto}
+  .kname{display:flex;align-items:center;gap:8px;font-weight:700}
+  .kdot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .fbtn{font-size:13px;font-weight:600;color:var(--soft);background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-height:40px;display:flex;align-items:center;gap:8px}
+  .fbtn[aria-pressed="true"]{background:var(--gold);color:#0F1522;border-color:var(--gold)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start;animation:fadeUp .5s ease both}
+  .card.past{opacity:.45}
+  .card.next{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 24px rgba(232,184,74,.15)}
+  .dots{display:flex;flex-direction:column;gap:4px;padding-top:4px}
+  .card .d{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .card .t{font-size:16px;font-weight:600}
+  .card .x{font-size:13px;color:var(--soft)}
+  .card .c{margin-left:auto;font-size:12.5px;font-weight:700;white-space:nowrap;padding-top:2px}
+
+  @keyframes stripes{to{background-position:56px 0}}
+  @keyframes march{to{background-position:0 14px}}
+  @keyframes nudge{50%{transform:translateX(4px)}}
+  @media (max-width:760px){
+    .tl{grid-template-columns:96px minmax(0,1fr);gap:0 8px}
+    .tl-lab b{font-size:14px}
+    .swipe{display:block}
+    .arrow{display:none}
+  }
+</style>
+</head>
+<body data-page="calendar">
+<div id="site-nav"></div>
+
+<main class="wrap page">
+  <header class="hero">
+    <div class="hero-text">
+      <div class="eyebrow">Migration · KvK · Off-season</div>
+      <h1>Road to 3914</h1>
+      <div style="font-size:17px;color:var(--soft)">Every key date from Aug 2026 to Mar 2027</div>
+    </div>
+    <div class="countdown" aria-live="polite">
+      <div class="cd-label">NEXT UP</div>
+      <div class="cd-title" id="cdTitle"></div>
+      <div class="cd-date" id="cdDate"></div>
+      <div class="cd-digits">
+        <div class="cd-unit"><span class="cd-num" id="cdD">0</span><div class="cd-cap">DAYS</div></div>
+        <div class="cd-unit"><span class="cd-num" id="cdH">00</span><div class="cd-cap">HRS</div></div>
+        <div class="cd-unit"><span class="cd-num" id="cdM">00</span><div class="cd-cap">MIN</div></div>
+        <div class="cd-unit"><span class="cd-num" id="cdS">00</span><div class="cd-cap">SEC</div></div>
+      </div>
+    </div>
+  </header>
+
+  <section aria-label="Kingdom status"><div class="status" id="status"></div></section>
+
+  <section class="panel">
+    <div class="sec-head"><h2>Timeline</h2><p>Each lane shows what a kingdom is doing day by day.</p></div>
+    <div class="legend" id="legend"></div>
+    <div class="tl">
+      <div class="tl-labels" id="labels"></div>
+      <div class="tl-scroll"><div class="tl-track" id="track"></div></div>
+    </div>
+    <div class="swipe">Swipe the timeline sideways →</div>
+  </section>
+
+  <section class="panel">
+    <div class="sec-head"><h2>How the off-season works</h2><p>A kingdom may skip one registration after KvK, never two.</p></div>
+    <div class="rule">
+      <div class="step"><b>KvK ends</b><span>Off-season starts the same day.</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="step"><b>1st pop-up · optional</b><span>Register now, or skip and stay in off-season.</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="step"><b style="color:var(--gold)">2nd pop-up · mandatory</b><span>Registration is required. Off-season ends at the latest here.</span></div>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Kingdom</th><th>KvK ends</th><th>1st pop-up (optional)</th><th>2nd pop-up (must register)</th><th>Off-season</th></tr></thead>
+      <tbody id="ruleRows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <div class="sec-head"><h2>Key dates</h2><p>Past dates fade out; the next one glows.</p></div>
+    <div class="filters" id="filters" role="group" aria-label="Filter key dates"></div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <footer class="foot">All dates are server time (UTC 00:00). Pop-ups run on a 28-day cycle, so 1 Mar 2027 is projected (est.), not confirmed.</footer>
+</main>
+
+<script src="config.js"></script>
+<script src="core.js"></script>
+<script src="site.js"></script>
+<script src="kvk.js"></script>
+<script>
+(function () {
+  "use strict";
+  var V = window.KVK, DAY = V.DAY, R0 = V.R0, R1 = V.R1, K = V.K, KC = V.KC, EVENTS = V.EVENTS, POPS = V.POPS, EST = V.EST, MIGS = V.MIGS;
+  var fd = V.fd, fw = V.fw, days = V.days, MON = V.MON;
+  function X(t) { return ((Math.max(R0, Math.min(R1, t)) - R0) / (R1 - R0) * 100).toFixed(3) + '%'; }
+  var filter = 'all', nextEvt = null;
+
+  function segStyle(k, s) {
+    if (s.t === 'kvk') return 'background:' + k.c;
+    if (s.t === 'off') return 'background:rgba(' + k.rgb + ',.22);color:' + k.c + ';box-shadow:inset 0 0 0 1px rgba(' + k.rgb + ',.55)';
+    if (s.t === 'skip') return 'background:repeating-linear-gradient(45deg,rgba(' + k.rgb + ',.20) 0 10px,rgba(' + k.rgb + ',.05) 10px 20px);color:' + k.c + ';box-shadow:inset 0 0 0 1px rgba(' + k.rgb + ',.35)';
+    return 'background:rgba(76,141,255,.16);color:#9DBFFF;box-shadow:inset 0 0 0 1px rgba(76,141,255,.5)';
+  }
+
+  function renderLegend() {
+    var L = [
+      ['<span class="sw" style="background:var(--k3914)"></span>', 'KvK'],
+      ['<span class="sw" style="background:rgba(61,214,140,.22);box-shadow:inset 0 0 0 1px rgba(61,214,140,.55)"></span>', 'Off-season'],
+      ['<span class="sw" style="background:repeating-linear-gradient(45deg,rgba(61,214,140,.25) 0 5px,rgba(61,214,140,.05) 5px 10px);box-shadow:inset 0 0 0 1px rgba(61,214,140,.35)"></span>', 'Off-season if 1st pop-up skipped'],
+      ['<span style="width:15px;height:15px;border-radius:50%;border:3px dashed var(--k3914)"></span>', 'Optional registration'],
+      ['<span class="must" style="background:var(--k3914);font-size:9px;padding:2px 5px">MUST</span>', 'Mandatory registration'],
+      ['<span style="width:12px;height:12px;background:var(--red);transform:rotate(45deg)"></span>', 'KvK pop-up'],
+      ['<span style="width:3px;height:16px;background:var(--blue)"></span>', 'Migration'],
+      ['<span style="width:3px;height:16px;background:var(--gold)"></span>', 'Today']
+    ];
+    document.getElementById('legend').innerHTML = L.map(function (i) { return '<div class="lg">' + i[0] + i[1] + '</div>'; }).join('');
+  }
+
+  function renderTimeline(now) {
+    var lab = '<div style="height:44px"></div><div class="tl-lab"><b style="color:var(--red)">KvK pop-ups</b><span>Every 28 days</span></div>';
+    K.forEach(function (k) { lab += '<div class="tl-lab"><b style="color:' + k.c + '">' + k.name + '</b><span>' + k.sub + '</span></div>'; });
+    lab += '<div style="height:44px;border-top:1px solid var(--line)"></div>';
+    document.getElementById('labels').innerHTML = lab;
+
+    var h = '<div class="axis">', shades = '', m = new Date(R0), i = 0;
+    while (m.getTime() < R1) {
+      var a = m.getTime(), nx = Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1), b = Math.min(nx, R1);
+      var lbl = MON[m.getUTCMonth()].toUpperCase() + (m.getUTCMonth() === 0 ? ' ’' + String(m.getUTCFullYear()).slice(2) : '');
+      h += '<div class="mon" style="left:' + X(a) + ';width:calc(' + X(b) + ' - ' + X(a) + ')">' + lbl + '</div>';
+      if (i % 2 === 0) shades += '<div class="shade" style="left:' + X(a) + ';width:calc(' + X(b) + ' - ' + X(a) + ')"></div>';
+      m = new Date(nx); i++;
+    }
+    h += '</div>' + shades;
+
+    var nextPop = POPS.filter(function (p) { return p + DAY > now; })[0];
+    h += '<div class="lane">';
+    POPS.forEach(function (p) {
+      var est = p === EST;
+      h += '<div class="mk' + (p === nextPop ? ' pulse' : '') + '" style="left:' + X(p) + ';color:var(--red);transform:none"><div class="diamond' + (est ? ' est' : '') + '" style="background:var(--red)"></div></div>';
+      h += '<div class="mk-lab" style="left:' + X(p) + '"><b>' + fd(p) + (est ? ' (est.)' : '') + '</b></div>';
+    });
+    h += '</div>';
+
+    K.forEach(function (k, ki) {
+      h += '<div class="lane">';
+      k.segs.forEach(function (s, si) {
+        h += '<div class="seg ' + s.t + (s.open ? ' open' : '') + '" style="left:' + X(s.a) + ';width:calc(' + X(s.b) + ' - ' + X(s.a) + ');' + segStyle(k, s) + ';animation-delay:' + (0.15 + ki * 0.25 + si * 0.18) + 's"><span>' + s.l + '</span></div>';
+      });
+      k.marks.forEach(function (mk) {
+        var isNext = nextEvt && nextEvt.d === mk.d, inner, l;
+        if (mk.t === 'reg') { inner = '<div class="dotm" style="background:' + k.c + '"></div>'; l = '<b>Registered</b>' + fd(mk.d); }
+        else if (mk.t === 'opt') { inner = '<div class="ring" style="border-color:' + k.c + '"></div>'; l = '<b>Can register or skip</b>' + fd(mk.d); }
+        else { inner = '<div class="must" style="background:' + k.c + '">MUST</div>'; l = '<b>Must register</b>' + fd(mk.d) + (mk.est ? ' (est.)' : ''); }
+        h += '<div class="mk' + (isNext ? ' pulse' : '') + '" style="left:' + X(mk.d) + ';color:' + k.c + '" title="' + k.name + ' · ' + fd(mk.d, true) + '">' + inner + '</div>';
+        h += '<div class="mk-lab" style="left:' + X(mk.d) + ';color:' + k.c + '">' + l + '</div>';
+      });
+      h += '</div>';
+    });
+
+    h += '<div class="chiprow">';
+    MIGS.forEach(function (g) { h += '<div class="chip" style="left:' + X(g.d) + ';background:' + g.c + '">' + g.l + '</div>'; });
+    h += '</div>';
+    MIGS.forEach(function (g) { h += '<div class="mig" style="left:' + X(g.d) + ';background-image:linear-gradient(' + g.c + ' 60%,transparent 60%)"></div>'; });
+    if (now >= R0 && now <= R1) h += '<div class="today" style="left:' + X(now) + '"></div><div class="today-tag" style="left:' + X(now) + '">TODAY</div>';
+    document.getElementById('track').innerHTML = h;
+
+    var sc = document.querySelector('.tl-scroll');
+    if (sc.scrollWidth > sc.clientWidth) sc.scrollLeft = Math.max(0, (now - R0) / (R1 - R0) * sc.scrollWidth - sc.clientWidth * 0.3);
+  }
+
+  function renderRule() {
+    document.getElementById('ruleRows').innerHTML = K.map(function (k) {
+      return '<tr><td><span class="kname"><span class="kdot" style="background:' + k.c + '"></span>' + k.name + '</span></td>' +
+        '<td>' + fd(k.end, true) + '</td><td>' + fd(k.opt, true) + '</td>' +
+        '<td style="color:' + k.c + ';font-weight:700">' + fd(k.must, true) + (k.must === EST ? ' (est.)' : '') + '</td>' +
+        '<td>' + days(k.end, k.opt) + ' days, or up to ' + days(k.end, k.must) + ' if skipped</td></tr>';
+    }).join('');
+  }
+
+  function renderFilters() {
+    var F = [['all', 'All'], ['3914', '3914'], ['2359', '2359'], ['1875', '1875'], ['pop', 'Pop-ups'], ['mig', 'Migrations']];
+    document.getElementById('filters').innerHTML = F.map(function (f) {
+      var dot = f[0] === 'all' ? '' : '<span class="kdot" style="background:' + KC[f[0]] + '"></span>';
+      return '<button class="fbtn" type="button" data-f="' + f[0] + '" aria-pressed="' + (filter === f[0]) + '">' + dot + f[1] + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.fbtn'), function (b) {
+      b.addEventListener('click', function () { filter = b.getAttribute('data-f'); renderFilters(); renderCards(Date.now()); });
+    });
+  }
+
+  function renderCards(now) {
+    var list = EVENTS.filter(function (e) { return filter === 'all' || e.g.indexOf(filter) > -1; });
+    document.getElementById('cards').innerHTML = list.map(function (e, i) {
+      var n = Math.floor((e.d - now) / DAY) + 1, past = e.d + DAY <= now, today = !past && now >= e.d;
+      var cd = past ? 'Done' : today ? 'Today' : n === 1 ? 'Tomorrow' : 'In ' + n + ' days';
+      var col = past ? 'var(--muted)' : n <= 7 ? 'var(--gold)' : 'var(--soft)';
+      return '<div class="card' + (past ? ' past' : '') + (nextEvt && e.d === nextEvt.d ? ' next' : '') + '" style="animation-delay:' + (i * 0.04) + 's">' +
+        '<div class="dots">' + e.g.map(function (g) { return '<span class="kdot" style="background:' + KC[g] + '"></span>'; }).join('') + '</div>' +
+        '<div style="min-width:0"><div class="d">' + fw(e.d) + '</div><div class="t">' + e.t + '</div><div class="x">' + e.x + '</div></div>' +
+        '<div class="c" style="color:' + col + '">' + cd + '</div></div>';
+    }).join('');
+  }
+
+  var last = {};
+  function setNum(id, v) {
+    if (last[id] === v) return; last[id] = v;
+    var el = document.getElementById(id); el.textContent = v;
+    el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick');
+  }
+  var lastDay = null;
+  function renderAll() {
+    var now = Date.now();
+    nextEvt = V.nextEvent(now);
+    if (!nextEvt) document.getElementById('cdTitle').textContent = 'All dates complete. Welcome to 3914';
+    document.getElementById('status').innerHTML = V.statusHTML(now);
+    renderTimeline(now); renderCards(now);
+    lastDay = Math.floor(now / DAY);
+  }
+  function tick() {
+    var now = Date.now();
+    if (Math.floor(now / DAY) !== lastDay) renderAll();
+    if (!nextEvt) return;
+    var diff = Math.max(0, nextEvt.d - now), l = Site.left(diff);
+    document.getElementById('cdTitle').textContent = nextEvt.t;
+    document.getElementById('cdDate').textContent = fw(nextEvt.d) + ' · 00:00 UTC' + (diff === 0 ? ' · happening today' : '');
+    setNum('cdD', String(l.d)); setNum('cdH', Site.pad(l.h)); setNum('cdM', Site.pad(l.m)); setNum('cdS', Site.pad(l.s));
+  }
+
+  renderLegend(); renderRule(); renderFilters(); renderAll(); tick();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
