@@ -128,7 +128,7 @@
   if (C.DISCORD) { var d = document.getElementById('discordBtn'); d.href = C.DISCORD; d.hidden = false; d.target = '_blank'; d.rel = 'noopener'; }
 
   /* ---------- KvK countdown + status ---------- */
-  var nextEvt = null, last = {};
+  var nextEvt = null, last = {}, kvkDay = null;
   function setNum(id, v) {
     if (last[id] === v) return; last[id] = v;
     var el = document.getElementById(id); el.textContent = v;
@@ -147,8 +147,9 @@
   }
   function tick() {
     var now = Date.now();
-    if (!nextEvt || nextEvt.d + KVK.DAY <= now) renderKvk();
-    if (!nextEvt) { document.getElementById('cdTitle').textContent = 'All dates complete'; return; }
+    var today = Math.floor(now / KVK.DAY);
+    if ((nextEvt && nextEvt.d + KVK.DAY <= now) || today !== kvkDay) { renderKvk(); kvkDay = today; }
+    if (!nextEvt) { document.getElementById('cdTitle').textContent = KVK.noNextText(); document.getElementById('cdDate').textContent = ''; return; }
     var diff = Math.max(0, nextEvt.d - now), l = S.left(diff);
     document.getElementById('cdTitle').textContent = nextEvt.t;
     document.getElementById('cdDate').textContent = KVK.fw(nextEvt.d) + ' · 00:00 UTC' + (diff === 0 ? ' · happening today' : '');

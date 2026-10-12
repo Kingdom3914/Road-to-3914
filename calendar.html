@@ -251,6 +251,7 @@
 
   function renderCards(now) {
     var list = EVENTS.filter(function (e) { return filter === 'all' || e.g.indexOf(filter) > -1; });
+    if (!list.length) { document.getElementById('cards').innerHTML = '<div class="empty" style="grid-column:1/-1"><b>No dates</b>Add key dates in the Calendar tab of the sheet.</div>'; return; }
     document.getElementById('cards').innerHTML = list.map(function (e, i) {
       var n = Math.floor((e.d - now) / DAY) + 1, past = e.d + DAY <= now, today = !past && now >= e.d;
       var cd = past ? 'Done' : today ? 'Today' : n === 1 ? 'Tomorrow' : 'In ' + n + ' days';
@@ -272,7 +273,7 @@
   function renderAll() {
     var now = Date.now();
     nextEvt = V.nextEvent(now);
-    if (!nextEvt) document.getElementById('cdTitle').textContent = 'All dates complete. Welcome to 3914';
+    if (!nextEvt) { document.getElementById('cdTitle').textContent = V.noNextText(); document.getElementById('cdDate').textContent = ''; }
     document.getElementById('status').innerHTML = V.statusHTML(now);
     renderTimeline(now); renderCards(now);
     lastDay = Math.floor(now / DAY);

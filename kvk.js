@@ -93,6 +93,7 @@
 
   /* Kingdom status cards (used on Home and Calendar) */
   V.statusHTML = function (now) {
+    if (!V.K.length) return '<div class="st"><div class="st-name">No kingdoms yet</div><div class="st-main">Add kingdoms in the Kingdoms tab of the sheet.</div></div>';
     return V.K.map(function (k, ki) {
       var s = V.phaseOf(k, now), chip, main, pct = null;
       if (!s) {
@@ -119,16 +120,31 @@
     }).join('');
   };
 
-  /* Load from the sheet; fall back to the backup above if it fails or is empty */
-  var ready = null;
+  /* Load from the sheet (the backup above is only used if the sheet can't be reached).
+     Open pages re-check the sheet every minute and refresh when something changed. */
+  var ready = null, lastSig = null;
+  function apply(res) {
+    var cal = res && res.ok && res.calendar;
+    if (!cal) return false;
+    build(cal); V.source = 'sheet'; lastSig = JSON.stringify(cal);
+    return true;
+  }
+  function check() {
+    if (document.hidden) return;
+    Site.api({ action: 'calendar' }).then(function (res) {
+      var cal = res && res.ok && res.calendar;
+      if (cal && JSON.stringify(cal) !== lastSig) location.reload();
+    }).catch(function () {});
+  }
   V.init = function () {
     if (ready) return ready;
-    ready = Site.api({ action: 'calendar' }).then(function (res) {
-      var cal = res && res.ok && res.calendar;
-      if (cal && cal.kingdoms && cal.kingdoms.length && cal.dates && cal.dates.length) { build(cal); V.source = 'sheet'; }
-    }).catch(function () {}).then(function () { return V; });
+    ready = Site.api({ action: 'calendar' }).then(apply).catch(function () {}).then(function () {
+      setInterval(check, 60000);
+      return V;
+    });
     return ready;
   };
+  V.noNextText = function () { return V.EVENTS.length ? 'All dates complete' : 'No dates yet. Add them in the Calendar tab'; };
 
   build(DEFAULT);
 })();
