@@ -108,24 +108,24 @@
     build(cal); V.source = 'sheet'; lastSig = JSON.stringify(cal);
     return true;
   }
-  function check(force) {
+  function check(force, pre) {
     if (document.hidden && force !== true) return;
-    Site.api({ action: 'calendar' }).then(function (res) {
+    (pre || Site.api({ action: 'calendar' })).then(function (res) {
       var cal = res && res.ok && res.calendar;
       if (cal && JSON.stringify(cal) !== lastSig) location.reload();
     }).catch(function () {});
   }
-  V.init = function () {
+  V.init = function (pre) {
     if (ready) return ready;
     var c = Site.cached('calendar');
     if (c && apply(c)) {
       /* show the saved dates right away, then refresh if the sheet changed */
       ready = Promise.resolve(V);
-      check(true);
+      check(true, pre);
       setInterval(check, 60000);
       return ready;
     }
-    ready = Site.api({ action: 'calendar' }).then(apply).catch(function () {}).then(function () {
+    ready = (pre || Site.api({ action: 'calendar' })).then(apply).catch(function () {}).then(function () {
       setInterval(check, 60000);
       return V;
     });

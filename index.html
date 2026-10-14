@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kingdom 3914 · Home</title>
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
@@ -189,8 +191,8 @@
         '<div class="leader">' + (r1.bid ? 'Rank 1: <b>' + esc(r1.leader) + '</b> · ' + S.n(r1.bid) + ' credits' : 'Rank 1 has no bids yet') + '</div></a>';
     }).join('') : '<div class="empty"><b>No live auctions</b>The next MGE or GH bidding will show here.</div>';
   }
-  function load() {
-    S.api({ action: 'state' }).then(function (res) {
+  function load(first) {
+    (first || S.api({ action: 'state' })).then(function (res) {
       if (!res || !res.ok) throw new Error(res && res.error || 'No response');
       data = res; renderNews(); renderLive();
       document.getElementById('updated').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '.';
@@ -203,8 +205,9 @@
   var saved = S.cached('state');
   if (saved) { data = saved; renderNews(); renderLive(); }
   var kvkReady = false;
-  KVK.init().then(function () { kvkReady = true; nextEvt = null; renderKvk(); tick(); });
-  load();
+  var first = S.api({ action: 'state', cal: 1 }); /* one request for news, bids and dates */
+  KVK.init(first).then(function () { kvkReady = true; nextEvt = null; renderKvk(); tick(); });
+  load(first);
   setInterval(function () {
     if (kvkReady) tick();
     Array.prototype.forEach.call(document.querySelectorAll('[data-until]'), function (el) {

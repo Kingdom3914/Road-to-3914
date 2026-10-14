@@ -90,6 +90,7 @@
       if (res && res.text) setText(res.text, true);
       if (res && res.ok && !res.locked && !res.authError && payload.gov && /^(state|calendar)$/.test(payload.action || '')) {
         store.set('k3914-c-' + payload.action + '-' + payload.gov, JSON.stringify(res));
+        if (res.calendar && payload.action !== 'calendar') store.set('k3914-c-calendar-' + payload.gov, JSON.stringify({ ok: true, calendar: res.calendar }));
       }
       if (res && res.locked && payload.action !== 'login') {
         if (session.get()) session.clear();
