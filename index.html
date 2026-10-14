@@ -200,6 +200,8 @@
     });
   }
 
+  var saved = S.cached('state');
+  if (saved) { data = saved; renderNews(); renderLive(); }
   var kvkReady = false;
   KVK.init().then(function () { kvkReady = true; nextEvt = null; renderKvk(); tick(); });
   load();

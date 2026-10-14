@@ -503,7 +503,7 @@
       $('bidInput').value = inc === 'max' ? av : cur + parseInt(inc, 10);
       updateAfter(); showErr('bidErr', ''); return;
     }
-    if (ev.target.id === 'signOut') { S.session.clear(); st.sess = null; st.prevLead = null; st.authMsg = ''; load(); return; }
+    if (ev.target.id === 'signOut') { S.signOut(); return; }
   });
   document.addEventListener('submit', function (ev) {
     if (ev.target.id !== 'signin') return;
@@ -545,6 +545,8 @@
   S.onText(renderRules);
 
   /* ---------- start ---------- */
+  var saved = S.cached('state');
+  if (saved && st.sess) { try { apply(saved); } catch (e) {} }
   load();
   setInterval(tickHero, 1000);
   setInterval(function () {

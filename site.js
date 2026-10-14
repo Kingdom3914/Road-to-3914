@@ -47,14 +47,16 @@
     var page = document.body.getAttribute('data-page');
     var links = [['index.html', 'home', 'Home'], ['calendar.html', 'calendar', 'Calendar'], ['events.html', 'events', 'MGE & GH'], ['migration.html', 'migrate', 'Migrate'], ['#discord', 'discord', 'Discord']];
     var el = document.getElementById('site-nav'); if (!el) return;
+    var who = session.get(), LOCK = '<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="members only"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
     el.innerHTML =
       '<header class="topbar"><div class="wrap">' +
         '<a class="brand" href="index.html"><span class="crest" aria-hidden="true"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h18l-2-10-5 4-2-6-2 6-5-4z"/><path d="M5 21h14"/></svg></span>' +
         '<span><b data-text="kingdom_name">' + esc(C.KINGDOM) + '</b><small data-text="tagline">' + esc(C.TAGLINE) + '</small></span></a>' +
         '<nav class="navlinks" aria-label="Main">' + links.map(function (l) {
           if (l[1] === 'discord') return '<a href="#" data-discord target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS.discord + '</svg>' + l[2] + '</a>';
-          return '<a href="' + l[0] + '"' + (page === l[1] ? ' aria-current="page"' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[l[1]] + '</svg>' + l[2] + '</a>';
+          return '<a href="' + l[0] + '"' + (page === l[1] ? ' aria-current="page"' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[l[1]] + '</svg>' + l[2] + (!who && MEMBERS[l[1]] ? LOCK : '') + '</a>';
         }).join('') + '</nav>' +
+        (who ? '<div class="who-chip"><span><b>' + esc(who.name || 'Governor') + '</b><small>ID ' + esc(who.gov) + '</small></span><button type="button" class="btn ghost sm" data-signout>Sign out</button></div>' : '') +
       '</div></header>' +
       (C.API_URL ? '' : '<div class="demo-banner"><div class="wrap"><b>Demo mode:</b> showing sample data. Bids are saved only on this device until the Google Sheet link is added in config.js.</div></div>');
   }
@@ -72,13 +74,79 @@
   }
 
   /* ---------- backend connection ---------- */
+  var MEMBERS = { home: 1, calendar: 1, events: 1 };
+  function membersPage() { return !!MEMBERS[document.body.getAttribute('data-page')]; }
   function api(payload) {
+    payload = payload || {};
+    if (membersPage() && !payload.gov && !/^(apply|text|login)/.test(payload.action || '')) {
+      var se = session.get(); if (se) { payload.gov = se.gov; payload.pin = se.pin; }
+    }
     var req = !C.API_URL ? demoCall(payload) : fetch(C.API_URL, {
       method: 'POST', redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload || {})
     }).then(function (r) { return r.json(); });
-    return req.then(function (res) { if (res && res.text) setText(res.text, true); return res; });
+    return req.then(function (res) {
+      if (res && res.text) setText(res.text, true);
+      if (res && res.ok && !res.locked && !res.authError && payload.gov && /^(state|calendar)$/.test(payload.action || '')) {
+        store.set('k3914-c-' + payload.action + '-' + payload.gov, JSON.stringify(res));
+      }
+      if (res && res.locked && payload.action !== 'login') {
+        if (session.get()) session.clear();
+        lock(res.authError ? 'Your sign-in has expired. Please sign in again.' : '');
+        return new Promise(function () {}); /* page stays locked */
+      }
+      return res;
+    });
+  }
+
+  /* ---------- members-only lock screen ---------- */
+  var PAGE_NAME = { home: 'the kingdom home page', calendar: 'the KvK calendar', events: 'MGE & GH bidding' };
+  function lock(msg) {
+    var main = document.querySelector('main'), chip = document.querySelector('.who-chip');
+    if (chip) chip.parentNode.removeChild(chip);
+    if (main) { main.classList.add('locked'); main.setAttribute('aria-hidden', 'true'); main.setAttribute('inert', ''); }
+    var box = document.getElementById('lockbox');
+    if (!box) {
+      box = document.createElement('div'); box.id = 'lockbox'; box.className = 'lockbox';
+      box.innerHTML = '<form class="lock-card" id="lockForm" autocomplete="on">' +
+        '<div class="lock-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="11" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/><path d="M12 15v2.5"/></svg></div>' +
+        '<h2>Members only</h2>' +
+        '<p>Sign in with your Governor ID and PIN to see ' + esc(PAGE_NAME[document.body.getAttribute('data-page')] || 'this page') + '.</p>' +
+        '<div class="field"><label for="lkGov">Governor ID</label><input id="lkGov" name="username" inputmode="numeric" autocomplete="username" required></div>' +
+        '<div class="field"><label for="lkPin">PIN</label><input id="lkPin" name="password" type="password" inputmode="numeric" autocomplete="current-password" required></div>' +
+        '<div class="err" id="lkErr" role="alert"></div>' +
+        '<button class="btn gold" type="submit" id="lkBtn">Sign in</button>' +
+        '<div class="lock-links"><span>' + (C.API_URL ? 'No PIN yet? Ask an officer in Discord.' : 'Demo: ID <b>1001</b>, PIN <b>1234</b>') + '</span>' +
+        '<a href="migration.html">Not in 3914 yet? Apply to migrate →</a></div></form>';
+      document.body.appendChild(box);
+      document.getElementById('lockForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var gov = document.getElementById('lkGov').value.trim(), pin = document.getElementById('lkPin').value.trim();
+        var btn = document.getElementById('lkBtn'), err = document.getElementById('lkErr');
+        if (!gov || !pin) { err.textContent = 'Enter your Governor ID and PIN.'; err.className = 'err on'; return; }
+        btn.disabled = true; btn.textContent = 'Signing in…'; err.className = 'err';
+        api({ action: 'login', gov: gov, pin: pin }).then(function (res) {
+          if (res && res.ok && res.me) { session.set(gov, pin, res.me.name); location.reload(); return; }
+          throw new Error((res && (res.authError || res.error)) || 'Wrong governor ID or PIN.');
+        }).catch(function (x) {
+          err.textContent = x.message || 'Could not sign in. Try again.'; err.className = 'err on';
+          btn.disabled = false; btn.textContent = 'Sign in';
+        });
+      });
+    }
+    var er = document.getElementById('lkErr');
+    if (msg) { er.textContent = msg; er.className = 'err on'; }
+    setTimeout(function () { var g = document.getElementById('lkGov'); if (g && !g.value) g.focus(); }, 50);
+  }
+  function signOut() {
+    try { Object.keys(window.localStorage).forEach(function (k) { if (k.indexOf('k3914-c-') === 0) store.del(k); }); } catch (e) {}
+    session.clear(); location.reload();
+  }
+  /* last data this member saw, shown instantly while fresh data loads */
+  function cached(action) {
+    var se = session.get(); if (!se) return null;
+    try { var r = JSON.parse(store.get('k3914-c-' + action + '-' + se.gov) || 'null'); return r && r.ok ? r : null; } catch (e) { return null; }
   }
 
   /* ---------- editable site text (Site text tab of the sheet) ---------- */
@@ -151,6 +219,12 @@
   }
   function demoCall(p) {
     var t = demoTables(), now = Date.now(), res;
+    if (p && p.action !== 'text' && !/^apply/.test(p.action || '')) {
+      var g = Core.gate(t, p);
+      if (!g.me) return Promise.resolve({ ok: true, locked: true, authError: g.error || '' });
+      if (p.action === 'login') return Promise.resolve({ ok: true, me: { name: String(g.me.Name), gov: String(g.me.GovID) } });
+    }
+    if (p && p.action === 'text') return Promise.resolve({ ok: true });
     if (p && /^apply/.test(p.action || '')) {
       res = p.action === 'applyStart' ? { ok: true, ref: 'DEMO-' + String(now).slice(-5), token: 'demo' } : { ok: true };
       return new Promise(function (resolve) { setTimeout(function () { resolve(res); }, p.action === 'applyImage' ? 350 : 700); });
@@ -171,15 +245,19 @@
   /* ---------- signed-in governor (kept on this device) ---------- */
   var session = {
     get: function () { var s = store.get('k3914-session'); try { return s ? JSON.parse(s) : null; } catch (e) { return null; } },
-    set: function (gov, pin) { store.set('k3914-session', JSON.stringify({ gov: gov, pin: pin })); },
+    set: function (gov, pin, name) { store.set('k3914-session', JSON.stringify({ gov: gov, pin: pin, name: name || '' })); },
     clear: function () { store.del('k3914-session'); }
   };
 
-  window.Site = { onText: onText, esc: esc, n: n, date: date, dateTime: dateTime, ago: ago, left: left, shortLeft: shortLeft, pad: pad, store: store, toast: toast, api: api, session: session, config: C, demo: !C.API_URL };
+  window.Site = { onText: onText, esc: esc, n: n, date: date, dateTime: dateTime, ago: ago, left: left, shortLeft: shortLeft, pad: pad, store: store, toast: toast, api: api, session: session, signOut: signOut, cached: cached, config: C, demo: !C.API_URL };
   nav();
+  if (membersPage() && !session.get()) {
+    if (document.querySelector('main')) lock(''); else document.addEventListener('DOMContentLoaded', function () { lock(''); });
+  }
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('[data-discord][data-nolink]');
     if (a) { e.preventDefault(); toast('Discord link coming soon', 'Leadership will add the invite link shortly.'); }
+    if (e.target.closest && e.target.closest('[data-signout]')) signOut();
   });
   try { var cached = JSON.parse(store.get('k3914-text') || 'null'); if (cached) setText(cached, false); } catch (e) {}
   document.addEventListener('DOMContentLoaded', applyText);

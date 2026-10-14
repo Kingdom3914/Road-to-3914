@@ -92,6 +92,13 @@ var Core = (function () {
     return null;
   }
 
+  /* Members-only pages: who is signed in? {me} | {} (no login) | {error} */
+  function gate(t, p) {
+    if (!p || !str(p.gov) || !str(p.pin)) return {};
+    var me = auth(t, p.gov, p.pin);
+    return me ? { me: me } : { error: 'Wrong governor ID or PIN.' };
+  }
+
   /* Everything the website needs in one response */
   function state(t, p, now) {
     var evs = events(t, now);
@@ -190,5 +197,5 @@ var Core = (function () {
     return o;
   }
 
-  return { state: state, checkBid: checkBid, calendar: calendar, balances: balances, texts: texts, toTime: toTime };
+  return { gate: gate, state: state, checkBid: checkBid, calendar: calendar, balances: balances, texts: texts, toTime: toTime };
 })();

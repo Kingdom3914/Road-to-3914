@@ -1,5 +1,5 @@
 /* KvK calendar: built from the Kingdoms and Calendar tabs of the Google Sheet.
-   The DEFAULT data below is only a backup, used if the sheet can't be reached. */
+   Only signed-in members receive the dates. */
 (function () {
   "use strict";
   var DAY = 86400000;
@@ -10,28 +10,7 @@
   function fw(t) { var d = new Date(t); return WD[d.getUTCDay()] + ' ' + fd(t, true); }
   function days(a, b) { return Math.round((b - a) / DAY); }
 
-  var DEFAULT = {
-    kingdoms: [
-      { id: '1875', name: 'Kingdom 1875', sub: 'Current KvK', color: '#F5C542', start: 0, end: U(2026,10,20), buildup: 0 },
-      { id: '2359', name: 'Kingdom 2359', sub: 'KvK league', color: '#D86CF2', start: U(2026,10,12), end: U(2026,12,17), buildup: 0 },
-      { id: '3914', name: 'Kingdom 3914', sub: 'Our new home', color: '#3DD68C', start: U(2026,11,9), end: U(2027,1,14), buildup: U(2026,10,21) }
-    ],
-    dates: [
-      { d: U(2026,8,17), t: 'KvK pop-up', x: 'Registration window', type: 'popup', k: [] },
-      { d: U(2026,9,14), t: 'KvK pop-up', x: 'Registration window', type: 'popup', k: [] },
-      { d: U(2026,10,12), t: 'Pop-up · 2359 registers', x: '2359 signs up for KvK', type: 'popup', k: ['2359'] },
-      { d: U(2026,10,20), t: '1875 KvK ends', x: '1875 enters off-season', type: 'kvk-end', k: ['1875'] },
-      { d: U(2026,10,21), t: 'Migration 1 → 3914', x: 'First migration window into 3914', type: 'migration', k: [] },
-      { d: U(2026,11,9), t: 'Pop-up · 3914 registers', x: '3914 signs up for KvK · 1875 may register or skip', type: 'popup', k: ['3914','1875'] },
-      { d: U(2026,12,7), t: 'Pop-up · 1875 must register', x: '2nd pop-up after its KvK, so registration is mandatory', type: 'popup', k: ['1875'] },
-      { d: U(2026,12,17), t: '2359 KvK ends', x: '2359 enters off-season', type: 'kvk-end', k: ['2359'] },
-      { d: U(2027,1,4), t: 'Pop-up · 2359 1st registration', x: 'Optional: 2359 may register or skip', type: 'popup', k: ['2359'] },
-      { d: U(2027,1,14), t: '3914 KvK ends', x: '3914 enters off-season', type: 'kvk-end', k: ['3914'] },
-      { d: U(2027,1,15), t: 'Migration 2 → 3914', x: 'Second migration window into 3914', type: 'migration', k: [] },
-      { d: U(2027,2,1), t: 'Pop-up · 3914 1st · 2359 2nd', x: '3914 optional (can skip) · 2359 must register', type: 'popup', k: ['3914','2359'] },
-      { d: U(2027,3,1), t: 'Pop-up (est.) · 3914 must register', x: 'Projected from the 28-day cycle', type: 'popup', k: ['3914'], est: true }
-    ]
-  };
+  var DEFAULT = { kingdoms: [], dates: [] }; /* dates come only from the sheet, for signed-in members */
 
   var PALETTE = ['#3DD68C', '#D86CF2', '#F5C542', '#4C8DFF', '#FF8A4C', '#2FD4E8'];
   function rgbOf(hex) {
@@ -129,8 +108,8 @@
     build(cal); V.source = 'sheet'; lastSig = JSON.stringify(cal);
     return true;
   }
-  function check() {
-    if (document.hidden) return;
+  function check(force) {
+    if (document.hidden && force !== true) return;
     Site.api({ action: 'calendar' }).then(function (res) {
       var cal = res && res.ok && res.calendar;
       if (cal && JSON.stringify(cal) !== lastSig) location.reload();
@@ -138,6 +117,14 @@
   }
   V.init = function () {
     if (ready) return ready;
+    var c = Site.cached('calendar');
+    if (c && apply(c)) {
+      /* show the saved dates right away, then refresh if the sheet changed */
+      ready = Promise.resolve(V);
+      check(true);
+      setInterval(check, 60000);
+      return ready;
+    }
     ready = Site.api({ action: 'calendar' }).then(apply).catch(function () {}).then(function () {
       setInterval(check, 60000);
       return V;
