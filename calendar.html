@@ -24,7 +24,7 @@
   .tl-lab b{font-size:16px}
   .tl-lab span{font-size:12px;color:var(--muted)}
   .tl-scroll{overflow-x:auto;scrollbar-color:#2E3B54 transparent}
-  .tl-track{position:relative;min-width:1100px}
+  .tl-track{position:relative;min-width:1400px}
   .axis{position:relative;height:44px}
   .mon{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--soft)}
   .shade{position:absolute;top:44px;bottom:44px;background:rgba(255,255,255,.025)}
@@ -49,6 +49,20 @@
   .today{position:absolute;top:30px;bottom:44px;width:2px;background:var(--gold);transform:translateX(-1px);z-index:4;box-shadow:0 0 12px rgba(232,184,74,.6)}
   .today-tag{position:absolute;top:4px;transform:translateX(-50%);background:var(--gold);color:#0F1522;font-size:11px;font-weight:800;letter-spacing:.14em;padding:3px 10px;border-radius:10px;z-index:5}
   .swipe{display:none;font-size:12px;color:var(--muted);margin-top:8px}
+  .lane.tall{height:132px}
+  .lane.short{height:64px}
+  .tl-lab.tall{height:132px}
+  .tl-lab.short{height:64px}
+  .stg{position:absolute;top:22px;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);border:3px solid #0F1522;box-shadow:0 0 0 2px var(--k3914);background:var(--k3914);z-index:3}
+  .stg.past{opacity:.45}
+  .stg.est{background:#0F1522;box-shadow:0 0 0 2px var(--k3914),inset 0 0 0 2px var(--k3914)}
+  .stg-line{position:absolute;top:22px;width:1px;background:rgba(61,214,140,.35);z-index:1}
+  .stg-lab{position:absolute;transform:translateX(-50%);text-align:center;font-size:11.5px;line-height:1.2;white-space:nowrap;color:var(--soft);z-index:3;background:var(--panel);padding:1px 4px;border-radius:4px}
+  .stg-lab b{display:block;color:var(--k3914);font-size:12px}
+  .ev{position:absolute;top:14px;height:34px;border-radius:8px;display:flex;flex-direction:column;justify-content:center;padding:0 8px;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;color:#0F1522;transform-origin:left;animation:grow .8s cubic-bezier(.2,.8,.2,1) both;min-width:6px}
+  .ev small{font-weight:600;font-size:10.5px;opacity:.8}
+  .ev.past{opacity:.4}
+  .ev.est{background-image:repeating-linear-gradient(45deg,rgba(15,21,34,.18) 0 6px,transparent 6px 12px)}
 
   .rule{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin-bottom:20px}
   .step{flex:1 1 170px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;animation:fadeUp .6s ease both}
@@ -92,9 +106,9 @@
 <main class="wrap page">
   <header class="hero">
     <div class="hero-text">
-      <div class="eyebrow" data-text="calendar_eyebrow">Migration · KvK · Off-season</div>
+      <div class="eyebrow" data-text="calendar_eyebrow">KvK · MGE · GH</div>
       <h1 data-text="calendar_title">Road to 3914</h1>
-      <div style="font-size:17px;color:var(--soft)" data-text="calendar_subtitle">Every key date from Aug 2026 to Mar 2027</div>
+      <div style="font-size:17px;color:var(--soft)" data-text="calendar_subtitle">Every key date for Kingdom 3914</div>
     </div>
     <div class="countdown" aria-live="polite">
       <div class="cd-label">NEXT UP</div>
@@ -109,10 +123,18 @@
     </div>
   </header>
 
+  <div class="edit-tools" style="display:none" role="toolbar" aria-label="Edit the calendar">
+    <b>Edit calendar:</b>
+    <button class="btn gold sm" type="button" data-ed="dates">Dates</button>
+    <button class="btn gold sm" type="button" data-ed="kingdoms">Kingdoms</button>
+    <button class="btn gold sm" type="button" data-ed="types">Event types &amp; colours</button>
+    <button class="btn gold sm" type="button" data-ed="view">Calendar view</button>
+  </div>
+
   <section aria-label="Kingdom status"><div class="status" id="status"></div></section>
 
   <section class="panel">
-    <div class="sec-head"><h2>Timeline</h2><p>Each lane shows what a kingdom is doing day by day.</p></div>
+    <div class="sec-head"><h2>Timeline</h2><p id="rangeNote">KvK, MGE and GH for Kingdom 3914, day by day.</p></div>
     <div class="legend" id="legend"></div>
     <div class="tl">
       <div class="tl-labels" id="labels"></div>
@@ -122,7 +144,7 @@
   </section>
 
   <section class="panel">
-    <div class="sec-head"><h2>How the off-season works</h2><p>A kingdom may skip one registration after KvK, never two.</p></div>
+    <div class="sec-head"><h2>How the off-season works</h2><p>After KvK we may skip one registration, never two.</p></div>
     <div class="rule">
       <div class="step"><b>KvK ends</b><span>Off-season starts the same day.</span></div>
       <div class="arrow" aria-hidden="true">→</div>
@@ -142,7 +164,7 @@
     <div class="cards" id="cards"></div>
   </section>
 
-  <footer class="foot">All dates are server time (UTC 00:00). Dates marked (est.) are projected, not confirmed. Dates are managed in the Kingdoms and Calendar tabs of the kingdom sheet.</footer>
+  <footer class="foot">All dates are server time (UTC 00:00). Dates marked (est.) are projected, not confirmed. Admins edit everything here in Edit mode.</footer>
 </main>
 
 <script src="config.js"></script>
@@ -154,42 +176,75 @@
   "use strict";
   KVK.init().then(function (V) {
   var DAY = V.DAY, R0 = V.R0, R1 = V.R1, K = V.K, KC = V.KC, EVENTS = V.EVENTS, POPS = V.POPS, MIGS = V.MIGS;
-  var fd = V.fd, fw = V.fw, days = V.days, MON = V.MON;
+  var fd = V.fd, fw = V.fw, days = V.days, MON = V.MON, esc = Site.esc;
   function X(t) { return ((Math.max(R0, Math.min(R1, t)) - R0) / (R1 - R0) * 100).toFixed(3) + '%'; }
   var filter = 'all', nextEvt = null;
 
   function segStyle(k, s) {
-    if (s.t === 'kvk') return 'background:' + k.c;
+    if (s.t === 'kvk') return 'background:' + k.c + ';color:#0F1522';
     if (s.t === 'off') return 'background:rgba(' + k.rgb + ',.22);color:' + k.c + ';box-shadow:inset 0 0 0 1px rgba(' + k.rgb + ',.55)';
     if (s.t === 'skip') return 'background:repeating-linear-gradient(45deg,rgba(' + k.rgb + ',.20) 0 10px,rgba(' + k.rgb + ',.05) 10px 20px);color:' + k.c + ';box-shadow:inset 0 0 0 1px rgba(' + k.rgb + ',.35)';
     return 'background:rgba(76,141,255,.16);color:#9DBFFF;box-shadow:inset 0 0 0 1px rgba(76,141,255,.5)';
   }
 
   function renderLegend() {
+    var g = K[0].c, rgb = K[0].rgb;
     var L = [
-      ['<span class="sw" style="background:var(--k3914)"></span>', 'KvK'],
-      ['<span class="sw" style="background:rgba(61,214,140,.22);box-shadow:inset 0 0 0 1px rgba(61,214,140,.55)"></span>', 'Off-season'],
-      ['<span class="sw" style="background:repeating-linear-gradient(45deg,rgba(61,214,140,.25) 0 5px,rgba(61,214,140,.05) 5px 10px);box-shadow:inset 0 0 0 1px rgba(61,214,140,.35)"></span>', 'Off-season if 1st pop-up skipped'],
-      ['<span style="width:15px;height:15px;border-radius:50%;border:3px dashed var(--k3914)"></span>', 'Optional registration'],
-      ['<span class="must" style="background:var(--k3914);font-size:9px;padding:2px 5px">MUST</span>', 'Mandatory registration'],
-      ['<span style="width:12px;height:12px;background:var(--red);transform:rotate(45deg)"></span>', 'KvK pop-up'],
-      ['<span style="width:3px;height:16px;background:var(--blue)"></span>', 'Migration'],
-      ['<span style="width:3px;height:16px;background:var(--gold)"></span>', 'Today']
+      ['<span class="sw" style="background:' + g + '"></span>', 'KvK'],
+      ['<span class="sw" style="background:rgba(' + rgb + ',.22);box-shadow:inset 0 0 0 1px rgba(' + rgb + ',.55)"></span>', 'Off-season'],
+      ['<span class="sw" style="background:repeating-linear-gradient(45deg,rgba(' + rgb + ',.25) 0 5px,rgba(' + rgb + ',.05) 5px 10px);box-shadow:inset 0 0 0 1px rgba(' + rgb + ',.35)"></span>', 'Off-season if 1st pop-up skipped'],
+      ['<span style="width:15px;height:15px;border-radius:50%;border:3px dashed ' + g + '"></span>', 'Optional registration'],
+      ['<span class="must" style="background:' + g + ';font-size:9px;padding:2px 5px">MUST</span>', 'Mandatory registration'],
+      ['<span style="width:12px;height:12px;background:' + KC.pop + ';transform:rotate(45deg)"></span>', 'KvK pop-up'],
+      ['<span style="width:3px;height:16px;background:' + KC.mig + '"></span>', 'Migration'],
+      ['<span style="width:3px;height:16px;background:var(--gold)"></span>', 'Today'],
+      ['<span style="width:12px;height:12px;border-radius:50%;background:' + KC.stage + ';border:2px solid #0F1522;box-shadow:0 0 0 2px ' + KC.stage + '"></span>', 'KvK stage'],
+      ['<span class="sw" style="background:' + KC.mge + '"></span>', 'MGE'],
+      ['<span class="sw" style="background:' + KC.gh + '"></span>', 'GH']
     ];
+    if (V.other.length) L.push(['<span class="sw" style="background:' + KC.other + '"></span>', 'Other events']);
     document.getElementById('legend').innerHTML = L.map(function (i) { return '<div class="lg">' + i[0] + i[1] + '</div>'; }).join('');
+    var v = V.view, note = document.getElementById('rangeNote');
+    note.textContent = v.mode === 'range' && v.from && v.to ? 'Showing ' + fd(v.from, true) + ' to ' + fd(v.to, true) + '.' : 'Showing the last ' + v.days + ' days and everything ahead.';
+  }
+
+  function evBars(list, label, now) {
+    return list.map(function (r, i) {
+      var endT = (r.b || r.a) + DAY, past = endT <= now, long = (endT - r.a) / DAY >= 4, name = label || r.s;
+      var txt = '<span>' + esc(name) + '</span>' + (long ? '<small>' + fd(r.a) + (r.b ? ' – ' + fd(r.b) : '') + '</small>' : '');
+      return '<div class="ev' + (past ? ' past' : '') + (r.est ? ' est' : '') + '" title="' + esc(r.e + (r.x ? ' · ' + r.x : '') + ' · ' + fd(r.a, true) + (r.b ? ' – ' + fd(r.b, true) : '')) + '" style="left:' + X(r.a) + ';width:calc(' + X(endT) + ' - ' + X(r.a) + ');background-color:' + r.c + ';animation-delay:' + (0.2 + i * 0.05) + 's">' + txt + '</div>';
+    }).join('');
+  }
+
+  function stageLane(list, now) {
+    var h = '', lastX = [-99, -99, -99], span = R1 - R0;
+    list.forEach(function (r) {
+      var pos = (r.a - R0) / span * 100, lvl = 0;
+      while (lvl < 2 && pos - lastX[lvl] < 5.5) lvl++;
+      lastX[lvl] = pos;
+      var top = 36 + lvl * 32, past = r.a + DAY <= now, isNext = nextEvt && nextEvt.d === r.a && nextEvt.t === r.e;
+      h += '<div class="stg-line" style="left:' + X(r.a) + ';height:' + (top - 22) + 'px;background:' + r.c + '66"></div>';
+      h += '<div class="stg' + (past ? ' past' : '') + (r.est ? ' est' : '') + (isNext ? ' pulse' : '') + '" style="left:' + X(r.a) + ';color:' + r.c + ';background:' + (r.est ? '#0F1522' : r.c) + ';box-shadow:0 0 0 2px ' + r.c + '" title="' + esc(r.e + (r.x ? ' · ' + r.x : '') + ' · ' + fd(r.a, true)) + '"></div>';
+      h += '<div class="stg-lab" style="left:' + X(r.a) + ';top:' + top + 'px' + (past ? ';opacity:.5' : '') + '"><b style="color:' + r.c + '">' + esc(r.s) + '</b>' + fd(r.a) + (r.est ? '?' : '') + '</div>';
+    });
+    return h;
   }
 
   function renderTimeline(now) {
-    var lab = '<div style="height:44px"></div><div class="tl-lab"><b style="color:var(--red)">KvK pop-ups</b><span>Every 28 days</span></div>';
-    K.forEach(function (k) { lab += '<div class="tl-lab"><b style="color:' + k.c + '">' + Site.esc(k.name) + '</b><span>' + Site.esc(k.sub) + '</span></div>'; });
-    lab += '<div style="height:44px;border-top:1px solid var(--line)"></div>';
+    var lab = '<div style="height:44px"></div><div class="tl-lab"><b style="color:' + KC.pop + '">KvK pop-ups</b><span>Every 28 days</span></div>';
+    K.forEach(function (k) { lab += '<div class="tl-lab"><b style="color:' + k.c + '">' + esc(k.name) + '</b><span>' + (k.ours ? 'KvK &amp; off-season' : 'Other kingdom') + '</span></div>'; });
+    lab += '<div class="tl-lab tall"><b style="color:' + KC.stage + '">KvK stages</b><span>LK, passes, altars</span></div>' +
+      '<div class="tl-lab short"><b style="color:' + KC.mge + '">MGE</b></div>' +
+      '<div class="tl-lab short"><b style="color:' + KC.gh + '">GH</b></div>' +
+      (V.other.length ? '<div class="tl-lab short"><b style="color:' + KC.other + '">Other</b></div>' : '') +
+      '<div style="height:44px;border-top:1px solid var(--line)"></div>';
     document.getElementById('labels').innerHTML = lab;
 
-    var h = '<div class="axis">', shades = '', m = new Date(R0), i = 0;
+    var h = '<div class="axis">', shades = '', m = new Date(Date.UTC(new Date(R0).getUTCFullYear(), new Date(R0).getUTCMonth(), 1)), i = 0;
     while (m.getTime() < R1) {
-      var a = m.getTime(), nx = Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1), b = Math.min(nx, R1);
+      var a = Math.max(m.getTime(), R0), nx = Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1), b = Math.min(nx, R1);
       var lbl = MON[m.getUTCMonth()].toUpperCase() + (m.getUTCMonth() === 0 ? ' ’' + String(m.getUTCFullYear()).slice(2) : '');
-      h += '<div class="mon" style="left:' + X(a) + ';width:calc(' + X(b) + ' - ' + X(a) + ')">' + lbl + '</div>';
+      if ((b - a) / DAY >= 5) h += '<div class="mon" style="left:' + X(a) + ';width:calc(' + X(b) + ' - ' + X(a) + ')">' + lbl + '</div>';
       if (i % 2 === 0) shades += '<div class="shade" style="left:' + X(a) + ';width:calc(' + X(b) + ' - ' + X(a) + ')"></div>';
       m = new Date(nx); i++;
     }
@@ -199,7 +254,7 @@
     h += '<div class="lane">';
     POPS.forEach(function (p) {
       var est = !!V.estSet[p];
-      h += '<div class="mk' + (p === nextPop ? ' pulse' : '') + '" style="left:' + X(p) + ';color:var(--red);transform:none"><div class="diamond' + (est ? ' est' : '') + '" style="background:var(--red)"></div></div>';
+      h += '<div class="mk' + (p === nextPop ? ' pulse' : '') + '" style="left:' + X(p) + ';color:' + KC.pop + ';transform:none"><div class="diamond' + (est ? ' est' : '') + '" style="background:' + KC.pop + '"></div></div>';
       h += '<div class="mk-lab" style="left:' + X(p) + '"><b>' + fd(p) + (est ? ' (est.)' : '') + '</b></div>';
     });
     h += '</div>';
@@ -207,41 +262,49 @@
     K.forEach(function (k, ki) {
       h += '<div class="lane">';
       k.segs.forEach(function (s, si) {
-        h += '<div class="seg ' + s.t + (s.open ? ' open' : '') + '" style="left:' + X(s.a) + ';width:calc(' + X(s.b) + ' - ' + X(s.a) + ');' + segStyle(k, s) + ';animation-delay:' + (0.15 + ki * 0.25 + si * 0.18) + 's"><span>' + s.l + '</span></div>';
+        if (s.b <= R0 || s.a >= R1) return;
+        h += '<div class="seg ' + s.t + (s.open ? ' open' : '') + '" style="left:' + X(s.a) + ';width:calc(' + X(s.b) + ' - ' + X(s.a) + ');' + segStyle(k, s) + ';animation-delay:' + (0.15 + ki * 0.2 + si * 0.15) + 's"><span>' + s.l + '</span></div>';
       });
       k.marks.forEach(function (mk) {
-        var isNext = nextEvt && nextEvt.d === mk.d, inner, l;
-        if (mk.t === 'reg') { inner = '<div class="dotm" style="background:' + k.c + '"></div>'; l = '<b>Registered</b>' + fd(mk.d); }
+        if (mk.d < R0 || mk.d > R1) return;
+        var isNext = k.ours && nextEvt && nextEvt.d === mk.d, inner, l;
+        if (mk.t === 'reg') { inner = '<div class="dotm" style="background:' + k.c + '"></div>'; l = '<b>KvK starts</b>' + fd(mk.d); }
         else if (mk.t === 'opt') { inner = '<div class="ring" style="border-color:' + k.c + '"></div>'; l = '<b>Can register or skip</b>' + fd(mk.d); }
         else { inner = '<div class="must" style="background:' + k.c + '">MUST</div>'; l = '<b>Must register</b>' + fd(mk.d) + (mk.est ? ' (est.)' : ''); }
-        h += '<div class="mk' + (isNext ? ' pulse' : '') + '" style="left:' + X(mk.d) + ';color:' + k.c + '" title="' + Site.esc(k.name) + ' · ' + fd(mk.d, true) + '">' + inner + '</div>';
+        h += '<div class="mk' + (isNext ? ' pulse' : '') + '" style="left:' + X(mk.d) + ';color:' + k.c + '">' + inner + '</div>';
         h += '<div class="mk-lab" style="left:' + X(mk.d) + ';color:' + k.c + '">' + l + '</div>';
       });
+      if (!k.end) h += '<div class="mk-lab" style="left:50%;top:22px;color:var(--muted)">No KvK dates yet</div>';
       h += '</div>';
     });
 
+    h += '<div class="lane tall">' + stageLane(V.stages, now) + (V.stages.length ? '' : '<div class="stg-lab" style="left:50%;top:44px">No KvK stage dates in this range</div>') + '</div>';
+    h += '<div class="lane short">' + evBars(V.mge, '', now) + '</div>';
+    h += '<div class="lane short">' + evBars(V.gh, '', now) + '</div>';
+    if (V.other.length) h += '<div class="lane short">' + evBars(V.other, '', now) + '</div>';
+
     h += '<div class="chiprow">';
-    MIGS.forEach(function (g) { h += '<div class="chip" style="left:' + X(g.d) + ';background:' + g.c + '">' + g.l + '</div>'; });
+    MIGS.forEach(function (g) { h += '<div class="chip" style="left:' + X(g.d) + ';background:' + g.c + '">' + esc(g.l) + '</div>'; });
     h += '</div>';
     MIGS.forEach(function (g) { h += '<div class="mig" style="left:' + X(g.d) + ';background-image:linear-gradient(' + g.c + ' 60%,transparent 60%)"></div>'; });
     if (now >= R0 && now <= R1) h += '<div class="today" style="left:' + X(now) + '"></div><div class="today-tag" style="left:' + X(now) + '">TODAY</div>';
     document.getElementById('track').innerHTML = h;
-
     var sc = document.querySelector('.tl-scroll');
     if (sc.scrollWidth > sc.clientWidth) sc.scrollLeft = Math.max(0, (now - R0) / (R1 - R0) * sc.scrollWidth - sc.clientWidth * 0.3);
   }
 
   function renderRule() {
     document.getElementById('ruleRows').innerHTML = K.map(function (k) {
-      return '<tr><td><span class="kname"><span class="kdot" style="background:' + k.c + '"></span>' + Site.esc(k.name) + '</span></td>' +
+      return '<tr><td><span class="kname"><span class="kdot" style="background:' + k.c + '"></span>' + esc(k.name) + '</span></td>' +
         '<td>' + (k.end ? fd(k.end, true) : '—') + '</td><td>' + (k.opt ? fd(k.opt, true) : '—') + '</td>' +
         '<td style="color:' + k.c + ';font-weight:700">' + (k.must ? fd(k.must, true) + (k.mustEst ? ' (est.)' : '') : '—') + '</td>' +
-        '<td>' + (k.opt ? days(k.end, k.opt) + ' days' + (k.must ? ', or up to ' + days(k.end, k.must) + ' if skipped' : '') : 'Add the next pop-up dates in the sheet') + '</td></tr>';
+        '<td>' + (k.opt ? days(k.end, k.opt) + ' days' + (k.must ? ', or up to ' + days(k.end, k.must) + ' if skipped' : '') : (k.end ? 'Add the next pop-up dates' : 'No KvK end date yet')) + '</td></tr>';
     }).join('');
   }
 
   function renderFilters() {
-    var F = [['all', 'All']].concat(K.slice().reverse().map(function (k) { return [k.id, k.id]; })).concat([['pop', 'Pop-ups'], ['mig', 'Migrations']]);
+    var F = [['all', 'All'], ['kvk', 'KvK'], ['mge', 'MGE'], ['gh', 'GH'], ['pop', 'Pop-ups'], ['mig', 'Migrations']];
+    if (V.EVENTS.some(function (e) { return e.g[0] === 'other'; })) F.push(['other', 'Other']);
     document.getElementById('filters').innerHTML = F.map(function (f) {
       var dot = f[0] === 'all' ? '' : '<span class="kdot" style="background:' + KC[f[0]] + '"></span>';
       return '<button class="fbtn" type="button" data-f="' + f[0] + '" aria-pressed="' + (filter === f[0]) + '">' + dot + f[1] + '</button>';
@@ -250,17 +313,18 @@
       b.addEventListener('click', function () { filter = b.getAttribute('data-f'); renderFilters(); renderCards(Date.now()); });
     });
   }
+  function matches(e) { var g = e.g[0]; return filter === 'all' || g === filter || (filter === 'kvk' && g === 'stage'); }
 
   function renderCards(now) {
-    var list = EVENTS.filter(function (e) { return filter === 'all' || e.g.indexOf(filter) > -1; });
-    if (!list.length) { document.getElementById('cards').innerHTML = '<div class="empty" style="grid-column:1/-1"><b>No dates</b>Add key dates in the Calendar tab of the sheet.</div>'; return; }
+    var list = V.SHOWN.filter(matches);
+    if (!list.length) { document.getElementById('cards').innerHTML = '<div class="empty" style="grid-column:1/-1"><b>No dates</b>Nothing in this range yet.</div>'; return; }
     document.getElementById('cards').innerHTML = list.map(function (e, i) {
-      var n = Math.floor((e.d - now) / DAY) + 1, past = e.d + DAY <= now, today = !past && now >= e.d;
-      var cd = past ? 'Done' : today ? 'Today' : n === 1 ? 'Tomorrow' : 'In ' + n + ' days';
-      var col = past ? 'var(--muted)' : n <= 7 ? 'var(--gold)' : 'var(--soft)';
-      return '<div class="card' + (past ? ' past' : '') + (nextEvt && e.d === nextEvt.d ? ' next' : '') + '" style="animation-delay:' + (i * 0.04) + 's">' +
-        '<div class="dots">' + e.g.map(function (g) { return '<span class="kdot" style="background:' + KC[g] + '"></span>'; }).join('') + '</div>' +
-        '<div style="min-width:0"><div class="d">' + fw(e.d) + '</div><div class="t">' + Site.esc(e.t) + '</div><div class="x">' + Site.esc(e.x) + '</div></div>' +
+      var endT = (e.b || e.d) + DAY, n = Math.floor((e.d - now) / DAY) + 1, past = endT <= now, live = !past && now >= e.d;
+      var cd = past ? 'Done' : live ? (e.b ? 'Running' : 'Today') : n === 1 ? 'Tomorrow' : 'In ' + n + ' days';
+      var col = past ? 'var(--muted)' : live ? e.c : n <= 7 ? 'var(--gold)' : 'var(--soft)';
+      return '<div class="card' + (past ? ' past' : '') + (nextEvt && e === nextEvt ? ' next' : '') + '" style="animation-delay:' + (i * 0.03) + 's">' +
+        '<div class="dots"><span class="kdot" style="background:' + e.c + '"></span></div>' +
+        '<div style="min-width:0"><div class="d">' + fw(e.d) + (e.est ? ' (est.)' : '') + '</div><div class="t">' + esc(e.t) + '</div><div class="x">' + esc(e.x) + '</div></div>' +
         '<div class="c" style="color:' + col + '">' + cd + '</div></div>';
     }).join('');
   }
@@ -289,6 +353,98 @@
     document.getElementById('cdDate').textContent = fw(nextEvt.d) + ' · 00:00 UTC' + (diff === 0 ? ' · happening today' : '');
     setNum('cdD', String(l.d)); setNum('cdH', Site.pad(l.h)); setNum('cdM', Site.pad(l.m)); setNum('cdS', Site.pad(l.s));
   }
+
+  /* ---------- Edit mode: calendar editors (admins only) ---------- */
+  var iso = Site.isoDate, GROUPS = [{ v: 'stage', l: 'KvK stage' }, { v: 'mge', l: 'MGE' }, { v: 'gh', l: 'GH' }, { v: 'pop', l: 'KvK pop-up' }, { v: 'mig', l: 'Migration' }, { v: 'other', l: 'Other' }];
+  function typeNames() { return V.types.map(function (t) { return t.n; }); }
+  function subsFor(name) { var t = V.types.filter(function (x) { return x.n === name; })[0]; return t ? t.subs : []; }
+  var EDITORS = {
+    dates: function () {
+      Site.manager({
+        title: 'Calendar dates', tab: 'Calendar', addLabel: 'Add date', addTitle: 'Add a date',
+        intro: 'Pick an event and set its dates. KvK start and end are set under Kingdoms.',
+        sort: function (p, q) { return (p.v.Start || 9e15) - (q.v.Start || 9e15); },
+        label: function (v) { var t = V.typeOf(String(v.Event)); return { t: v.Event + (v.Details ? ' · ' + v.Details : ''), sub: v.Start ? fd(v.Start, true) + (v.End ? ' – ' + fd(v.End, true) : '') + (v.Estimated ? ' (est.)' : '') : 'No date', color: t.c }; },
+        editTitle: function (v) { return 'Edit ' + v.Event; },
+        defaults: function () { return { Event: typeNames()[0] || '' }; },
+        fields: function (v) {
+          var cur = String(v.Details || '');
+          return [
+            { key: 'Event', label: 'Event', type: 'select', required: true, full: true, value: v.Event || typeNames()[0], options: typeNames().length ? typeNames() : [''], help: 'Titles and colours are managed under “Event types & colours”.' },
+            { key: 'Details', label: 'Subtitle', type: 'select', full: true, value: cur, options: function (vals) { var s = subsFor(vals.Event).slice(); if (cur && s.indexOf(cur) < 0 && vals.Event === v.Event) s.unshift(cur); return [{ v: '', l: '— none —' }].concat(s); } },
+            { key: 'Start', label: 'Start date', type: 'date', required: true, value: iso(v.Start) },
+            { key: 'End', label: 'End date', type: 'date', value: iso(v.End), help: 'For events that last several days (MGE, GH).' },
+            { key: 'Estimated', label: 'Date not confirmed yet (estimated)', type: 'checkbox', value: !!v.Estimated }
+          ];
+        },
+        check: function (v) { return v.End && v.End < v.Start ? 'The end date is before the start date.' : ''; }
+      });
+    },
+    kingdoms: function () {
+      Site.manager({
+        title: 'Kingdoms', tab: 'Kingdoms', addLabel: 'Add kingdom', addTitle: 'Add a kingdom',
+        intro: 'Kingdom ' + V.OURS + ' is ours. Off-season, optional and must-register dates are worked out from KvK end and the pop-ups.',
+        sort: function (p, q) { return (String(p.v.Kingdom) === V.OURS ? -1 : String(q.v.Kingdom) === V.OURS ? 1 : Number(p.v.Kingdom) - Number(q.v.Kingdom)); },
+        label: function (v) { return { t: (v.Name || 'Kingdom ' + v.Kingdom) + (String(v.Kingdom) === V.OURS ? ' (ours)' : ''), sub: 'KvK ' + (v['KvK start'] ? fd(v['KvK start'], true) : '?') + ' → ' + (v['KvK end'] ? fd(v['KvK end'], true) : '?'), color: v.Color }; },
+        editTitle: function (v) { return 'Edit kingdom ' + v.Kingdom; },
+        defaults: function () { return { Color: '#4C8DFF' }; },
+        fields: function (v) {
+          var ours = String(v.Kingdom || '') === V.OURS;
+          var f = [
+            { key: 'Kingdom', label: 'Kingdom number', required: true, value: v.Kingdom || '', placeholder: 'e.g. 1875' },
+            { key: 'Name', label: 'Name on the timeline', value: v.Name || '', placeholder: 'Kingdom 1875' },
+            { key: 'Color', label: 'Colour', type: 'color', full: true, value: v.Color || '#4C8DFF' },
+            { key: 'KvK start', label: 'KvK start', type: 'date', value: iso(v['KvK start']), help: 'Leave empty if it was already running.' },
+            { key: 'KvK end', label: 'KvK end', type: 'date', value: iso(v['KvK end']) }
+          ];
+          if (ours) f.push({ key: 'Build-up from', label: 'Build-up from (migration day)', type: 'date', value: iso(v['Build-up from']) });
+          return f;
+        },
+        toSheet: function (v) { if (v.Name === '') v.Name = 'Kingdom ' + v.Kingdom; return v; },
+        check: function (v) { return v['KvK start'] && v['KvK end'] && v['KvK end'] < v['KvK start'] ? 'KvK end is before KvK start.' : ''; }
+      });
+    },
+    types: function () {
+      Site.manager({
+        title: 'Event types & colours', tab: 'Event types', addLabel: 'Add event type', addTitle: 'Add an event type',
+        intro: 'These are the titles in the dropdown, their colour, short timeline label and subtitle choices.',
+        label: function (v) { return { t: v.Name, sub: (GROUPS.filter(function (g) { return g.v === v.Group; })[0] || { l: v.Group }).l + (v.Short ? ' · “' + v.Short + '”' : '') + (v.Subtitles ? ' · ' + String(v.Subtitles).split('|').length + ' subtitles' : ''), color: v.Color }; },
+        editTitle: function (v) { return 'Edit ' + v.Name; },
+        defaults: function () { return { Group: 'stage', Color: '#3DD68C' }; },
+        fields: function (v) {
+          return [
+            { key: 'Name', label: 'Title', required: true, value: v.Name || '', max: 40 },
+            { key: 'Short', label: 'Short label on the timeline', value: v.Short || '', max: 12, placeholder: 'e.g. P4' },
+            { key: 'Group', label: 'Shows on the timeline as', type: 'select', required: true, full: true, value: v.Group || 'stage', options: GROUPS },
+            { key: 'Color', label: 'Colour', type: 'color', full: true, value: v.Color || '#3DD68C' },
+            { key: 'Subtitles', label: 'Subtitle choices (one per line)', type: 'textarea', full: true, rows: 4, value: String(v.Subtitles || '').split('|').filter(Boolean).join('\n'), placeholder: 'Infantry\nCavalry\nArcher' }
+          ];
+        },
+        toSheet: function (v) { v.Subtitles = String(v.Subtitles || '').split(/\n/).map(function (x) { return x.replace(/[|]/g, '/').trim(); }).filter(Boolean).join('|'); return v; }
+      });
+    },
+    view: function () {
+      var v = V.view;
+      Site.form({
+        title: 'Calendar view',
+        fields: [
+          { key: 'mode', label: 'What to show', type: 'select', full: true, required: true, value: v.mode, options: [{ v: 'history', l: 'Recent history + everything ahead' }, { v: 'range', l: 'A fixed range: from one date to another' }] },
+          { key: 'days', label: 'Days of history to show', type: 'number', value: String(v.days), help: 'For “recent history”. 0 = start today.' },
+          { key: 'blank', label: '', type: 'text', value: '' },
+          { key: 'from', label: 'From', type: 'date', value: iso(v.from), help: 'For a fixed range.' },
+          { key: 'to', label: 'To', type: 'date', value: iso(v.to) }
+        ].filter(function (f) { return f.key !== 'blank'; }),
+        check: function (x) {
+          if (x.mode === 'range' && (!x.from || !x.to)) return 'Pick both dates for a fixed range.';
+          if (x.mode === 'range' && x.to <= x.from) return '“To” must be after “From”.';
+          if (x.mode === 'history' && !(Number(x.days) >= 0 && Number(x.days) <= 365)) return 'Days of history: 0 to 365.';
+          return '';
+        },
+        onSave: function (x) { return Site.saveText({ cal_view: x.mode, cal_history_days: String(Math.round(Number(x.days) || 0)), cal_from: x.from || '', cal_to: x.to || '' }); }
+      });
+    }
+  };
+  document.querySelector('.edit-tools').addEventListener('click', function (e) { var b = e.target.closest('[data-ed]'); if (b && Site.isAdmin()) EDITORS[b.getAttribute('data-ed')](); });
 
   renderLegend(); renderRule(); renderFilters(); renderAll(); tick();
   setInterval(tick, 1000);

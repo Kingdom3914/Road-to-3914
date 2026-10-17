@@ -165,22 +165,24 @@ var Core = (function () {
     };
   }
 
-  /* KvK calendar from the Kingdoms and Calendar tabs */
+  /* Calendar data: dates (Calendar tab), kingdoms (Kingdoms tab), event types and the view range */
   function calendar(t) {
     var yes = /^(y|yes|true|1|x)$/i;
+    var ds = (t.calendar || []).filter(function (d) { return str(d.Event); }).map(function (d) {
+      return { e: str(d.Event), a: toTime(d.Start), b: toTime(d.End), x: str(d.Details), est: yes.test(str(d.Estimated)), r: d._row || 0 };
+    });
     var ks = (t.kingdoms || []).filter(function (k) { return str(k.Kingdom); }).map(function (k) {
-      return {
-        id: str(k.Kingdom), name: str(k.Name) || ('Kingdom ' + str(k.Kingdom)), sub: str(k.Subtitle), color: str(k.Color),
-        start: toTime(k['KvK start']), end: toTime(k['KvK end']), buildup: toTime(k['Build-up from'])
-      };
+      return { id: str(k.Kingdom), name: str(k.Name) || ('Kingdom ' + str(k.Kingdom)), color: str(k.Color),
+        start: toTime(k['KvK start']), end: toTime(k['KvK end']), buildup: toTime(k['Build-up from']) };
     });
-    var ds = (t.calendar || []).filter(function (d) { return toTime(d.Date); }).map(function (d) {
-      return {
-        d: toTime(d.Date), t: str(d.Title), x: str(d.Details), type: str(d.Type).toLowerCase(),
-        k: splitList(d.Kingdoms), est: yes.test(str(d.Estimated))
-      };
+    var ty = (t.eventtypes || []).filter(function (r) { return str(r.Name); }).map(function (r) {
+      return { n: str(r.Name), g: str(r.Group).toLowerCase() || 'other', c: str(r.Color), s: str(r.Short),
+        subs: str(r.Subtitles) ? str(r.Subtitles).split('|').map(function (x) { return x.trim(); }).filter(Boolean) : [] };
     });
-    return { kingdoms: ks, dates: ds };
+    var tx = texts(t);
+    var view = { mode: tx.cal_view === 'range' ? 'range' : 'history', days: Math.max(0, Math.min(365, num(tx.cal_history_days) || (tx.cal_history_days === '0' ? 0 : 10))),
+      from: toTime(tx.cal_from), to: toTime(tx.cal_to) };
+    return { dates: ds, kingdoms: ks, types: ty, view: view };
   }
 
   /* Credit totals for every player (used to fill the Credits tab) */

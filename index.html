@@ -91,11 +91,11 @@
 
   <section class="grid2">
     <div class="panel">
-      <div class="sec-head"><h2 data-text="home_announcements_title">Kingdom announcements</h2><p data-text="home_announcements_note">From leadership</p></div>
+      <div class="sec-head"><h2 data-text="home_announcements_title">Kingdom announcements</h2><p><span data-text="home_announcements_note">From leadership</span><button class="btn gold sm edit-btn edit-pen" type="button" data-ed-news>Edit news</button></p></div>
       <div class="ann" id="announcements"><div class="skeleton" style="height:110px"></div><div class="skeleton" style="height:110px"></div></div>
     </div>
     <div class="panel">
-      <div class="sec-head"><h2 data-text="home_news_title">Latest news</h2></div>
+      <div class="sec-head"><h2 data-text="home_news_title">Latest news</h2><button class="btn gold sm edit-btn edit-pen" type="button" data-ed-news>Edit news</button></div>
       <div class="news" id="news"><div class="skeleton" style="height:64px;margin-bottom:10px"></div><div class="skeleton" style="height:64px"></div></div>
     </div>
   </section>
@@ -201,6 +201,28 @@
       if (!data) { document.getElementById('announcements').innerHTML = msg; document.getElementById('news').innerHTML = ''; document.getElementById('live').innerHTML = msg; }
     });
   }
+
+  /* Edit mode: news & announcements (admins) */
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-ed-news]') || !S.isAdmin()) return;
+    S.manager({
+      title: 'News & announcements', tab: 'News', addLabel: 'Add post', addTitle: 'New post',
+      intro: 'Announcements show big at the top of Home; Pinned keeps a post first.',
+      sort: function (p, q) { return (q.v.Pinned === true) - (p.v.Pinned === true) || (q.v.Date || 0) - (p.v.Date || 0); },
+      label: function (v) { return { t: (v.Pinned === true ? '📌 ' : '') + v.Title, sub: v.Type + ' · ' + (v.Date ? S.date(v.Date) : ''), color: v.Type === 'Announcement' ? 'var(--gold)' : '#5B6476' }; },
+      editTitle: function () { return 'Edit post'; },
+      defaults: function () { return { Date: Date.now(), Type: 'Announcement' }; },
+      fields: function (v) {
+        return [
+          { key: 'Title', label: 'Title', required: true, full: true, value: v.Title || '', max: 120 },
+          { key: 'Body', label: 'Text', type: 'textarea', full: true, rows: 5, value: v.Body || '' },
+          { key: 'Type', label: 'Type', type: 'select', required: true, value: v.Type || 'Announcement', options: ['Announcement', 'News'] },
+          { key: 'Date', label: 'Date', type: 'date', required: true, value: S.isoDate(v.Date) },
+          { key: 'Pinned', label: 'Pin to the top', type: 'checkbox', value: v.Pinned === true }
+        ];
+      }
+    });
+  });
 
   var saved = S.cached('state');
   if (saved) { data = saved; renderNews(); renderLive(); }

@@ -56,8 +56,10 @@
           if (l[1] === 'discord') return '<a href="#" data-discord target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS.discord + '</svg>' + l[2] + '</a>';
           return '<a href="' + l[0] + '"' + (page === l[1] ? ' aria-current="page"' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[l[1]] + '</svg>' + l[2] + (!who && MEMBERS[l[1]] ? LOCK : '') + '</a>';
         }).join('') + '</nav>' +
-        (who ? '<div class="who-chip"><span><b>' + esc(who.name || 'Governor') + '</b><small>ID ' + esc(who.gov) + '</small></span><button type="button" class="btn ghost sm" data-signout>Sign out</button></div>' : '') +
+        (who ? '<div class="who-chip">' + (who.admin ? '<button type="button" class="edit-switch" data-edit-toggle aria-pressed="' + editOn() + '"><span class="knob"></span>Edit mode</button>' : '') +
+          '<span><b>' + esc(who.name || 'Governor') + '</b><small>ID ' + esc(who.gov) + '</small></span><button type="button" class="btn ghost sm" data-signout>Sign out</button></div>' : '') +
       '</div></header>' +
+      (who && who.admin ? '<div class="edit-banner edit-block"><div class="wrap"><b>Edit mode is on.</b> Click any title or text with a dashed outline to change it. Use the gold buttons to edit dates, news and auctions. <button type="button" class="btn ghost sm" data-edit-discord>Discord link</button></div></div>' : '') +
       (C.API_URL ? '' : '<div class="demo-banner"><div class="wrap"><b>Demo mode:</b> showing sample data. Bids are saved only on this device until the Google Sheet link is added in config.js.</div></div>');
   }
 
@@ -78,7 +80,7 @@
   function membersPage() { return !!MEMBERS[document.body.getAttribute('data-page')]; }
   function api(payload) {
     payload = payload || {};
-    if (membersPage() && !payload.gov && !/^(apply|text|login)/.test(payload.action || '')) {
+    if (!payload.gov && (membersPage() || /^(admin|textSave)/.test(payload.action || '')) && !/^(apply|login)|^text$/.test(payload.action || '')) {
       var se = session.get(); if (se) { payload.gov = se.gov; payload.pin = se.pin; }
     }
     var req = !C.API_URL ? demoCall(payload) : fetch(C.API_URL, {
@@ -88,6 +90,10 @@
     }).then(function (r) { return r.json(); });
     return req.then(function (res) {
       if (res && res.text) setText(res.text, true);
+      if (res && typeof res.admin === 'boolean') {
+        var cur = session.get();
+        if (cur && !!cur.admin !== res.admin) { cur.admin = res.admin; store.set('k3914-session', JSON.stringify(cur)); if (!res.admin) setEdit(false); nav(); }
+      }
       if (res && res.ok && !res.locked && !res.authError && payload.gov && /^(state|calendar)$/.test(payload.action || '')) {
         store.set('k3914-c-' + payload.action + '-' + payload.gov, JSON.stringify(res));
         if (res.calendar && payload.action !== 'calendar') store.set('k3914-c-calendar-' + payload.gov, JSON.stringify({ ok: true, calendar: res.calendar }));
@@ -128,7 +134,7 @@
         if (!gov || !pin) { err.textContent = 'Enter your Governor ID and PIN.'; err.className = 'err on'; return; }
         btn.disabled = true; btn.textContent = 'Signing in…'; err.className = 'err';
         api({ action: 'login', gov: gov, pin: pin }).then(function (res) {
-          if (res && res.ok && res.me) { session.set(gov, pin, res.me.name); location.reload(); return; }
+          if (res && res.ok && res.me) { session.set(gov, pin, res.me.name, !!res.me.admin); location.reload(); return; }
           throw new Error((res && (res.authError || res.error)) || 'Wrong governor ID or PIN.');
         }).catch(function (x) {
           err.textContent = x.message || 'Could not sign in. Try again.'; err.className = 'err on';
@@ -141,6 +147,7 @@
     setTimeout(function () { var g = document.getElementById('lkGov'); if (g && !g.value) g.focus(); }, 50);
   }
   function signOut() {
+    setEdit(false);
     try { Object.keys(window.localStorage).forEach(function (k) { if (k.indexOf('k3914-c-') === 0) store.del(k); }); } catch (e) {}
     session.clear(); location.reload();
   }
@@ -246,12 +253,168 @@
   /* ---------- signed-in governor (kept on this device) ---------- */
   var session = {
     get: function () { var s = store.get('k3914-session'); try { return s ? JSON.parse(s) : null; } catch (e) { return null; } },
-    set: function (gov, pin, name) { store.set('k3914-session', JSON.stringify({ gov: gov, pin: pin, name: name || '' })); },
+    set: function (gov, pin, name, admin) { store.set('k3914-session', JSON.stringify({ gov: gov, pin: pin, name: name || '', admin: !!admin })); },
     clear: function () { store.del('k3914-session'); }
   };
 
-  window.Site = { onText: onText, esc: esc, n: n, date: date, dateTime: dateTime, ago: ago, left: left, shortLeft: shortLeft, pad: pad, store: store, toast: toast, api: api, session: session, signOut: signOut, cached: cached, config: C, demo: !C.API_URL };
+  /* ================= Edit mode (admins only) ================= */
+  function editOn() { var se = session.get(); return !!(se && se.admin && store.get('k3914-edit') === '1'); }
+  function setEdit(on) {
+    if (on) store.set('k3914-edit', '1'); else store.del('k3914-edit');
+    document.body.classList.toggle('edit-on', editOn());
+    var b = document.querySelector('[data-edit-toggle]'); if (b) b.setAttribute('aria-pressed', String(editOn()));
+  }
+  function isoDate(t) { return t ? new Date(t).toISOString().slice(0, 10) : ''; }
+  function isoDT(t) { return t ? new Date(t).toISOString().slice(0, 16) : ''; }
+  function clearSaved() { try { Object.keys(window.localStorage).forEach(function (k) { if (k.indexOf('k3914-c-') === 0) store.del(k); }); } catch (e) {} }
+  function refresh() { clearSaved(); location.reload(); }
+
+  /* Modal shell */
+  function modal(title) {
+    var old = document.getElementById('mdl'); if (old) old.parentNode.removeChild(old);
+    var m = document.createElement('div'); m.id = 'mdl'; m.className = 'mdl-scrim on'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+    m.innerHTML = '<div class="mdl"><div class="mdl-head"><h2>' + esc(title) + '</h2><button class="btn ghost sm" type="button" data-mdl-close>Close</button></div><div class="mdl-body"></div></div>';
+    document.body.appendChild(m);
+    function close() { if (m.parentNode) m.parentNode.removeChild(m); document.removeEventListener('keydown', onKey); }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-mdl-close]')) close(); });
+    document.addEventListener('keydown', onKey);
+    return { el: m, body: m.querySelector('.mdl-body'), title: function (t) { m.querySelector('h2').textContent = t; }, close: close };
+  }
+
+  var SWATCHES = ['#3DD68C', '#E8B84A', '#F5C542', '#D86CF2', '#FF8A4C', '#F0555A', '#4C8DFF', '#2FD4E8', '#C2C8D2', '#9B7BFF'];
+  /* Form. fields: {key,label,type,value,options(array|fn(values)),required,help,full,placeholder}
+     types: text, textarea, select, date, datetime, number, color, checkbox */
+  function form(opts, host) {
+    var M = host || modal(opts.title);
+    if (host) M.title(opts.title);
+    var vals = {};
+    opts.fields.forEach(function (f) { vals[f.key] = f.value == null ? (f.type === 'checkbox' ? false : '') : f.value; });
+    function optList(f) { var o = typeof f.options === 'function' ? f.options(vals) : (f.options || []); return o.map(function (x) { return typeof x === 'object' ? x : { v: x, l: x }; }); }
+    function fieldHTML(f) {
+      var id = 'f_' + f.key.replace(/[^a-z0-9]/gi, '_'), v = vals[f.key], lab = '<label for="' + id + '">' + esc(f.label) + (f.required ? '' : ' <span class="opt">(optional)</span>') + '</label>', inner;
+      if (f.type === 'textarea') inner = '<textarea id="' + id + '" rows="' + (f.rows || 4) + '" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>';
+      else if (f.type === 'select') inner = '<select id="' + id + '">' + optList(f).map(function (o) { return '<option value="' + esc(o.v) + '"' + (String(o.v) === String(v) ? ' selected' : '') + '>' + esc(o.l) + '</option>'; }).join('') + '</select>';
+      else if (f.type === 'checkbox') return '<label class="chk' + (f.full !== false ? ' full' : '') + '"><input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '> ' + esc(f.label) + '</label>';
+      else if (f.type === 'color') inner = '<div class="colorrow"><input type="color" id="' + id + '" value="' + esc(/^#[0-9a-f]{6}$/i.test(v) ? v : '#3DD68C') + '"><input type="text" class="hex" data-hex-for="' + id + '" value="' + esc(v) + '" placeholder="#3DD68C" maxlength="7"></div>' +
+        '<div class="swatches">' + SWATCHES.map(function (c) { return '<button type="button" class="sw-btn" data-sw="' + c + '" data-sw-for="' + id + '" style="background:' + c + '" aria-label="' + c + '"></button>'; }).join('') + '</div>';
+      else inner = '<input id="' + id + '" type="' + ({ date: 'date', datetime: 'datetime-local', number: 'number' }[f.type] || 'text') + '" value="' + esc(v) + '" placeholder="' + esc(f.placeholder || '') + '"' + (f.max ? ' maxlength="' + f.max + '"' : '') + '>';
+      return '<div class="field' + (f.full ? ' full' : '') + '">' + lab + inner + (f.help ? '<small class="help">' + esc(f.help) + '</small>' : '') + '</div>';
+    }
+    M.body.innerHTML = '<form class="mdl-form" novalidate><div class="mdl-grid">' + opts.fields.map(fieldHTML).join('') + '</div><div class="mdl-err" role="alert"></div>' +
+      '<div class="mdl-actions">' + (opts.onDelete ? '<button class="btn red sm" type="button" data-del>Delete</button>' : '') + '<span style="flex:1"></span>' +
+      (opts.onBack ? '<button class="btn ghost sm" type="button" data-back>Back</button>' : '') + '<button class="btn gold sm" type="submit">' + esc(opts.saveLabel || 'Save') + '</button></div></form>';
+    var F = M.body.querySelector('form'), err = F.querySelector('.mdl-err');
+    function showErr(m) { err.textContent = m || ''; err.className = 'mdl-err' + (m ? ' on' : ''); }
+    function read() {
+      opts.fields.forEach(function (f) {
+        var el = document.getElementById('f_' + f.key.replace(/[^a-z0-9]/gi, '_')); if (!el) return;
+        vals[f.key] = f.type === 'checkbox' ? el.checked : f.type === 'color' ? (F.querySelector('[data-hex-for="' + el.id + '"]').value.trim() || '') : el.value;
+      });
+    }
+    F.addEventListener('input', function (e) {
+      if (e.target.type === 'color') { F.querySelector('[data-hex-for="' + e.target.id + '"]').value = e.target.value.toUpperCase(); }
+      if (e.target.classList.contains('hex') && /^#[0-9a-f]{6}$/i.test(e.target.value)) document.getElementById(e.target.getAttribute('data-hex-for')).value = e.target.value;
+    });
+    F.addEventListener('change', function () {
+      read();
+      opts.fields.forEach(function (f) {
+        if (f.type !== 'select' || typeof f.options !== 'function') return;
+        var el = document.getElementById('f_' + f.key.replace(/[^a-z0-9]/gi, '_')), list = optList(f);
+        if (!list.some(function (o) { return String(o.v) === String(vals[f.key]); })) vals[f.key] = list.length ? list[0].v : '';
+        el.innerHTML = list.map(function (o) { return '<option value="' + esc(o.v) + '"' + (String(o.v) === String(vals[f.key]) ? ' selected' : '') + '>' + esc(o.l) + '</option>'; }).join('');
+      });
+    });
+    F.addEventListener('click', function (e) {
+      var sw = e.target.closest('[data-sw]');
+      if (sw) { var id = sw.getAttribute('data-sw-for'); document.getElementById(id).value = sw.getAttribute('data-sw'); F.querySelector('[data-hex-for="' + id + '"]').value = sw.getAttribute('data-sw'); }
+      if (e.target.closest('[data-back]')) opts.onBack();
+      var d = e.target.closest('[data-del]');
+      if (d) {
+        if (!d.getAttribute('data-armed')) { d.setAttribute('data-armed', '1'); d.textContent = 'Tap again to delete'; return; }
+        busy(d, opts.onDelete());
+      }
+    });
+    function busy(btn, p) {
+      var label = btn.textContent; btn.disabled = true; btn.textContent = 'Saving…'; showErr('');
+      Promise.resolve(p).then(function (res) {
+        if (res && res.ok === false) throw new Error(res.error || 'Could not save.');
+        if (opts.after) opts.after(res, M); else refresh();
+      }).catch(function (x) { showErr(x.message || 'Could not save.'); btn.disabled = false; btn.textContent = label; });
+    }
+    F.addEventListener('submit', function (e) {
+      e.preventDefault(); read();
+      var miss = opts.fields.filter(function (f) { return f.required && f.type !== 'checkbox' && !String(vals[f.key]).trim(); })[0];
+      if (miss) { showErr(miss.label + ' is required.'); return; }
+      var problem = opts.check && opts.check(vals); if (problem) { showErr(problem); return; }
+      busy(F.querySelector('[type=submit]'), opts.onSave(vals));
+    });
+    setTimeout(function () { var first = F.querySelector('input:not([type=checkbox]):not([type=color]),select,textarea'); if (first) first.focus(); }, 40);
+    return M;
+  }
+
+  /* List of rows from one sheet tab, each with Edit, plus Add. Saves straight to the sheet. */
+  function manager(o) {
+    var M = modal(o.title);
+    function list() {
+      M.title(o.title);
+      M.body.innerHTML = '<div class="mdl-bar"><span>' + esc(o.intro || 'Changes save straight to the kingdom sheet.') + '</span><button class="btn gold sm" type="button" data-add>+ ' + esc(o.addLabel || 'Add') + '</button></div><div class="mdl-list"><div class="empty">Loading…</div></div>';
+      M.body.querySelector('[data-add]').onclick = function () { edit(null); };
+      api({ action: 'adminLoad', tab: o.tab }).then(function (res) {
+        if (!res || !res.ok) throw new Error((res && res.error) || 'Could not load.');
+        var rows = res.rows.slice(); if (o.sort) rows.sort(o.sort);
+        M.rows = rows;
+        M.body.querySelector('.mdl-list').innerHTML = rows.length ? rows.map(function (r, i) {
+          var L = o.label(r.v);
+          return '<div class="mdl-row"><span class="kdot" style="background:' + esc(L.color || '#5B6476') + '"></span><div class="t"><b>' + esc(L.t) + '</b><span>' + esc(L.sub || '') + '</span></div><button class="btn ghost sm" type="button" data-edit="' + i + '">Edit</button></div>';
+        }).join('') : '<div class="empty">Nothing here yet. Use “+ ' + esc(o.addLabel || 'Add') + '”.</div>';
+      }).catch(function (x) { M.body.querySelector('.mdl-list').innerHTML = '<div class="empty"><b>Couldn’t load</b>' + esc(x.message) + '</div>'; });
+    }
+    function edit(r) {
+      form({
+        title: r ? (o.editTitle ? o.editTitle(r.v) : 'Edit') : (o.addTitle || 'Add'),
+        fields: o.fields(r ? r.v : (o.defaults ? o.defaults() : {})),
+        check: o.check,
+        onBack: list,
+        onSave: function (v) { return api({ action: 'adminSave', tab: o.tab, row: r ? r.r : 0, sig: r ? r.sig : '', values: o.toSheet ? o.toSheet(v) : v }); },
+        onDelete: r && o.canDelete !== false ? function () { return api({ action: 'adminDelete', tab: o.tab, row: r.r, sig: r.sig }); } : null
+      }, M);
+    }
+    M.body.addEventListener('click', function (e) { var b = e.target.closest('[data-edit]'); if (b && M.rows) edit(M.rows[Number(b.getAttribute('data-edit'))]); });
+    list();
+    return M;
+  }
+
+  /* Save Site text keys: items = { key: text } */
+  function saveText(items) {
+    return api({ action: 'textSave', items: items }).then(function (res) { if (res && res.ok && res.text) setText(res.text, true); return res; });
+  }
+
+  /* Click any [data-text] while Edit mode is on to change it */
+  document.addEventListener('click', function (e) {
+    if (!document.body.classList.contains('edit-on')) return;
+    var el = e.target.closest && e.target.closest('[data-text]');
+    if (!el || el.closest('.mdl-scrim')) return;
+    e.preventDefault(); e.stopPropagation();
+    var key = el.getAttribute('data-text'), long = el.textContent.length > 60;
+    form({ title: 'Edit text', fields: [{ key: 'v', label: 'Text', type: long ? 'textarea' : 'text', value: (text[key] != null && String(text[key]).trim() !== '') ? text[key] : el.textContent, required: true, full: true, help: 'Shown on the website straight away.' }],
+      onSave: function (v) { return saveText((function () { var o = {}; o[key] = v.v; return o; })()); },
+      after: function (res, M) { M.close(); toast('Saved', 'The text has been updated.', 'good'); } });
+  }, true);
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('[data-edit-toggle]')) { setEdit(!editOn()); toast(editOn() ? 'Edit mode on' : 'Edit mode off', editOn() ? 'Dashed outlines and gold buttons can be edited.' : 'The website is back to normal view.'); }
+    if (e.target.closest && e.target.closest('[data-edit-discord]')) {
+      form({ title: 'Discord invite link', fields: [{ key: 'v', label: 'Invite link', value: text.discord_link || '', placeholder: 'https://discord.gg/…', full: true, help: 'Leave empty to hide the Join Discord buttons.' }],
+        check: function (v) { return v.v && !/^https?:[/][/]/i.test(v.v.trim()) ? 'The link must start with https://' : ''; },
+        onSave: function (v) { return saveText({ discord_link: v.v.trim() }); },
+        after: function (res, M) { M.close(); toast('Saved', 'Discord link updated.', 'good'); } });
+    }
+  });
+
+  window.Site = { onText: onText, esc: esc, n: n, date: date, dateTime: dateTime, ago: ago, left: left, shortLeft: shortLeft, pad: pad, store: store, toast: toast, api: api, session: session, signOut: signOut, cached: cached,
+    isAdmin: function () { var se = session.get(); return !!(se && se.admin); }, editOn: editOn, form: form, manager: manager, modal: modal, saveText: saveText, refresh: refresh, isoDate: isoDate, isoDT: isoDT, config: C, demo: !C.API_URL };
   nav();
+  if (editOn()) document.body.classList.add('edit-on');
   if (membersPage() && !session.get()) {
     if (document.querySelector('main')) lock(''); else document.addEventListener('DOMContentLoaded', function () { lock(''); });
   }
