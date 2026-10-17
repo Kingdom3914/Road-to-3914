@@ -125,10 +125,10 @@
   .ax-top{position:relative;height:26px}
   .ax-top .mname{position:absolute;top:4px;font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--gold);white-space:nowrap;padding-left:4px}
   .ax-ticks{position:relative;height:30px;border-bottom:1px solid var(--line)}
-  .tick{position:absolute;top:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--muted);transform:translateX(-50%);line-height:1.1}
-  .tick b{font-size:12.5px;color:var(--soft)}
-  .tick.today b{color:var(--gold)}
-  .tick.wk{transform:none;align-items:flex-start;padding-left:4px;border-left:1px solid var(--line)}
+  .axt{position:absolute;top:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--muted);transform:translateX(-50%);line-height:1.1}
+  .axt b{font-size:12.5px;color:var(--soft)}
+  .axt.today b{color:var(--gold)}
+  .axt.wk{transform:none;align-items:flex-start;padding-left:4px;border-left:1px solid var(--line)}
   .daycol{position:absolute;top:56px;bottom:0;background:rgba(255,255,255,.022);pointer-events:none}
   .wkline{position:absolute;top:56px;bottom:0;width:1px;background:rgba(255,255,255,.06);pointer-events:none}
   .ln{position:relative;border-top:1px solid var(--line)}
@@ -362,15 +362,15 @@
     if (f.span <= 45) {
       for (var d = sod(f.a); d < f.b; d += DAY) {
         var wd = (new Date(d).getUTCDay() + 6) % 7, today = d === sod(now);
-        t += '<div class="tick' + (today ? ' today' : '') + '" style="left:calc(' + f.X(d) + ' + ' + (f.W / f.span / 2).toFixed(1) + 'px)"><span>' + WD[wd].charAt(0) + '</span><b>' + new Date(d).getUTCDate() + '</b></div>';
+        t += '<div class="axt' + (today ? ' today' : '') + '" style="left:calc(' + f.X(d) + ' + ' + (f.W / f.span / 2).toFixed(1) + 'px)"><span>' + WD[wd].charAt(0) + '</span><b>' + new Date(d).getUTCDate() + '</b></div>';
         if (wd >= 5) g += '<div class="daycol" style="left:' + f.X(d) + ';width:' + (f.W / f.span).toFixed(1) + 'px"></div>';
         if (wd === 0 && d > f.a) g += '<div class="wkline" style="left:' + f.X(d) + '"></div>';
       }
     } else if (f.span <= 120) {
-      for (var w = monday(f.a) + (monday(f.a) < f.a ? 7 * DAY : 0); w < f.b; w += 7 * DAY) { t += '<div class="tick wk" style="left:' + f.X(w) + '"><span>Mon</span><b>' + fd(w) + '</b></div>'; g += '<div class="wkline" style="left:' + f.X(w) + '"></div>'; }
+      for (var w = monday(f.a) + (monday(f.a) < f.a ? 7 * DAY : 0); w < f.b; w += 7 * DAY) { t += '<div class="axt wk" style="left:' + f.X(w) + '"><span>Mon</span><b>' + fd(w) + '</b></div>'; g += '<div class="wkline" style="left:' + f.X(w) + '"></div>'; }
     } else {
       var mm = addMonths(monthStart(f.a), monthStart(f.a) < f.a ? 1 : 0);
-      for (; mm < f.b; mm = addMonths(mm, 1)) { t += '<div class="tick wk" style="left:' + f.X(mm) + '"><b>' + MON[new Date(mm).getUTCMonth()] + (new Date(mm).getUTCMonth() === 0 ? ' ' + new Date(mm).getUTCFullYear() : '') + '</b></div>'; g += '<div class="wkline" style="left:' + f.X(mm) + '"></div>'; }
+      for (; mm < f.b; mm = addMonths(mm, 1)) { t += '<div class="axt wk" style="left:' + f.X(mm) + '"><b>' + MON[new Date(mm).getUTCMonth()] + (new Date(mm).getUTCMonth() === 0 ? ' ' + new Date(mm).getUTCFullYear() : '') + '</b></div>'; g += '<div class="wkline" style="left:' + f.X(mm) + '"></div>'; }
     }
     if (now >= f.a && now < f.b) h += '<div class="today2-tag" style="left:' + f.X(now) + '">TODAY · ' + fd(now) + '</div>';
     return { top: h + '</div>' + t + '</div>', grid: g, today: now >= f.a && now < f.b ? '<div class="today2" style="left:' + f.X(now) + '"></div>' : '' };
