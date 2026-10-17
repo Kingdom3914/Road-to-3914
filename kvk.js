@@ -61,7 +61,8 @@
       if (k.start) marks.push({ t: 'reg', d: k.start });
       if (opt) { segs.push({ t: 'off', a: k.end, b: opt, l: 'Off-season' }); marks.push({ t: 'opt', d: opt }); }
       if (must) { segs.push({ t: 'skip', a: opt, b: must, l: 'Off-season if skipped' }); marks.push({ t: 'must', d: must, est: estSet[must] ? 1 : 0 }); }
-      return { id: k.id, ours: ours, name: k.name || ('Kingdom ' + k.id), sub: ours ? 'Our KvK' : 'Other kingdom', c: c, rgb: rgbOf(c), segs: segs, marks: marks, start: k.start, end: k.end, opt: opt, must: must, mustEst: !!estSet[must] };
+      var nm = String(k.name || '').trim(); if (!nm || /^[0-9]+$/.test(nm)) nm = 'Kingdom ' + k.id;
+      return { id: k.id, ours: ours, name: nm, sub: ours ? 'Our KvK' : 'Other kingdom', c: c, rgb: rgbOf(c), segs: segs, marks: marks, start: k.start, end: k.end, opt: opt, must: must, mustEst: !!estSet[must] };
     });
     var me = K[0];
 
@@ -83,7 +84,7 @@
       R0 = startOfDay(now) - (view.days >= 0 ? view.days : 10) * DAY;
       R1 = Math.max(Math.max.apply(null, all) + 14 * DAY, now + 30 * DAY);
     }
-    K.forEach(function (k) { k.segs.forEach(function (s) { if (!s.a || s.a < R0) { s.a = Math.max(s.a || R0, R0); s.open = 1; } }); });
+    K.forEach(function (k) { k.segs.forEach(function (s) { if (!s.a) { s.a = Math.min(R0, k.end - 30 * DAY); s.open = 1; } }); });
     function inView(a, b) { return (b || a) + DAY > R0 && a < R1; }
 
     var migs = migRows.filter(function (r) { return inView(r.a); }).map(function (r, i) { return { d: r.a, c: r.c, l: (r.x || 'Migration ' + (i + 1)) + ' · ' + fd(r.a) }; });
@@ -97,6 +98,7 @@
     if (me.end) EVENTS.push({ d: me.end, b: 0, t: 'KvK end', x: me.name + ' enters off-season', g: ['kvk'], c: me.c });
     EVENTS.sort(function (p, q) { return p.d - q.d; });
 
+    V.ALLPOPS = pops; V.MIGROWS = migRows;
     V.R0 = R0; V.R1 = R1; V.POPS = pops.filter(function (p) { return inView(p); }); V.estSet = estSet; V.MIGS = migs; V.K = K; V.KC = KC;
     V.EVENTS = EVENTS; V.SHOWN = EVENTS.filter(function (e) { return inView(e.d, e.b); }); V.ROWS = rows; V.view = view;
     V.stages = rows.filter(function (r) { return r.g === 'stage' && inView(r.a); });

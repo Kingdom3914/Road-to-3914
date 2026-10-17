@@ -98,6 +98,100 @@
     .swipe{display:block}
     .arrow{display:none}
   }
+
+  /* ---------- views ---------- */
+  .cal-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .vtabs{display:flex;gap:4px;background:#0D1320;border:1px solid var(--line);border-radius:12px;padding:4px}
+  .vtab{border:0;background:transparent;color:var(--soft);font-weight:700;font-size:14px;padding:8px 14px;border-radius:9px;min-height:40px}
+  .vtab[aria-selected="true"]{background:var(--gold);color:#18130A}
+  .cal-nav{display:flex;align-items:center;gap:6px}
+  .cal-nav b{min-width:150px;text-align:center;font-size:15px}
+  .nbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-size:20px;line-height:1;display:grid;place-items:center}
+  .nbtn.txt{width:auto;padding:0 12px;font-size:13px;font-weight:700}
+  .sub-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .zoom{display:flex;gap:6px;flex-wrap:wrap}
+  .zbtn{font-size:13px;font-weight:700;color:var(--soft);background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:7px 13px;min-height:36px}
+  .zbtn[aria-pressed="true"]{border-color:var(--gold);color:var(--gold);background:rgba(232,184,74,.12)}
+  .legend.small{margin-bottom:12px}
+  .hidden{display:none !important}
+
+  /* timeline v2 */
+  .tl2{display:grid;grid-template-columns:130px minmax(0,1fr);gap:0 12px}
+  .tl2-labels .lab{display:flex;flex-direction:column;justify-content:center;border-top:1px solid var(--line);padding-right:4px}
+  .tl2-labels .lab b{font-size:14.5px;line-height:1.2}
+  .tl2-labels .lab span{font-size:11.5px;color:var(--muted)}
+  .tl2-scroll{overflow-x:auto;scrollbar-color:#2E3B54 transparent}
+  .tl2-track{position:relative}
+  .ax-top{position:relative;height:26px}
+  .ax-top .mname{position:absolute;top:4px;font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--gold);white-space:nowrap;padding-left:4px}
+  .ax-ticks{position:relative;height:30px;border-bottom:1px solid var(--line)}
+  .tick{position:absolute;top:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--muted);transform:translateX(-50%);line-height:1.1}
+  .tick b{font-size:12.5px;color:var(--soft)}
+  .tick.today b{color:var(--gold)}
+  .tick.wk{transform:none;align-items:flex-start;padding-left:4px;border-left:1px solid var(--line)}
+  .daycol{position:absolute;top:56px;bottom:0;background:rgba(255,255,255,.022);pointer-events:none}
+  .wkline{position:absolute;top:56px;bottom:0;width:1px;background:rgba(255,255,255,.06);pointer-events:none}
+  .ln{position:relative;border-top:1px solid var(--line)}
+  .bar{position:absolute;height:34px;border-radius:8px;display:flex;flex-direction:column;justify-content:center;padding:0 8px;font-size:12px;font-weight:800;color:#0F1522;white-space:nowrap;overflow:hidden;z-index:2;transform-origin:left;animation:grow .7s cubic-bezier(.2,.8,.2,1) both;min-width:8px;box-shadow:0 1px 0 rgba(0,0,0,.25)}
+  .bar small{font-size:10.5px;font-weight:700;opacity:.8}
+  .bar.past{opacity:.45}
+  .bar.est{background-image:repeating-linear-gradient(45deg,rgba(15,21,34,.18) 0 6px,transparent 6px 12px)}
+  .out-lab{position:absolute;z-index:2;font-size:12px;font-weight:700;white-space:nowrap;line-height:1.15;padding-left:6px}
+  .out-lab small{display:block;font-size:10.5px;color:var(--muted);font-weight:600}
+  .mig2{position:absolute;top:56px;bottom:0;width:0;border-left:2px dashed;opacity:.35;z-index:0;pointer-events:none}
+  .today2{position:absolute;top:22px;bottom:0;width:2px;background:var(--gold);transform:translateX(-1px);z-index:4;box-shadow:0 0 10px rgba(232,184,74,.55);pointer-events:none}
+  .today2-tag{position:absolute;top:2px;transform:translateX(-50%);background:var(--gold);color:#0F1522;font-size:10.5px;font-weight:800;letter-spacing:.12em;padding:2px 8px;border-radius:9px;z-index:5;white-space:nowrap}
+  .empty-lanes{padding:30px;text-align:center;color:var(--muted)}
+
+  /* month grid */
+  .mgrid{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .mg-head{display:grid;grid-template-columns:repeat(7,1fr);background:#0D1320;border-bottom:1px solid var(--line)}
+  .mg-head div{padding:8px;font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--muted);text-align:center}
+  .mg-week{position:relative;border-bottom:1px solid var(--line)}
+  .mg-week:last-child{border-bottom:none}
+  .mg-days{display:grid;grid-template-columns:repeat(7,1fr)}
+  .mg-day{min-height:104px;border-right:1px solid var(--line2);padding:6px 6px 4px;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;background:transparent;border-top:0;border-bottom:0;border-left:0;text-align:left;color:inherit;font:inherit}
+  .mg-day:last-child{border-right:none}
+  .mg-day:hover{background:rgba(255,255,255,.025)}
+  .mg-day.out{opacity:.38}
+  .mg-day.sel{background:rgba(232,184,74,.08)}
+  .mg-day .dn{font-size:13px;font-weight:700;color:var(--soft);display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:12px}
+  .mg-day.is-today .dn{background:var(--gold);color:#18130A}
+  .mg-day .ph{position:absolute;left:0;right:0;top:0;height:3px}
+  .mg-bars{position:absolute;left:0;right:0;top:34px;pointer-events:none}
+  .mg-bar{position:absolute;height:20px;border-radius:6px;font-size:11.5px;font-weight:800;color:#0F1522;padding:0 6px;display:flex;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mg-bar.cont-l{border-top-left-radius:0;border-bottom-left-radius:0}
+  .mg-bar.cont-r{border-top-right-radius:0;border-bottom-right-radius:0}
+  .mg-bar.past{opacity:.5}
+  .mg-more{position:absolute;font-size:11px;font-weight:700;color:var(--muted)}
+  .day-detail{margin-top:14px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .day-detail h3{font-size:16px;margin-bottom:8px}
+  @media(max-width:700px){
+    .mg-day{min-height:78px;padding:4px}
+    .mg-bars{top:28px}
+    .mg-bar{height:16px;font-size:10px;padding:0 4px}
+    .mg-head div{font-size:10.5px;padding:6px 2px}
+  }
+
+  /* agenda */
+  .ag-group{margin-bottom:18px}
+  .ag-group h3{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:800}
+  .ag-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+  .ag-row .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .ag-row .t{flex:1;min-width:0}
+  .ag-row .t b{display:block;font-size:15px}
+  .ag-row .t span{font-size:13px;color:var(--muted)}
+  .ag-row .when{font-size:13px;font-weight:800;white-space:nowrap;text-align:right}
+  .ag-row .pbar{height:5px;background:#0D1320;border-radius:3px;overflow:hidden;margin-top:6px;max-width:220px}
+  .ag-row .pbar i{display:block;height:100%}
+  .ag-row.past{opacity:.5}
+  details.ag-earlier summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:700;margin-bottom:8px}
+  @media(max-width:760px){
+    .tl2{grid-template-columns:86px minmax(0,1fr);gap:0 6px}
+    .tl2-labels .lab b{font-size:13px}
+    .cal-nav b{min-width:110px;font-size:14px}
+    .vtab{padding:8px 10px;font-size:13px}
+  }
 </style>
 </head>
 <body data-page="calendar">
@@ -128,19 +222,37 @@
     <button class="btn gold sm" type="button" data-ed="dates">Dates</button>
     <button class="btn gold sm" type="button" data-ed="kingdoms">Kingdoms</button>
     <button class="btn gold sm" type="button" data-ed="types">Event types &amp; colours</button>
-    <button class="btn gold sm" type="button" data-ed="view">Calendar view</button>
+    <button class="btn gold sm" type="button" data-ed="view">“All” zoom range</button>
   </div>
 
   <section aria-label="Kingdom status"><div class="status" id="status"></div></section>
 
-  <section class="panel">
-    <div class="sec-head"><h2>Timeline</h2><p id="rangeNote">KvK, MGE and GH for Kingdom 3914, day by day.</p></div>
-    <div class="legend" id="legend"></div>
-    <div class="tl">
-      <div class="tl-labels" id="labels"></div>
-      <div class="tl-scroll"><div class="tl-track" id="track"></div></div>
+  <section class="panel" aria-label="Calendar">
+    <div class="cal-head">
+      <div class="vtabs" role="tablist" aria-label="Calendar view">
+        <button class="vtab" role="tab" data-v="timeline">Timeline</button>
+        <button class="vtab" role="tab" data-v="month">Month</button>
+        <button class="vtab" role="tab" data-v="agenda">Agenda</button>
+        <button class="vtab" role="tab" data-v="kingdoms">Kingdoms</button>
+      </div>
+      <div class="cal-nav" id="calNav">
+        <button class="nbtn" type="button" data-nav="-1" aria-label="Previous">‹</button>
+        <b id="period">—</b>
+        <button class="nbtn" type="button" data-nav="1" aria-label="Next">›</button>
+        <button class="nbtn txt" type="button" data-nav="0">Today</button>
+      </div>
     </div>
-    <div class="swipe">Swipe the timeline sideways →</div>
+    <div class="sub-bar">
+      <div class="zoom" id="zoom" role="group" aria-label="Zoom">
+        <button class="zbtn" type="button" data-z="2w">2 weeks</button>
+        <button class="zbtn" type="button" data-z="month">Month</button>
+        <button class="zbtn" type="button" data-z="3m">3 months</button>
+        <button class="zbtn" type="button" data-z="all">All</button>
+      </div>
+      <div class="filters" id="filters" role="group" aria-label="Filter" style="margin:0"></div>
+    </div>
+    <div class="legend small" id="legend"></div>
+    <div id="view"></div>
   </section>
 
   <section class="panel">
@@ -158,12 +270,6 @@
     </table></div>
   </section>
 
-  <section class="panel">
-    <div class="sec-head"><h2>Key dates</h2><p>Past dates fade out; the next one glows.</p></div>
-    <div class="filters" id="filters" role="group" aria-label="Filter key dates"></div>
-    <div class="cards" id="cards"></div>
-  </section>
-
   <footer class="foot">All dates are server time (UTC 00:00). Dates marked (est.) are projected, not confirmed. Admins edit everything here in Edit mode.</footer>
 </main>
 
@@ -175,126 +281,249 @@
 (function () {
   "use strict";
   KVK.init().then(function (V) {
-  var DAY = V.DAY, R0 = V.R0, R1 = V.R1, K = V.K, KC = V.KC, EVENTS = V.EVENTS, POPS = V.POPS, MIGS = V.MIGS;
-  var fd = V.fd, fw = V.fw, days = V.days, MON = V.MON, esc = Site.esc;
-  function X(t) { return ((Math.max(R0, Math.min(R1, t)) - R0) / (R1 - R0) * 100).toFixed(3) + '%'; }
-  var filter = 'all', nextEvt = null;
+  var DAY = V.DAY, K = V.K, KC = V.KC, EVENTS = V.EVENTS;
+  var fd = V.fd, fw = V.fw, days = V.days, MON = V.MON, esc = Site.esc, $ = function (id) { return document.getElementById(id); };
+  var WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  var nextEvt = null;
 
-  function segStyle(k, s) {
-    if (s.t === 'kvk') return 'background:' + k.c + ';color:#0F1522';
-    if (s.t === 'off') return 'background:rgba(' + k.rgb + ',.22);color:' + k.c + ';box-shadow:inset 0 0 0 1px rgba(' + k.rgb + ',.55)';
-    if (s.t === 'skip') return 'background:repeating-linear-gradient(45deg,rgba(' + k.rgb + ',.20) 0 10px,rgba(' + k.rgb + ',.05) 10px 20px);color:' + k.c + ';box-shadow:inset 0 0 0 1px rgba(' + k.rgb + ',.35)';
-    return 'background:rgba(76,141,255,.16);color:#9DBFFF;box-shadow:inset 0 0 0 1px rgba(76,141,255,.5)';
+  /* ---------- state (remembered on this device) ---------- */
+  var st = { v: 'timeline', z: 'month', anchor: 0, filter: 'all', sel: 0 };
+  try { var sv = JSON.parse(Site.store.get('k3914-calview') || '{}'); if (sv.v) st.v = sv.v; if (sv.z) st.z = sv.z; if (sv.filter) st.filter = sv.filter; } catch (e) {}
+  function remember() { Site.store.set('k3914-calview', JSON.stringify({ v: st.v, z: st.z, filter: st.filter })); }
+  function sod(t) { return Math.floor(t / DAY) * DAY; }
+  function monthStart(t) { var d = new Date(t); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1); }
+  function addMonths(t, n) { var d = new Date(t); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1); }
+  function monday(t) { var d = new Date(sod(t)); return sod(t) - ((d.getUTCDay() + 6) % 7) * DAY; }
+  function resetAnchor() { var now = Date.now(); st.anchor = st.z === '2w' ? monday(now) : monthStart(now); }
+  resetAnchor();
+
+  function period() {
+    if (st.v === 'month') { var a = monthStart(st.anchor); return { a: a, b: addMonths(a, 1), label: new Date(a).toLocaleString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }) }; }
+    if (st.z === 'all') return { a: V.R0, b: V.R1, label: 'All dates' };
+    if (st.z === '2w') { var w = st.anchor; return { a: w, b: w + 14 * DAY, label: fd(w) + ' – ' + fd(w + 13 * DAY, true) }; }
+    var m = monthStart(st.anchor), n = st.z === '3m' ? 3 : 1, e = addMonths(m, n);
+    var lab = n === 1 ? new Date(m).toLocaleString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : MON[new Date(m).getUTCMonth()] + ' – ' + MON[new Date(e - DAY).getUTCMonth()] + ' ' + new Date(e - DAY).getUTCFullYear();
+    return { a: m, b: e, label: lab };
+  }
+  function shift(dir) {
+    if (dir === 0) { resetAnchor(); return; }
+    if (st.v === 'month' || st.z === 'month') st.anchor = addMonths(monthStart(st.anchor), dir);
+    else if (st.z === '3m') st.anchor = addMonths(monthStart(st.anchor), 3 * dir);
+    else if (st.z === '2w') st.anchor += 14 * DAY * dir;
   }
 
+  /* ---------- filters & legend ---------- */
+  function matches(g) { return st.filter === 'all' || g === st.filter || (st.filter === 'kvk' && g === 'stage'); }
+  function rowsIn(a, b, groups) { return V.ROWS.filter(function (r) { return groups.indexOf(r.g) > -1 && matches(r.g) && (r.b || r.a) + DAY > a && r.a < b; }); }
+  function renderFilters() {
+    var F = [['all', 'All'], ['kvk', 'KvK'], ['mge', 'MGE'], ['gh', 'GH'], ['pop', 'Pop-ups'], ['mig', 'Migrations']];
+    if (V.ROWS.some(function (r) { return r.g === 'other'; })) F.push(['other', 'Other']);
+    $('filters').innerHTML = F.map(function (f) {
+      var dot = f[0] === 'all' ? '' : '<span class="kdot" style="background:' + KC[f[0]] + '"></span>';
+      return '<button class="fbtn" type="button" data-f="' + f[0] + '" aria-pressed="' + (st.filter === f[0]) + '">' + dot + f[1] + '</button>';
+    }).join('');
+  }
   function renderLegend() {
-    var g = K[0].c, rgb = K[0].rgb;
-    var L = [
+    var g = K[0].c, rgb = K[0].rgb, L;
+    if (st.v === 'kingdoms') L = [
       ['<span class="sw" style="background:' + g + '"></span>', 'KvK'],
       ['<span class="sw" style="background:rgba(' + rgb + ',.22);box-shadow:inset 0 0 0 1px rgba(' + rgb + ',.55)"></span>', 'Off-season'],
       ['<span class="sw" style="background:repeating-linear-gradient(45deg,rgba(' + rgb + ',.25) 0 5px,rgba(' + rgb + ',.05) 5px 10px);box-shadow:inset 0 0 0 1px rgba(' + rgb + ',.35)"></span>', 'Off-season if 1st pop-up skipped'],
       ['<span style="width:15px;height:15px;border-radius:50%;border:3px dashed ' + g + '"></span>', 'Optional registration'],
       ['<span class="must" style="background:' + g + ';font-size:9px;padding:2px 5px">MUST</span>', 'Mandatory registration'],
       ['<span style="width:12px;height:12px;background:' + KC.pop + ';transform:rotate(45deg)"></span>', 'KvK pop-up'],
-      ['<span style="width:3px;height:16px;background:' + KC.mig + '"></span>', 'Migration'],
-      ['<span style="width:3px;height:16px;background:var(--gold)"></span>', 'Today'],
-      ['<span style="width:12px;height:12px;border-radius:50%;background:' + KC.stage + ';border:2px solid #0F1522;box-shadow:0 0 0 2px ' + KC.stage + '"></span>', 'KvK stage'],
-      ['<span class="sw" style="background:' + KC.mge + '"></span>', 'MGE'],
-      ['<span class="sw" style="background:' + KC.gh + '"></span>', 'GH']
-    ];
-    if (V.other.length) L.push(['<span class="sw" style="background:' + KC.other + '"></span>', 'Other events']);
-    document.getElementById('legend').innerHTML = L.map(function (i) { return '<div class="lg">' + i[0] + i[1] + '</div>'; }).join('');
-    var v = V.view, note = document.getElementById('rangeNote');
-    note.textContent = v.mode === 'range' && v.from && v.to ? 'Showing ' + fd(v.from, true) + ' to ' + fd(v.to, true) + '.' : 'Showing the last ' + v.days + ' days and everything ahead.';
+      ['<span style="width:3px;height:16px;background:var(--gold)"></span>', 'Today']];
+    else {
+      L = [['<span class="sw" style="background:' + g + '"></span>', 'KvK'], ['<span style="width:12px;height:12px;border-radius:50%;background:' + KC.stage + '"></span>', 'KvK stage'],
+        ['<span class="sw" style="background:' + KC.mge + '"></span>', 'MGE'], ['<span class="sw" style="background:' + KC.gh + '"></span>', 'GH'],
+        ['<span style="width:12px;height:12px;background:' + KC.pop + ';transform:rotate(45deg)"></span>', 'KvK pop-up'], ['<span class="sw" style="background:' + KC.mig + '"></span>', 'Migration']];
+      if (V.ROWS.some(function (r) { return r.g === 'other'; })) L.push(['<span class="sw" style="background:' + KC.other + '"></span>', 'Other']);
+      if (st.v !== 'agenda') L.push(['<span style="width:3px;height:16px;background:var(--gold)"></span>', 'Today']);
+    }
+    $('legend').innerHTML = L.map(function (i) { return '<div class="lg">' + i[0] + i[1] + '</div>'; }).join('');
   }
 
-  function evBars(list, label, now) {
-    return list.map(function (r, i) {
-      var endT = (r.b || r.a) + DAY, past = endT <= now, long = (endT - r.a) / DAY >= 4, name = label || r.s;
-      var txt = '<span>' + esc(name) + '</span>' + (long ? '<small>' + fd(r.a) + (r.b ? ' – ' + fd(r.b) : '') + '</small>' : '');
-      return '<div class="ev' + (past ? ' past' : '') + (r.est ? ' est' : '') + '" title="' + esc(r.e + (r.x ? ' · ' + r.x : '') + ' · ' + fd(r.a, true) + (r.b ? ' – ' + fd(r.b, true) : '')) + '" style="left:' + X(r.a) + ';width:calc(' + X(endT) + ' - ' + X(r.a) + ');background-color:' + r.c + ';animation-delay:' + (0.2 + i * 0.05) + 's">' + txt + '</div>';
-    }).join('');
+  /* ---------- Timeline ---------- */
+  function segStyle(k, s) {
+    if (s.t === 'kvk') return 'background:' + k.c + ';color:#0F1522';
+    if (s.t === 'off') return 'background:rgba(' + k.rgb + ',.22);color:' + k.c + ';box-shadow:inset 0 0 0 1px rgba(' + k.rgb + ',.55)';
+    if (s.t === 'skip') return 'background:repeating-linear-gradient(45deg,rgba(' + k.rgb + ',.20) 0 10px,rgba(' + k.rgb + ',.05) 10px 20px);color:' + k.c + ';box-shadow:inset 0 0 0 1px rgba(' + k.rgb + ',.35)';
+    return 'background:rgba(76,141,255,.16);color:#9DBFFF;box-shadow:inset 0 0 0 1px rgba(76,141,255,.5)';
   }
-
-  function stageLane(list, now) {
-    var h = '', lastX = [-99, -99, -99], span = R1 - R0;
-    list.forEach(function (r) {
-      var pos = (r.a - R0) / span * 100, lvl = 0;
-      while (lvl < 2 && pos - lastX[lvl] < 5.5) lvl++;
-      lastX[lvl] = pos;
-      var top = 36 + lvl * 32, past = r.a + DAY <= now, isNext = nextEvt && nextEvt.d === r.a && nextEvt.t === r.e;
-      h += '<div class="stg-line" style="left:' + X(r.a) + ';height:' + (top - 22) + 'px;background:' + r.c + '66"></div>';
-      h += '<div class="stg' + (past ? ' past' : '') + (r.est ? ' est' : '') + (isNext ? ' pulse' : '') + '" style="left:' + X(r.a) + ';color:' + r.c + ';background:' + (r.est ? '#0F1522' : r.c) + ';box-shadow:0 0 0 2px ' + r.c + '" title="' + esc(r.e + (r.x ? ' · ' + r.x : '') + ' · ' + fd(r.a, true)) + '"></div>';
-      h += '<div class="stg-lab" style="left:' + X(r.a) + ';top:' + top + 'px' + (past ? ';opacity:.5' : '') + '"><b style="color:' + r.c + '">' + esc(r.s) + '</b>' + fd(r.a) + (r.est ? '?' : '') + '</div>';
-    });
+  function frame(a, b, minPx) {
+    var host = $('view'), span = (b - a) / DAY, labW = window.innerWidth < 760 ? 92 : 142;
+    var avail = Math.max(260, host.clientWidth - labW), W = Math.max(avail, minPx(span));
+    return { a: a, b: b, span: span, W: W, X: function (t) { return ((Math.max(a, Math.min(b, t)) - a) / (b - a) * 100).toFixed(3) + '%'; }, px: function (t1, t2) { return (Math.min(b, t2) - Math.max(a, t1)) / (b - a) * W; } };
+  }
+  function axis(f, now) {
+    var h = '<div class="ax-top">', t = '<div class="ax-ticks">', g = '';
+    var m = monthStart(f.a);
+    while (f.span <= 120 && m < f.b) { var ms = Math.max(m, f.a), me = Math.min(addMonths(m, 1), f.b); if ((me - ms) / DAY >= 3 || f.span < 20) h += '<div class="mname" style="left:' + f.X(ms) + '">' + new Date(m).toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' }).toUpperCase() + (new Date(m).getUTCMonth() === 0 || ms === f.a ? ' ' + new Date(m).getUTCFullYear() : '') + '</div>'; if (ms > f.a) g += '<div class="wkline" style="left:' + f.X(ms) + ';background:rgba(232,184,74,.25)"></div>'; m = addMonths(m, 1); }
+    if (f.span <= 45) {
+      for (var d = sod(f.a); d < f.b; d += DAY) {
+        var wd = (new Date(d).getUTCDay() + 6) % 7, today = d === sod(now);
+        t += '<div class="tick' + (today ? ' today' : '') + '" style="left:calc(' + f.X(d) + ' + ' + (f.W / f.span / 2).toFixed(1) + 'px)"><span>' + WD[wd].charAt(0) + '</span><b>' + new Date(d).getUTCDate() + '</b></div>';
+        if (wd >= 5) g += '<div class="daycol" style="left:' + f.X(d) + ';width:' + (f.W / f.span).toFixed(1) + 'px"></div>';
+        if (wd === 0 && d > f.a) g += '<div class="wkline" style="left:' + f.X(d) + '"></div>';
+      }
+    } else if (f.span <= 120) {
+      for (var w = monday(f.a) + (monday(f.a) < f.a ? 7 * DAY : 0); w < f.b; w += 7 * DAY) { t += '<div class="tick wk" style="left:' + f.X(w) + '"><span>Mon</span><b>' + fd(w) + '</b></div>'; g += '<div class="wkline" style="left:' + f.X(w) + '"></div>'; }
+    } else {
+      var mm = addMonths(monthStart(f.a), monthStart(f.a) < f.a ? 1 : 0);
+      for (; mm < f.b; mm = addMonths(mm, 1)) { t += '<div class="tick wk" style="left:' + f.X(mm) + '"><b>' + MON[new Date(mm).getUTCMonth()] + (new Date(mm).getUTCMonth() === 0 ? ' ' + new Date(mm).getUTCFullYear() : '') + '</b></div>'; g += '<div class="wkline" style="left:' + f.X(mm) + '"></div>'; }
+    }
+    if (now >= f.a && now < f.b) h += '<div class="today2-tag" style="left:' + f.X(now) + '">TODAY · ' + fd(now) + '</div>';
+    return { top: h + '</div>' + t + '</div>', grid: g, today: now >= f.a && now < f.b ? '<div class="today2" style="left:' + f.X(now) + '"></div>' : '' };
+  }
+  function barHTML(f, r, now, top, label) {
+    var endT = (r.b || r.a) + DAY, w = f.px(r.a, endT), past = endT <= now, name = label || (r.s || r.e), sub = r.x ? r.x : '';
+    var dates = fd(r.a) + (r.b ? ' – ' + fd(r.b) : ''), tip = esc(r.e + (sub ? ' · ' + sub : '') + ' · ' + fd(r.a, true) + (r.b ? ' – ' + fd(r.b, true) : '') + (r.est ? ' (est.)' : ''));
+    var inside = w >= 96;
+    var h = '<div class="bar' + (past ? ' past' : '') + (r.est ? ' est' : '') + '" title="' + tip + '" style="top:' + top + 'px;left:' + f.X(r.a) + ';width:calc(' + f.X(endT) + ' - ' + f.X(r.a) + ');background-color:' + r.c + '">' + (inside ? '<span>' + esc(name + (sub && w > 150 ? ' · ' + sub : '')) + '</span><small>' + dates + '</small>' : '') + '</div>';
+    if (!inside) h += '<div class="out-lab" title="' + tip + '" style="top:' + (top + 2) + 'px;left:calc(' + f.X(endT) + ' + 2px);color:' + r.c + (past ? ';opacity:.5' : '') + '">' + esc(name) + '<small>' + dates + '</small></div>';
     return h;
   }
+  function packLanes(list, f) {
+    /* put overlapping bars (including their outside labels) on separate rows */
+    var rowsEnd = [], out = [];
+    list.forEach(function (r) {
+      var endT = (r.b || r.a) + DAY, extra = f.px(r.a, endT) >= 96 ? 0 : 110 / f.W * (f.b - f.a);
+      var i = 0; while (i < rowsEnd.length && rowsEnd[i] > r.a) i++;
+      rowsEnd[i] = endT + extra; out.push({ r: r, row: i });
+    });
+    return { items: out, rows: Math.max(1, rowsEnd.length) };
+  }
+  function renderTimeline() {
+    var now = Date.now(), p = period(), f = frame(p.a, p.b, function (span) { return span <= 45 ? span * 26 : span <= 120 ? span * 9 : Math.max(1100, span * 5); });
+    var ax = axis(f, now), labs = '<div style="height:56px"></div>', lanes = '';
+    function lane(title, sub, color, h, inner) { labs += '<div class="lab" style="height:' + h + 'px"><b style="color:' + color + '">' + title + '</b>' + (sub ? '<span>' + sub + '</span>' : '') + '</div>'; lanes += '<div class="ln" style="height:' + h + 'px">' + inner + '</div>'; }
 
-  function renderTimeline(now) {
-    var lab = '<div style="height:44px"></div><div class="tl-lab"><b style="color:' + KC.pop + '">KvK pop-ups</b><span>Every 28 days</span></div>';
-    K.forEach(function (k) { lab += '<div class="tl-lab"><b style="color:' + k.c + '">' + esc(k.name) + '</b><span>' + (k.ours ? 'KvK &amp; off-season' : 'Other kingdom') + '</span></div>'; });
-    lab += '<div class="tl-lab tall"><b style="color:' + KC.stage + '">KvK stages</b><span>LK, passes, altars</span></div>' +
-      '<div class="tl-lab short"><b style="color:' + KC.mge + '">MGE</b></div>' +
-      '<div class="tl-lab short"><b style="color:' + KC.gh + '">GH</b></div>' +
-      (V.other.length ? '<div class="tl-lab short"><b style="color:' + KC.other + '">Other</b></div>' : '') +
-      '<div style="height:44px;border-top:1px solid var(--line)"></div>';
-    document.getElementById('labels').innerHTML = lab;
-
-    var h = '<div class="axis">', shades = '', m = new Date(Date.UTC(new Date(R0).getUTCFullYear(), new Date(R0).getUTCMonth(), 1)), i = 0;
-    while (m.getTime() < R1) {
-      var a = Math.max(m.getTime(), R0), nx = Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1), b = Math.min(nx, R1);
-      var lbl = MON[m.getUTCMonth()].toUpperCase() + (m.getUTCMonth() === 0 ? ' ’' + String(m.getUTCFullYear()).slice(2) : '');
-      if ((b - a) / DAY >= 5) h += '<div class="mon" style="left:' + X(a) + ';width:calc(' + X(b) + ' - ' + X(a) + ')">' + lbl + '</div>';
-      if (i % 2 === 0) shades += '<div class="shade" style="left:' + X(a) + ';width:calc(' + X(b) + ' - ' + X(a) + ')"></div>';
-      m = new Date(nx); i++;
+    var pops = matches('pop') ? V.ALLPOPS.filter(function (x) { return x >= p.a && x < p.b; }) : [];
+    if (pops.length) {
+      var ph = ''; pops.forEach(function (x) { var est = !!V.estSet[x]; ph += '<div class="mk" style="left:calc(' + f.X(x) + ' + ' + (f.span <= 45 ? (f.W / f.span / 2).toFixed(1) : 0) + 'px);top:22px;color:' + KC.pop + ';transform:none"><div class="diamond' + (est ? ' est' : '') + '" style="background:' + KC.pop + '"></div></div><div class="mk-lab" style="top:38px;left:calc(' + f.X(x) + ' + ' + (f.span <= 45 ? (f.W / f.span / 2).toFixed(1) : 0) + 'px)"><b>' + fd(x) + (est ? ' (est.)' : '') + '</b></div>'; });
+      lane('KvK pop-ups', 'Registration', KC.pop, 70, ph);
     }
-    h += '</div>' + shades;
-
-    var nextPop = POPS.filter(function (p) { return p + DAY > now; })[0];
-    h += '<div class="lane">';
-    POPS.forEach(function (p) {
-      var est = !!V.estSet[p];
-      h += '<div class="mk' + (p === nextPop ? ' pulse' : '') + '" style="left:' + X(p) + ';color:' + KC.pop + ';transform:none"><div class="diamond' + (est ? ' est' : '') + '" style="background:' + KC.pop + '"></div></div>';
-      h += '<div class="mk-lab" style="left:' + X(p) + '"><b>' + fd(p) + (est ? ' (est.)' : '') + '</b></div>';
+    if (matches('kvk')) {
+      var k = K[0], kh = '';
+      k.segs.forEach(function (s) { if (s.b <= p.a || s.a >= p.b) return; var dates = fd(s.a) + ' – ' + fd(s.b); kh += '<div class="seg ' + s.t + (s.a < p.a ? ' open' : '') + '" title="' + esc(s.l + ' · ' + dates) + '" style="top:14px;left:' + f.X(s.a) + ';width:calc(' + f.X(s.b) + ' - ' + f.X(s.a) + ');' + segStyle(k, s) + '"><span>' + s.l + (f.px(s.a, s.b) > 220 ? ' · ' + dates : '') + '</span></div>'; });
+      k.marks.forEach(function (mk) { if (mk.d < p.a || mk.d >= p.b) return; var inner, l; if (mk.t === 'reg') { inner = '<div class="dotm" style="background:' + k.c + '"></div>'; l = '<b>KvK starts</b>' + fd(mk.d); } else if (mk.t === 'opt') { inner = '<div class="ring" style="border-color:' + k.c + '"></div>'; l = '<b>Can register or skip</b>' + fd(mk.d); } else { inner = '<div class="must" style="background:' + k.c + '">MUST</div>'; l = '<b>Must register</b>' + fd(mk.d); }
+        kh += '<div class="mk" style="left:' + f.X(mk.d) + ';color:' + k.c + '">' + inner + '</div><div class="mk-lab" style="left:' + f.X(mk.d) + ';color:' + k.c + '">' + l + '</div>'; });
+      if (kh) lane(esc(k.name), 'KvK &amp; off-season', k.c, 86, kh);
+      var stg = rowsIn(p.a, p.b, ['stage']);
+      if (stg.length) {
+        var sh = '', lastPx = [-999, -999, -999];
+        stg.forEach(function (r) { var x = f.px(p.a, r.a) + (f.span <= 45 ? f.W / f.span / 2 : 0), lvl = 0; while (lvl < 2 && x - lastPx[lvl] < 64) lvl++; lastPx[lvl] = x; var top = 34 + lvl * 30, past = r.a + DAY <= now;
+          sh += '<div class="stg-line" style="left:' + x.toFixed(1) + 'px;height:' + (top - 20) + 'px;background:' + r.c + '66"></div><div class="stg' + (past ? ' past' : '') + (r.est ? ' est' : '') + '" title="' + esc(r.e + ' · ' + fd(r.a, true)) + '" style="left:' + x.toFixed(1) + 'px;background:' + (r.est ? '#0F1522' : r.c) + ';box-shadow:0 0 0 2px ' + r.c + '"></div><div class="stg-lab" style="left:' + x.toFixed(1) + 'px;top:' + top + 'px' + (past ? ';opacity:.5' : '') + '"><b style="color:' + r.c + '">' + esc(r.s) + '</b>' + fd(r.a) + '</div>'; });
+        lane('KvK stages', 'LK, passes, altars', KC.stage, 34 + 30 * Math.min(3, Math.ceil(stg.length / 2)) + 30, sh);
+      }
+    }
+    [['mge', 'MGE'], ['gh', 'GH'], ['other', 'Other']].forEach(function (g) {
+      var list = rowsIn(p.a, p.b, [g[0]]); if (!list.length) return;
+      var P = packLanes(list, f), inner = '';
+      P.items.forEach(function (it) { inner += barHTML(f, it.r, now, 12 + it.row * 42, ''); });
+      lane(g[1], '', KC[g[0]], 24 + P.rows * 42, inner);
     });
-    h += '</div>';
+    var migs = rowsIn(p.a, p.b, ['mig']), migLines = '';
+    if (migs.length) {
+      var mh = ''; migs.forEach(function (r) { mh += '<div class="chip" style="top:12px;left:' + f.X(r.a) + ';background:' + r.c + '">' + esc((r.x || 'Migration') + ' · ' + fd(r.a)) + '</div>'; migLines += '<div class="mig2" style="left:' + f.X(r.a) + ';border-color:' + r.c + '"></div>'; });
+      lane('Migration', '', KC.mig, 52, mh);
+    }
+    if (!lanes) { $('view').innerHTML = '<div class="empty-lanes"><b>Nothing in this period</b><br>Use ‹ › to move, or pick a wider zoom.</div>'; return; }
+    $('view').innerHTML = '<div class="tl2"><div class="tl2-labels">' + labs + '</div><div class="tl2-scroll"><div class="tl2-track" style="width:' + Math.round(f.W) + 'px">' + ax.top + ax.grid + migLines + lanes + ax.today + '</div></div></div>';
+    var sc = document.querySelector('.tl2-scroll'); if (sc.scrollWidth > sc.clientWidth && now > p.a && now < p.b) sc.scrollLeft = Math.max(0, f.px(p.a, now) - sc.clientWidth * 0.3);
+  }
 
-    K.forEach(function (k, ki) {
-      h += '<div class="lane">';
-      k.segs.forEach(function (s, si) {
-        if (s.b <= R0 || s.a >= R1) return;
-        h += '<div class="seg ' + s.t + (s.open ? ' open' : '') + '" style="left:' + X(s.a) + ';width:calc(' + X(s.b) + ' - ' + X(s.a) + ');' + segStyle(k, s) + ';animation-delay:' + (0.15 + ki * 0.2 + si * 0.15) + 's"><span>' + s.l + '</span></div>';
+  /* ---------- Month grid ---------- */
+  function renderMonth() {
+    var now = Date.now(), p = period(), a = monday(p.a), end = p.b + ((7 - ((new Date(p.b).getUTCDay() + 6) % 7)) % 7) * DAY;
+    var items = V.EVENTS.filter(function (e) { return matches(e.g[0]); });
+    var k = K[0];
+    function phaseColor(d) { var s = V.phaseOf(k, d + DAY / 2); if (!s) return ''; return s.t === 'kvk' ? k.c : s.t === 'pre' ? 'rgba(76,141,255,.7)' : 'rgba(' + k.rgb + ',.35)'; }
+    var h = '<div class="mgrid"><div class="mg-head">' + WD.map(function (d) { return '<div>' + d + '</div>'; }).join('') + '</div>';
+    for (var w = a; w < end; w += 7 * DAY) {
+      var we = w + 7 * DAY, cells = '', bars = '', lanesEnd = [], hidden = {};
+      for (var d = w; d < we; d += DAY) {
+        var cls = 'mg-day' + (d < p.a || d >= p.b ? ' out' : '') + (d === sod(now) ? ' is-today' : '') + (d === st.sel ? ' sel' : ''), pc = phaseColor(d);
+        cells += '<button type="button" class="' + cls + '" data-day="' + d + '">' + (pc ? '<span class="ph" style="background:' + pc + '"></span>' : '') + '<span class="dn">' + new Date(d).getUTCDate() + '</span></button>';
+      }
+      var wk = items.filter(function (e) { return (e.b || e.d) + DAY > w && e.d < we; }).sort(function (x, y) { return x.d - y.d || ((y.b || y.d) - (x.b || x.d)); });
+      var maxRows = window.innerWidth < 700 ? 2 : 3;
+      wk.forEach(function (e) {
+        var s = Math.max(e.d, w), t = Math.min((e.b || e.d) + DAY, we), c0 = Math.round((s - w) / DAY), c1 = Math.round((t - w) / DAY);
+        var row = 0; while (row < lanesEnd.length && lanesEnd[row] > c0) row++;
+        if (row >= maxRows) { for (var c = c0; c < c1; c++) hidden[c] = (hidden[c] || 0) + 1; return; }
+        lanesEnd[row] = c1;
+        var past = (e.b || e.d) + DAY <= now, sub0 = e.x && e.g[0] !== 'kvk' && !/–/.test(e.x.split(' · ')[0]) ? e.x.split(' · ')[0] : '', label = e.g[0] === 'pop' ? '◆ ' + e.t : (sub0 && sub0.indexOf(e.t) === 0 ? sub0 : e.t + (sub0 ? ' · ' + sub0 : ''));
+        bars += '<div class="mg-bar' + (e.d < w ? ' cont-l' : '') + ((e.b || e.d) + DAY > we ? ' cont-r' : '') + (past ? ' past' : '') + '" title="' + esc(e.t + ' · ' + fd(e.d, true) + (e.b ? ' – ' + fd(e.b, true) : '')) + '" style="left:calc(' + (c0 / 7 * 100).toFixed(3) + '% + 3px);width:calc(' + ((c1 - c0) / 7 * 100).toFixed(3) + '% - 6px);top:' + (row * (window.innerWidth < 700 ? 18 : 23)) + 'px;background:' + e.c + '">' + esc(label) + '</div>';
       });
-      k.marks.forEach(function (mk) {
-        if (mk.d < R0 || mk.d > R1) return;
-        var isNext = k.ours && nextEvt && nextEvt.d === mk.d, inner, l;
-        if (mk.t === 'reg') { inner = '<div class="dotm" style="background:' + k.c + '"></div>'; l = '<b>KvK starts</b>' + fd(mk.d); }
-        else if (mk.t === 'opt') { inner = '<div class="ring" style="border-color:' + k.c + '"></div>'; l = '<b>Can register or skip</b>' + fd(mk.d); }
-        else { inner = '<div class="must" style="background:' + k.c + '">MUST</div>'; l = '<b>Must register</b>' + fd(mk.d) + (mk.est ? ' (est.)' : ''); }
-        h += '<div class="mk' + (isNext ? ' pulse' : '') + '" style="left:' + X(mk.d) + ';color:' + k.c + '">' + inner + '</div>';
-        h += '<div class="mk-lab" style="left:' + X(mk.d) + ';color:' + k.c + '">' + l + '</div>';
-      });
-      if (!k.end) h += '<div class="mk-lab" style="left:50%;top:22px;color:var(--muted)">No KvK dates yet</div>';
-      h += '</div>';
+      Object.keys(hidden).forEach(function (c) { bars += '<div class="mg-more" style="left:calc(' + (c / 7 * 100).toFixed(3) + '% + 6px);top:' + (maxRows * (window.innerWidth < 700 ? 18 : 23)) + 'px">+' + hidden[c] + ' more</div>'; });
+      h += '<div class="mg-week"><div class="mg-days">' + cells + '</div><div class="mg-bars">' + bars + '</div></div>';
+    }
+    h += '</div><div id="dayDetail"></div>';
+    $('view').innerHTML = h;
+    if (st.sel) showDay(st.sel);
+  }
+  function showDay(d) {
+    var list = V.EVENTS.filter(function (e) { return matches(e.g[0]) && (e.b || e.d) + DAY > d && e.d < d + DAY; });
+    var pops = V.ALLPOPS.indexOf(d) > -1;
+    $('dayDetail').innerHTML = '<div class="day-detail"><h3>' + fw(d) + '</h3>' + (list.length ? list.map(agRow).join('') : '<div class="empty" style="padding:8px 0">Nothing on this day.</div>') + '</div>';
+  }
+
+  /* ---------- Agenda ---------- */
+  function when(e, now) {
+    var endT = (e.b || e.d) + DAY, n = Math.ceil((e.d - now) / DAY);
+    if (endT <= now) return { txt: 'Done', col: 'var(--muted)' };
+    if (now >= e.d) return { txt: e.b ? 'Running · ends ' + fd(e.b) : 'Today', col: e.c, pct: e.b ? Math.min(100, (now - e.d) / (endT - e.d) * 100) : null };
+    return { txt: n <= 1 ? 'Tomorrow' : 'in ' + n + ' days', col: n <= 7 ? 'var(--gold)' : 'var(--soft)' };
+  }
+  function agRow(e) {
+    var now = Date.now(), w = when(e, now), dates = fd(e.d) + (e.b ? ' – ' + fd(e.b) : '');
+    var sub = [dates].concat(e.x && !/–/.test(e.x) ? [e.x.split(' · ')[0]] : (e.x && e.g[0] === 'kvk' ? [e.x] : [])).join(' · ');
+    return '<div class="ag-row' + (w.txt === 'Done' ? ' past' : '') + '"><span class="dot" style="background:' + e.c + (e.g[0] === 'pop' ? ';border-radius:2px;transform:rotate(45deg)' : '') + '"></span><div class="t"><b>' + esc(e.t) + (e.est ? ' <span style="font-weight:600;color:var(--muted)">(est.)</span>' : '') + '</b><span>' + esc(sub) + '</span>' +
+      (w.pct != null ? '<div class="pbar"><i style="width:' + w.pct.toFixed(1) + '%;background:' + e.c + '"></i></div>' : '') + '</div><div class="when" style="color:' + w.col + '">' + w.txt + '</div></div>';
+  }
+  function renderAgenda() {
+    var now = Date.now(), today = sod(now), wkEnd = monday(now) + 7 * DAY, nextWkEnd = wkEnd + 7 * DAY, mEnd = addMonths(monthStart(now), 1);
+    var list = V.EVENTS.filter(function (e) { return matches(e.g[0]); });
+    var G = [], groups = {};
+    function put(name, e) { if (!groups[name]) { groups[name] = []; G.push(name); } groups[name].push(e); }
+    var earlier = [];
+    list.forEach(function (e) {
+      var endT = (e.b || e.d) + DAY;
+      if (endT <= now) { if (endT > today - 14 * DAY) earlier.push(e); return; }
+      if (e.d <= now) put('Happening now', e);
+      else if (e.d < wkEnd) put('This week', e);
+      else if (e.d < nextWkEnd) put('Next week', e);
+      else if (e.d < mEnd) put('Later this month', e);
+      else put(new Date(e.d).toLocaleString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }), e);
     });
+    var h = earlier.length ? '<details class="ag-earlier"><summary>Earlier (last 14 days) · ' + earlier.length + '</summary>' + earlier.map(agRow).join('') + '</details>' : '';
+    h += G.map(function (g) { return '<div class="ag-group"><h3>' + esc(g) + '</h3>' + groups[g].map(agRow).join('') + '</div>'; }).join('');
+    $('view').innerHTML = h || '<div class="empty"><b>No upcoming dates</b>Admins can add dates in Edit mode.</div>';
+  }
 
-    h += '<div class="lane tall">' + stageLane(V.stages, now) + (V.stages.length ? '' : '<div class="stg-lab" style="left:50%;top:44px">No KvK stage dates in this range</div>') + '</div>';
-    h += '<div class="lane short">' + evBars(V.mge, '', now) + '</div>';
-    h += '<div class="lane short">' + evBars(V.gh, '', now) + '</div>';
-    if (V.other.length) h += '<div class="lane short">' + evBars(V.other, '', now) + '</div>';
-
-    h += '<div class="chiprow">';
-    MIGS.forEach(function (g) { h += '<div class="chip" style="left:' + X(g.d) + ';background:' + g.c + '">' + esc(g.l) + '</div>'; });
-    h += '</div>';
-    MIGS.forEach(function (g) { h += '<div class="mig" style="left:' + X(g.d) + ';background-image:linear-gradient(' + g.c + ' 60%,transparent 60%)"></div>'; });
-    if (now >= R0 && now <= R1) h += '<div class="today" style="left:' + X(now) + '"></div><div class="today-tag" style="left:' + X(now) + '">TODAY</div>';
-    document.getElementById('track').innerHTML = h;
-    var sc = document.querySelector('.tl-scroll');
-    if (sc.scrollWidth > sc.clientWidth) sc.scrollLeft = Math.max(0, (now - R0) / (R1 - R0) * sc.scrollWidth - sc.clientWidth * 0.3);
+  /* ---------- Kingdoms overview ---------- */
+  function renderKingdoms() {
+    var now = Date.now(), pts = [now - 10 * DAY, now + 60 * DAY];
+    K.forEach(function (k) { [k.start, k.end, k.opt, k.must].forEach(function (x) { if (x) pts.push(x); }); k.segs.forEach(function (s) { if (s.a) pts.push(s.a); }); });
+    var a = monthStart(Math.min.apply(null, pts)), b = Math.max.apply(null, pts) + 21 * DAY;
+    var f = frame(a, b, function (span) { return Math.max(900, span * 5); }), ax = axis(f, now), labs = '<div style="height:56px"></div>', lanes = '';
+    var ph = ''; V.ALLPOPS.filter(function (x) { return x >= a && x < b; }).forEach(function (x) { var est = !!V.estSet[x]; ph += '<div class="mk" style="left:' + f.X(x) + ';top:22px;color:' + KC.pop + ';transform:none"><div class="diamond' + (est ? ' est' : '') + '" style="background:' + KC.pop + '"></div></div><div class="mk-lab" style="top:38px;left:' + f.X(x) + '"><b>' + fd(x) + (est ? '?' : '') + '</b></div>'; });
+    labs += '<div class="lab" style="height:70px"><b style="color:' + KC.pop + '">KvK pop-ups</b><span>Every 28 days</span></div>'; lanes += '<div class="ln" style="height:70px">' + ph + '</div>';
+    K.forEach(function (k) {
+      var kh = '';
+      k.segs.forEach(function (s) { if (s.b <= a || s.a >= b) return; kh += '<div class="seg ' + s.t + (s.open || s.a < a ? ' open' : '') + '" title="' + esc(s.l + ' · ' + fd(s.a) + ' – ' + fd(s.b)) + '" style="top:14px;left:' + f.X(s.a) + ';width:calc(' + f.X(s.b) + ' - ' + f.X(s.a) + ');' + segStyle(k, s) + '"><span>' + s.l + '</span></div>'; });
+      k.marks.forEach(function (mk) { var inner, l; if (mk.t === 'reg') { inner = '<div class="dotm" style="background:' + k.c + '"></div>'; l = '<b>KvK starts</b>' + fd(mk.d); } else if (mk.t === 'opt') { inner = '<div class="ring" style="border-color:' + k.c + '"></div>'; l = '<b>Can skip</b>' + fd(mk.d); } else { inner = '<div class="must" style="background:' + k.c + '">MUST</div>'; l = '<b>Must register</b>' + fd(mk.d) + (mk.est ? ' (est.)' : ''); }
+        kh += '<div class="mk" style="left:' + f.X(mk.d) + ';color:' + k.c + '">' + inner + '</div><div class="mk-lab" style="left:' + f.X(mk.d) + ';color:' + k.c + '">' + l + '</div>'; });
+      if (!k.end) kh += '<div class="mk-lab" style="left:50%;top:26px;color:var(--muted)">No KvK dates yet</div>';
+      labs += '<div class="lab" style="height:86px"><b style="color:' + k.c + '">' + esc(k.name) + '</b><span>' + (k.ours ? 'Our kingdom' : 'Other kingdom') + '</span></div>'; lanes += '<div class="ln" style="height:86px">' + kh + '</div>';
+    });
+    $('view').innerHTML = '<div class="tl2"><div class="tl2-labels">' + labs + '</div><div class="tl2-scroll"><div class="tl2-track" style="width:' + Math.round(f.W) + 'px">' + ax.top + ax.grid + lanes + ax.today + '</div></div></div>';
+    var sc = document.querySelector('.tl2-scroll'); if (sc.scrollWidth > sc.clientWidth) sc.scrollLeft = Math.max(0, f.px(a, now) - sc.clientWidth * 0.25);
   }
 
   function renderRule() {
-    document.getElementById('ruleRows').innerHTML = K.map(function (k) {
+    $('ruleRows').innerHTML = K.map(function (k) {
       return '<tr><td><span class="kname"><span class="kdot" style="background:' + k.c + '"></span>' + esc(k.name) + '</span></td>' +
         '<td>' + (k.end ? fd(k.end, true) : '—') + '</td><td>' + (k.opt ? fd(k.opt, true) : '—') + '</td>' +
         '<td style="color:' + k.c + ';font-weight:700">' + (k.must ? fd(k.must, true) + (k.mustEst ? ' (est.)' : '') : '—') + '</td>' +
@@ -302,55 +531,40 @@
     }).join('');
   }
 
-  function renderFilters() {
-    var F = [['all', 'All'], ['kvk', 'KvK'], ['mge', 'MGE'], ['gh', 'GH'], ['pop', 'Pop-ups'], ['mig', 'Migrations']];
-    if (V.EVENTS.some(function (e) { return e.g[0] === 'other'; })) F.push(['other', 'Other']);
-    document.getElementById('filters').innerHTML = F.map(function (f) {
-      var dot = f[0] === 'all' ? '' : '<span class="kdot" style="background:' + KC[f[0]] + '"></span>';
-      return '<button class="fbtn" type="button" data-f="' + f[0] + '" aria-pressed="' + (filter === f[0]) + '">' + dot + f[1] + '</button>';
-    }).join('');
-    Array.prototype.forEach.call(document.querySelectorAll('.fbtn'), function (b) {
-      b.addEventListener('click', function () { filter = b.getAttribute('data-f'); renderFilters(); renderCards(Date.now()); });
-    });
+  /* ---------- render & controls ---------- */
+  function render() {
+    Array.prototype.forEach.call(document.querySelectorAll('.vtab'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-v') === st.v)); });
+    Array.prototype.forEach.call(document.querySelectorAll('.zbtn'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-z') === st.z)); });
+    $('zoom').classList.toggle('hidden', st.v !== 'timeline');
+    $('filters').classList.toggle('hidden', st.v === 'kingdoms');
+    $('calNav').classList.toggle('hidden', st.v === 'agenda' || st.v === 'kingdoms' || (st.v === 'timeline' && st.z === 'all'));
+    if (!$('calNav').classList.contains('hidden')) $('period').textContent = period().label;
+    renderFilters(); renderLegend();
+    if (st.v === 'timeline') renderTimeline(); else if (st.v === 'month') renderMonth(); else if (st.v === 'agenda') renderAgenda(); else renderKingdoms();
   }
-  function matches(e) { var g = e.g[0]; return filter === 'all' || g === filter || (filter === 'kvk' && g === 'stage'); }
+  document.querySelector('.vtabs').addEventListener('click', function (e) { var b = e.target.closest('[data-v]'); if (!b) return; st.v = b.getAttribute('data-v'); if (st.v === 'month') st.anchor = monthStart(st.anchor || Date.now()); remember(); render(); });
+  $('zoom').addEventListener('click', function (e) { var b = e.target.closest('[data-z]'); if (!b) return; st.z = b.getAttribute('data-z'); resetAnchor(); remember(); render(); });
+  $('calNav').addEventListener('click', function (e) { var b = e.target.closest('[data-nav]'); if (!b) return; shift(Number(b.getAttribute('data-nav'))); st.sel = 0; render(); });
+  $('filters').addEventListener('click', function (e) { var b = e.target.closest('[data-f]'); if (!b) return; st.filter = b.getAttribute('data-f'); remember(); render(); });
+  $('view').addEventListener('click', function (e) { var d = e.target.closest('[data-day]'); if (!d) return; st.sel = Number(d.getAttribute('data-day')); Array.prototype.forEach.call(document.querySelectorAll('.mg-day.sel'), function (x) { x.classList.remove('sel'); }); d.classList.add('sel'); showDay(st.sel); });
+  var rz; window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(render, 200); });
 
-  function renderCards(now) {
-    var list = V.SHOWN.filter(matches);
-    if (!list.length) { document.getElementById('cards').innerHTML = '<div class="empty" style="grid-column:1/-1"><b>No dates</b>Nothing in this range yet.</div>'; return; }
-    document.getElementById('cards').innerHTML = list.map(function (e, i) {
-      var endT = (e.b || e.d) + DAY, n = Math.floor((e.d - now) / DAY) + 1, past = endT <= now, live = !past && now >= e.d;
-      var cd = past ? 'Done' : live ? (e.b ? 'Running' : 'Today') : n === 1 ? 'Tomorrow' : 'In ' + n + ' days';
-      var col = past ? 'var(--muted)' : live ? e.c : n <= 7 ? 'var(--gold)' : 'var(--soft)';
-      return '<div class="card' + (past ? ' past' : '') + (nextEvt && e === nextEvt ? ' next' : '') + '" style="animation-delay:' + (i * 0.03) + 's">' +
-        '<div class="dots"><span class="kdot" style="background:' + e.c + '"></span></div>' +
-        '<div style="min-width:0"><div class="d">' + fw(e.d) + (e.est ? ' (est.)' : '') + '</div><div class="t">' + esc(e.t) + '</div><div class="x">' + esc(e.x) + '</div></div>' +
-        '<div class="c" style="color:' + col + '">' + cd + '</div></div>';
-    }).join('');
-  }
-
+  /* ---------- countdown ---------- */
   var last = {};
-  function setNum(id, v) {
-    if (last[id] === v) return; last[id] = v;
-    var el = document.getElementById(id); el.textContent = v;
-    el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick');
-  }
+  function setNum(id, v) { if (last[id] === v) return; last[id] = v; var el = $(id); el.textContent = v; el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick'); }
   var lastDay = null;
-  function renderAll() {
-    var now = Date.now();
-    nextEvt = V.nextEvent(now);
-    if (!nextEvt) { document.getElementById('cdTitle').textContent = V.noNextText(); document.getElementById('cdDate').textContent = ''; }
-    document.getElementById('status').innerHTML = V.statusHTML(now);
-    renderTimeline(now); renderCards(now);
-    lastDay = Math.floor(now / DAY);
+  function renderTop() {
+    var now = Date.now(); nextEvt = V.nextEvent(now);
+    if (!nextEvt) { $('cdTitle').textContent = V.noNextText(); $('cdDate').textContent = ''; }
+    $('status').innerHTML = V.statusHTML(now); lastDay = Math.floor(now / DAY);
   }
   function tick() {
     var now = Date.now();
-    if (Math.floor(now / DAY) !== lastDay) renderAll();
+    if (Math.floor(now / DAY) !== lastDay) { renderTop(); render(); }
     if (!nextEvt) return;
     var diff = Math.max(0, nextEvt.d - now), l = Site.left(diff);
-    document.getElementById('cdTitle').textContent = nextEvt.t;
-    document.getElementById('cdDate').textContent = fw(nextEvt.d) + ' · 00:00 UTC' + (diff === 0 ? ' · happening today' : '');
+    $('cdTitle').textContent = nextEvt.t;
+    $('cdDate').textContent = fw(nextEvt.d) + ' · 00:00 UTC' + (diff === 0 ? ' · happening today' : '');
     setNum('cdD', String(l.d)); setNum('cdH', Site.pad(l.h)); setNum('cdM', Site.pad(l.m)); setNum('cdS', Site.pad(l.s));
   }
 
@@ -426,9 +640,9 @@
     view: function () {
       var v = V.view;
       Site.form({
-        title: 'Calendar view',
+        title: 'Range for the “All” zoom',
         fields: [
-          { key: 'mode', label: 'What to show', type: 'select', full: true, required: true, value: v.mode, options: [{ v: 'history', l: 'Recent history + everything ahead' }, { v: 'range', l: 'A fixed range: from one date to another' }] },
+          { key: 'mode', label: 'What “All” shows', type: 'select', full: true, required: true, value: v.mode, options: [{ v: 'history', l: 'Recent history + everything ahead' }, { v: 'range', l: 'A fixed range: from one date to another' }] },
           { key: 'days', label: 'Days of history to show', type: 'number', value: String(v.days), help: 'For “recent history”. 0 = start today.' },
           { key: 'blank', label: '', type: 'text', value: '' },
           { key: 'from', label: 'From', type: 'date', value: iso(v.from), help: 'For a fixed range.' },
@@ -444,9 +658,10 @@
       });
     }
   };
+
   document.querySelector('.edit-tools').addEventListener('click', function (e) { var b = e.target.closest('[data-ed]'); if (b && Site.isAdmin()) EDITORS[b.getAttribute('data-ed')](); });
 
-  renderLegend(); renderRule(); renderFilters(); renderAll(); tick();
+  renderRule(); renderTop(); render(); tick();
   setInterval(tick, 1000);
   });
 })();
