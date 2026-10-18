@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="site.css?v=16">
 <style>
   .hero{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px}
   .hero-text{display:flex;flex-direction:column;gap:10px}
@@ -274,10 +274,10 @@
   <footer class="foot">All dates are server time (UTC 00:00). Dates marked (est.) are projected, not confirmed. Admins edit everything here in Edit mode.</footer>
 </main>
 
-<script src="config.js"></script>
-<script src="core.js"></script>
-<script src="site.js"></script>
-<script src="kvk.js"></script>
+<script src="config.js?v=16"></script>
+<script src="core.js?v=16"></script>
+<script src="site.js?v=16"></script>
+<script src="kvk.js?v=16"></script>
 <script>
 (function () {
   "use strict";
@@ -318,7 +318,7 @@
   function rowsIn(a, b, groups) { return V.ROWS.filter(function (r) { return groups.indexOf(r.g) > -1 && matches(r.g) && (r.b || r.a) + DAY > a && r.a < b; }); }
   function renderFilters() {
     var N = V.GROUP_NAMES, F = [['all', 'All'], ['kvk', 'KvK'], ['mge', N.mge], ['gh', N.gh], ['pop', N.pop], ['mig', N.mig]];
-    V.CUSTOM.concat(['other']).forEach(function (k) { if (V.ROWS.some(function (r) { return r.g === k; })) F.push([k, N[k]]); });
+    (V.CUSTOM || []).concat(['other']).forEach(function (k) { if (V.ROWS.some(function (r) { return r.g === k; })) F.push([k, N[k]]); });
     $('filters').innerHTML = F.map(function (f) {
       var dot = f[0] === 'all' ? '' : '<span class="kdot" style="background:' + KC[f[0]] + '"></span>';
       return '<button class="fbtn" type="button" data-f="' + esc(f[0]) + '" aria-pressed="' + (st.filter === f[0]) + '">' + dot + esc(f[1]) + '</button>';
@@ -339,7 +339,7 @@
       L = [['<span class="sw" style="background:' + g + '"></span>', 'KvK'], ['<span style="width:12px;height:12px;border-radius:50%;background:' + KC.stage + '"></span>', esc(N.stage)],
         ['<span class="sw" style="background:' + KC.mge + '"></span>', esc(N.mge)], ['<span class="sw" style="background:' + KC.gh + '"></span>', esc(N.gh)],
         ['<span style="width:12px;height:12px;background:' + KC.pop + ';transform:rotate(45deg)"></span>', esc(N.pop)], ['<span class="sw" style="background:' + KC.mig + '"></span>', esc(N.mig)]];
-      V.CUSTOM.concat(['other']).forEach(function (k) { if (V.ROWS.some(function (r) { return r.g === k; })) L.push(['<span class="sw" style="background:' + KC[k] + '"></span>', esc(N[k])]); });
+      (V.CUSTOM || []).concat(['other']).forEach(function (k) { if (V.ROWS.some(function (r) { return r.g === k; })) L.push(['<span class="sw" style="background:' + KC[k] + '"></span>', esc(N[k])]); });
       if (st.v !== 'agenda') L.push(['<span style="width:3px;height:16px;background:var(--gold)"></span>', 'Today']);
     }
     $('legend').innerHTML = L.map(function (i) { return '<div class="lg">' + i[0] + i[1] + '</div>'; }).join('');
@@ -419,7 +419,7 @@
         lane(esc(V.GROUP_NAMES.stage), 'LK, passes, altars', KC.stage, 34 + 30 * Math.min(3, Math.ceil(stg.length / 2)) + 30, sh);
       }
     }
-    ['mge', 'gh'].concat(V.CUSTOM, ['other']).map(function (k) { return [k, esc(V.GROUP_NAMES[k])]; }).forEach(function (g) {
+    ['mge', 'gh'].concat((V.CUSTOM || []), ['other']).map(function (k) { return [k, esc(V.GROUP_NAMES[k])]; }).forEach(function (g) {
       var list = rowsIn(p.a, p.b, [g[0]]); if (!list.length) return;
       var P = packLanes(list, f), inner = '';
       P.items.forEach(function (it) { inner += barHTML(f, it.r, now, 12 + it.row * 42, ''); });
@@ -541,8 +541,9 @@
     $('filters').classList.toggle('hidden', st.v === 'kingdoms');
     $('calNav').classList.toggle('hidden', st.v === 'agenda' || st.v === 'kingdoms' || (st.v === 'timeline' && st.z === 'all'));
     if (!$('calNav').classList.contains('hidden')) $('period').textContent = period().label;
-    renderFilters(); renderLegend();
-    if (st.v === 'timeline') renderTimeline(); else if (st.v === 'month') renderMonth(); else if (st.v === 'agenda') renderAgenda(); else renderKingdoms();
+    /* safety guard: if anything goes wrong while drawing, say so instead of getting stuck on "Loading" */
+    try { renderFilters(); renderLegend(); if (st.v === 'timeline') renderTimeline(); else if (st.v === 'month') renderMonth(); else if (st.v === 'agenda') renderAgenda(); else renderKingdoms(); }
+    catch (err) { $('view').innerHTML = '<div class="empty"><b>The calendar couldn’t be drawn</b>Please refresh the page (Ctrl + Shift + R). If it keeps happening, tell an admin.</div>'; if (window.console) console.error(err); }
   }
   document.querySelector('.vtabs').addEventListener('click', function (e) { var b = e.target.closest('[data-v]'); if (!b) return; st.v = b.getAttribute('data-v'); if (st.v === 'month') st.anchor = monthStart(st.anchor || Date.now()); remember(); render(); });
   $('zoom').addEventListener('click', function (e) { var b = e.target.closest('[data-z]'); if (!b) return; st.z = b.getAttribute('data-z'); resetAnchor(); remember(); render(); });
@@ -572,7 +573,7 @@
 
   /* ---------- Edit mode: calendar editors (admins only) ---------- */
   var iso = Site.isoDate;
-  function groupOpts() { return V.GROUPS.map(function (g) { return { v: g.k, l: g.n + (g.fixed ? '' : ' (your group)') }; }); }
+  function groupOpts() { return (V.GROUPS || []).map(function (g) { return { v: g.k, l: g.n + (g.fixed ? '' : ' (your group)') }; }); }
   function typeNames() { return V.types.map(function (t) { return t.n; }); }
   function subsFor(name) { var t = V.types.filter(function (x) { return x.n === name; })[0]; return t ? t.subs : []; }
   /* Groups: rename/recolour the built-in ones, add/rename/delete your own. Saved in Site text ("groups"). */
@@ -583,12 +584,12 @@
   }
   function groupsEditor() {
     var M = Site.modal('Groups');
-    function current() { return V.GROUPS.map(function (g) { return { k: g.k, n: g.n, c: g.own && g.own.c ? g.own.c : '', fixed: g.fixed }; }); }
+    function current() { return (V.GROUPS || []).map(function (g) { return { k: g.k, n: g.n, c: g.own && g.own.c ? g.own.c : '', fixed: g.fixed }; }); }
     function used(k) { return V.types.filter(function (t) { return String(t.g) === k; }).map(function (t) { return t.n; }); }
     function list() {
       M.title('Groups');
       M.body.innerHTML = '<div class="mdl-bar"><span>Each group has its own row on the timeline, a filter button and a legend entry. Built-in groups can be renamed and recoloured.</span><button class="btn gold sm" type="button" data-add>+ New group</button></div><div class="mdl-list">' +
-        V.GROUPS.map(function (g, i) { var n = used(g.k).length; return '<div class="mdl-row"><span class="kdot" style="background:' + esc(g.c) + '"></span><div class="t"><b>' + esc(g.n) + '</b><span>' + (g.fixed ? 'Built-in · ' : 'Your group · ') + n + ' event type' + (n === 1 ? '' : 's') + '</span></div><button class="btn ghost sm" type="button" data-g="' + i + '">Edit</button></div>'; }).join('') + '</div>';
+        (V.GROUPS || []).map(function (g, i) { var n = used(g.k).length; return '<div class="mdl-row"><span class="kdot" style="background:' + esc(g.c) + '"></span><div class="t"><b>' + esc(g.n) + '</b><span>' + (g.fixed ? 'Built-in · ' : 'Your group · ') + n + ' event type' + (n === 1 ? '' : 's') + '</span></div><button class="btn ghost sm" type="button" data-g="' + i + '">Edit</button></div>'; }).join('') + '</div>';
     }
     function edit(g) {
       var isNew = !g, all = current();
@@ -625,7 +626,7 @@
     }
     M.body.addEventListener('click', function (e) {
       if (e.target.closest('[data-add]')) edit(null);
-      var b = e.target.closest('[data-g]'); if (b) edit(V.GROUPS[Number(b.getAttribute('data-g'))]);
+      var b = e.target.closest('[data-g]'); if (b) edit((V.GROUPS || [])[Number(b.getAttribute('data-g'))]);
     });
     list();
   }
