@@ -26,15 +26,20 @@
   function startOfDay(t) { return Math.floor(t / DAY) * DAY; }
 
   var OURS = String((window.CONFIG && window.CONFIG.KINGDOM) || '3914').replace(/[^0-9]/g, '') || '3914';
-  var V = window.KVK = { DAY: DAY, U: U, MON: MON, fd: fd, fw: fw, days: days, source: 'backup', GROUP_NAMES: GROUP_NAMES, OURS: OURS, admin: false, all: [], types: [], kingdomsRaw: [] };
+  var V = window.KVK = { DAY: DAY, U: U, MON: MON, fd: fd, fw: fw, days: days, source: 'backup', GROUP_NAMES: GROUP_NAMES, GROUP_NAMES_DEFAULT: GROUP_NAMES, CUSTOM: [], GROUPS: [], OURS: OURS, admin: false, all: [], types: [], kingdomsRaw: [] };
 
   /* Turn the sheet data into everything the pages draw */
   function build(cal) {
     var now = Date.now();
     var T = {}; (cal.types || []).forEach(function (t) { T[t.n] = t; });
     V.types = cal.types || [];
-    function typeOf(name) { var t = T[name]; return t ? { g: TYPE_GROUP(t.g), c: hex(t.c, FALLBACK[TYPE_GROUP(t.g)]), s: t.s || name, subs: t.subs || [] } : { g: guess(name), c: FALLBACK[guess(name)], s: name, subs: [] }; }
-    function TYPE_GROUP(g) { return FALLBACK[g] && g !== 'kvk' ? g : 'other'; }
+    /* groups: the built-in ones (names/colours can be changed) plus the admins' own groups */
+    var FIXED = ['stage', 'mge', 'gh', 'pop', 'mig', 'other'], OV = {}, CUSTOM = [];
+    (cal.groups || []).forEach(function (g) { if (FIXED.indexOf(g.k) > -1) OV[g.k] = g; else if (g.k !== 'kvk' && CUSTOM.indexOf(g.k) < 0) { CUSTOM.push(g.k); OV[g.k] = g; } });
+    var FB = {}; Object.keys(FALLBACK).forEach(function (k) { FB[k] = FALLBACK[k]; });
+    CUSTOM.forEach(function (k, i) { FB[k] = PALETTE[i % PALETTE.length]; });
+    function typeOf(name) { var t = T[name]; return t ? { g: TYPE_GROUP(t.g), c: hex(t.c, FB[TYPE_GROUP(t.g)]), s: t.s || name, subs: t.subs || [] } : { g: guess(name), c: FB[guess(name)], s: name, subs: [] }; }
+    function TYPE_GROUP(g) { return (FIXED.indexOf(g) > -1 || CUSTOM.indexOf(g) > -1) ? g : 'other'; }
 
     var rows = (cal.dates || []).filter(function (d) { return d.e && d.a; }).map(function (d) {
       var t = typeOf(d.e);
@@ -66,12 +71,16 @@
     });
     var me = K[0];
 
-    /* group colours (first event type of each group decides) */
-    var KC = { kvk: me.c };
-    ['stage', 'mge', 'gh', 'pop', 'mig', 'other'].forEach(function (g) {
-      var t = (cal.types || []).filter(function (x) { return TYPE_GROUP(x.g) === g; })[0];
-      KC[g] = t ? hex(t.c, FALLBACK[g]) : FALLBACK[g];
+    /* group colours: the group's own colour if set, otherwise the first event type in it */
+    var KC = { kvk: me.c }, NAMES = {};
+    Object.keys(GROUP_NAMES).forEach(function (k) { NAMES[k] = GROUP_NAMES[k]; });
+    FIXED.concat(CUSTOM).forEach(function (g) {
+      var t = (cal.types || []).filter(function (x) { return TYPE_GROUP(x.g) === g; })[0], o = OV[g] || {};
+      KC[g] = hex(o.c, t ? hex(t.c, FB[g]) : FB[g]);
+      if (o.n) NAMES[g] = o.n; else if (!NAMES[g]) NAMES[g] = g;
     });
+    V.GROUP_NAMES = NAMES; V.CUSTOM = CUSTOM;
+    V.GROUPS = FIXED.slice(0, 5).concat(CUSTOM, ['other']).map(function (k) { return { k: k, n: NAMES[k], c: KC[k], fixed: FIXED.indexOf(k) > -1, own: OV[k] || null }; });
 
     /* visible range */
     var view = cal.view || { mode: 'history', days: 10 };

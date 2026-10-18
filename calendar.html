@@ -222,6 +222,7 @@
     <button class="btn gold sm" type="button" data-ed="dates">Dates</button>
     <button class="btn gold sm" type="button" data-ed="kingdoms">Kingdoms</button>
     <button class="btn gold sm" type="button" data-ed="types">Event types &amp; colours</button>
+    <button class="btn gold sm" type="button" data-ed="groups">Groups</button>
     <button class="btn gold sm" type="button" data-ed="view">“All” zoom range</button>
   </div>
 
@@ -316,11 +317,11 @@
   function matches(g) { return st.filter === 'all' || g === st.filter || (st.filter === 'kvk' && g === 'stage'); }
   function rowsIn(a, b, groups) { return V.ROWS.filter(function (r) { return groups.indexOf(r.g) > -1 && matches(r.g) && (r.b || r.a) + DAY > a && r.a < b; }); }
   function renderFilters() {
-    var F = [['all', 'All'], ['kvk', 'KvK'], ['mge', 'MGE'], ['gh', 'GH'], ['pop', 'Pop-ups'], ['mig', 'Migrations']];
-    if (V.ROWS.some(function (r) { return r.g === 'other'; })) F.push(['other', 'Other']);
+    var N = V.GROUP_NAMES, F = [['all', 'All'], ['kvk', 'KvK'], ['mge', N.mge], ['gh', N.gh], ['pop', N.pop], ['mig', N.mig]];
+    V.CUSTOM.concat(['other']).forEach(function (k) { if (V.ROWS.some(function (r) { return r.g === k; })) F.push([k, N[k]]); });
     $('filters').innerHTML = F.map(function (f) {
       var dot = f[0] === 'all' ? '' : '<span class="kdot" style="background:' + KC[f[0]] + '"></span>';
-      return '<button class="fbtn" type="button" data-f="' + f[0] + '" aria-pressed="' + (st.filter === f[0]) + '">' + dot + f[1] + '</button>';
+      return '<button class="fbtn" type="button" data-f="' + esc(f[0]) + '" aria-pressed="' + (st.filter === f[0]) + '">' + dot + esc(f[1]) + '</button>';
     }).join('');
   }
   function renderLegend() {
@@ -331,13 +332,14 @@
       ['<span class="sw" style="background:repeating-linear-gradient(45deg,rgba(' + rgb + ',.25) 0 5px,rgba(' + rgb + ',.05) 5px 10px);box-shadow:inset 0 0 0 1px rgba(' + rgb + ',.35)"></span>', 'Off-season if 1st pop-up skipped'],
       ['<span style="width:15px;height:15px;border-radius:50%;border:3px dashed ' + g + '"></span>', 'Optional registration'],
       ['<span class="must" style="background:' + g + ';font-size:9px;padding:2px 5px">MUST</span>', 'Mandatory registration'],
-      ['<span style="width:12px;height:12px;background:' + KC.pop + ';transform:rotate(45deg)"></span>', 'KvK pop-up'],
+      ['<span style="width:12px;height:12px;background:' + KC.pop + ';transform:rotate(45deg)"></span>', esc(V.GROUP_NAMES.pop)],
       ['<span style="width:3px;height:16px;background:var(--gold)"></span>', 'Today']];
     else {
-      L = [['<span class="sw" style="background:' + g + '"></span>', 'KvK'], ['<span style="width:12px;height:12px;border-radius:50%;background:' + KC.stage + '"></span>', 'KvK stage'],
-        ['<span class="sw" style="background:' + KC.mge + '"></span>', 'MGE'], ['<span class="sw" style="background:' + KC.gh + '"></span>', 'GH'],
-        ['<span style="width:12px;height:12px;background:' + KC.pop + ';transform:rotate(45deg)"></span>', 'KvK pop-up'], ['<span class="sw" style="background:' + KC.mig + '"></span>', 'Migration']];
-      if (V.ROWS.some(function (r) { return r.g === 'other'; })) L.push(['<span class="sw" style="background:' + KC.other + '"></span>', 'Other']);
+      var N = V.GROUP_NAMES;
+      L = [['<span class="sw" style="background:' + g + '"></span>', 'KvK'], ['<span style="width:12px;height:12px;border-radius:50%;background:' + KC.stage + '"></span>', esc(N.stage)],
+        ['<span class="sw" style="background:' + KC.mge + '"></span>', esc(N.mge)], ['<span class="sw" style="background:' + KC.gh + '"></span>', esc(N.gh)],
+        ['<span style="width:12px;height:12px;background:' + KC.pop + ';transform:rotate(45deg)"></span>', esc(N.pop)], ['<span class="sw" style="background:' + KC.mig + '"></span>', esc(N.mig)]];
+      V.CUSTOM.concat(['other']).forEach(function (k) { if (V.ROWS.some(function (r) { return r.g === k; })) L.push(['<span class="sw" style="background:' + KC[k] + '"></span>', esc(N[k])]); });
       if (st.v !== 'agenda') L.push(['<span style="width:3px;height:16px;background:var(--gold)"></span>', 'Today']);
     }
     $('legend').innerHTML = L.map(function (i) { return '<div class="lg">' + i[0] + i[1] + '</div>'; }).join('');
@@ -401,7 +403,7 @@
     var pops = matches('pop') ? V.ALLPOPS.filter(function (x) { return x >= p.a && x < p.b; }) : [];
     if (pops.length) {
       var ph = ''; pops.forEach(function (x) { var est = !!V.estSet[x]; ph += '<div class="mk" style="left:calc(' + f.X(x) + ' + ' + (f.span <= 45 ? (f.W / f.span / 2).toFixed(1) : 0) + 'px);top:22px;color:' + KC.pop + ';transform:none"><div class="diamond' + (est ? ' est' : '') + '" style="background:' + KC.pop + '"></div></div><div class="mk-lab" style="top:38px;left:calc(' + f.X(x) + ' + ' + (f.span <= 45 ? (f.W / f.span / 2).toFixed(1) : 0) + 'px)"><b>' + fd(x) + (est ? ' (est.)' : '') + '</b></div>'; });
-      lane('KvK pop-ups', 'Registration', KC.pop, 70, ph);
+      lane(esc(V.GROUP_NAMES.pop), 'Registration', KC.pop, 70, ph);
     }
     if (matches('kvk')) {
       var k = K[0], kh = '';
@@ -414,10 +416,10 @@
         var sh = '', lastPx = [-999, -999, -999];
         stg.forEach(function (r) { var x = f.px(p.a, r.a) + (f.span <= 45 ? f.W / f.span / 2 : 0), lvl = 0; while (lvl < 2 && x - lastPx[lvl] < 64) lvl++; lastPx[lvl] = x; var top = 34 + lvl * 30, past = r.a + DAY <= now;
           sh += '<div class="stg-line" style="left:' + x.toFixed(1) + 'px;height:' + (top - 20) + 'px;background:' + r.c + '66"></div><div class="stg' + (past ? ' past' : '') + (r.est ? ' est' : '') + '" title="' + esc(r.e + ' · ' + fd(r.a, true)) + '" style="left:' + x.toFixed(1) + 'px;background:' + (r.est ? '#0F1522' : r.c) + ';box-shadow:0 0 0 2px ' + r.c + '"></div><div class="stg-lab" style="left:' + x.toFixed(1) + 'px;top:' + top + 'px' + (past ? ';opacity:.5' : '') + '"><b style="color:' + r.c + '">' + esc(r.s) + '</b>' + fd(r.a) + '</div>'; });
-        lane('KvK stages', 'LK, passes, altars', KC.stage, 34 + 30 * Math.min(3, Math.ceil(stg.length / 2)) + 30, sh);
+        lane(esc(V.GROUP_NAMES.stage), 'LK, passes, altars', KC.stage, 34 + 30 * Math.min(3, Math.ceil(stg.length / 2)) + 30, sh);
       }
     }
-    [['mge', 'MGE'], ['gh', 'GH'], ['other', 'Other']].forEach(function (g) {
+    ['mge', 'gh'].concat(V.CUSTOM, ['other']).map(function (k) { return [k, esc(V.GROUP_NAMES[k])]; }).forEach(function (g) {
       var list = rowsIn(p.a, p.b, [g[0]]); if (!list.length) return;
       var P = packLanes(list, f), inner = '';
       P.items.forEach(function (it) { inner += barHTML(f, it.r, now, 12 + it.row * 42, ''); });
@@ -426,7 +428,7 @@
     var migs = rowsIn(p.a, p.b, ['mig']), migLines = '';
     if (migs.length) {
       var mh = ''; migs.forEach(function (r) { mh += '<div class="chip" style="top:12px;left:' + f.X(r.a) + ';background:' + r.c + '">' + esc((r.x || 'Migration') + ' · ' + fd(r.a)) + '</div>'; migLines += '<div class="mig2" style="left:' + f.X(r.a) + ';border-color:' + r.c + '"></div>'; });
-      lane('Migration', '', KC.mig, 52, mh);
+      lane(esc(V.GROUP_NAMES.mig), '', KC.mig, 52, mh);
     }
     if (!lanes) { $('view').innerHTML = '<div class="empty-lanes"><b>Nothing in this period</b><br>Use ‹ › to move, or pick a wider zoom.</div>'; return; }
     $('view').innerHTML = '<div class="tl2"><div class="tl2-labels">' + labs + '</div><div class="tl2-scroll"><div class="tl2-track" style="width:' + Math.round(f.W) + 'px">' + ax.top + ax.grid + migLines + lanes + ax.today + '</div></div></div>';
@@ -509,7 +511,7 @@
     var a = monthStart(Math.min.apply(null, pts)), b = Math.max.apply(null, pts) + 21 * DAY;
     var f = frame(a, b, function (span) { return Math.max(900, span * 5); }), ax = axis(f, now), labs = '<div style="height:56px"></div>', lanes = '';
     var ph = ''; V.ALLPOPS.filter(function (x) { return x >= a && x < b; }).forEach(function (x) { var est = !!V.estSet[x]; ph += '<div class="mk" style="left:' + f.X(x) + ';top:22px;color:' + KC.pop + ';transform:none"><div class="diamond' + (est ? ' est' : '') + '" style="background:' + KC.pop + '"></div></div><div class="mk-lab" style="top:38px;left:' + f.X(x) + '"><b>' + fd(x) + (est ? '?' : '') + '</b></div>'; });
-    labs += '<div class="lab" style="height:70px"><b style="color:' + KC.pop + '">KvK pop-ups</b><span>Every 28 days</span></div>'; lanes += '<div class="ln" style="height:70px">' + ph + '</div>';
+    labs += '<div class="lab" style="height:70px"><b style="color:' + KC.pop + '">' + esc(V.GROUP_NAMES.pop) + '</b><span>Every 28 days</span></div>'; lanes += '<div class="ln" style="height:70px">' + ph + '</div>';
     K.forEach(function (k) {
       var kh = '';
       k.segs.forEach(function (s) { if (s.b <= a || s.a >= b) return; kh += '<div class="seg ' + s.t + (s.open || s.a < a ? ' open' : '') + '" title="' + esc(s.l + ' · ' + fd(s.a) + ' – ' + fd(s.b)) + '" style="top:14px;left:' + f.X(s.a) + ';width:calc(' + f.X(s.b) + ' - ' + f.X(s.a) + ');' + segStyle(k, s) + '"><span>' + s.l + '</span></div>'; });
@@ -569,9 +571,64 @@
   }
 
   /* ---------- Edit mode: calendar editors (admins only) ---------- */
-  var iso = Site.isoDate, GROUPS = [{ v: 'stage', l: 'KvK stage' }, { v: 'mge', l: 'MGE' }, { v: 'gh', l: 'GH' }, { v: 'pop', l: 'KvK pop-up' }, { v: 'mig', l: 'Migration' }, { v: 'other', l: 'Other' }];
+  var iso = Site.isoDate;
+  function groupOpts() { return V.GROUPS.map(function (g) { return { v: g.k, l: g.n + (g.fixed ? '' : ' (your group)') }; }); }
   function typeNames() { return V.types.map(function (t) { return t.n; }); }
   function subsFor(name) { var t = V.types.filter(function (x) { return x.n === name; })[0]; return t ? t.subs : []; }
+  /* Groups: rename/recolour the built-in ones, add/rename/delete your own. Saved in Site text ("groups"). */
+  var BUILTIN_HELP = { stage: 'Dots on the KvK stages row (LK, passes, altars).', mge: 'MGE row.', gh: 'GH row.', pop: 'Diamonds on the pop-up row; also used to work out off-season dates.', mig: 'Migration row and dashed line.', other: 'Anything not in another group.' };
+  function saveGroups(list) {
+    var out = list.filter(function (g) { return !g.fixed || g.n !== KVK.GROUP_NAMES_DEFAULT[g.k] || g.c; }).map(function (g) { var o = { k: g.k, n: g.n }; if (g.c) o.c = g.c; return o; });
+    return Site.saveText({ groups: JSON.stringify(out) });
+  }
+  function groupsEditor() {
+    var M = Site.modal('Groups');
+    function current() { return V.GROUPS.map(function (g) { return { k: g.k, n: g.n, c: g.own && g.own.c ? g.own.c : '', fixed: g.fixed }; }); }
+    function used(k) { return V.types.filter(function (t) { return String(t.g) === k; }).map(function (t) { return t.n; }); }
+    function list() {
+      M.title('Groups');
+      M.body.innerHTML = '<div class="mdl-bar"><span>Each group has its own row on the timeline, a filter button and a legend entry. Built-in groups can be renamed and recoloured.</span><button class="btn gold sm" type="button" data-add>+ New group</button></div><div class="mdl-list">' +
+        V.GROUPS.map(function (g, i) { var n = used(g.k).length; return '<div class="mdl-row"><span class="kdot" style="background:' + esc(g.c) + '"></span><div class="t"><b>' + esc(g.n) + '</b><span>' + (g.fixed ? 'Built-in · ' : 'Your group · ') + n + ' event type' + (n === 1 ? '' : 's') + '</span></div><button class="btn ghost sm" type="button" data-g="' + i + '">Edit</button></div>'; }).join('') + '</div>';
+    }
+    function edit(g) {
+      var isNew = !g, all = current();
+      Site.form({
+        title: isNew ? 'New group' : 'Edit group · ' + g.n,
+        fields: [
+          { key: 'n', label: 'Name', value: g ? g.n : '', required: true, full: true, max: 40, placeholder: 'e.g. Puzzle Box', help: g && g.fixed ? BUILTIN_HELP[g.k] : 'Shown on the filter button, legend and timeline row.' },
+          { key: 'c', label: 'Colour', type: 'color', full: true, value: (g && (g.own && g.own.c || g.c)) || '#2FD4E8', help: 'Event types in this group keep their own colour on the calendar; this colour is for the filter button, legend and row title.' }
+        ],
+        saveLabel: isNew ? 'Add group' : 'Save',
+        onBack: list,
+        check: function (v) {
+          var nm = v.n.trim().toLowerCase();
+          if (all.some(function (x) { return (!g || x.k !== g.k) && x.n.trim().toLowerCase() === nm; })) return 'There is already a group called “' + v.n.trim() + '”.';
+          if (v.c && !/^#[0-9a-f]{6}$/i.test(v.c)) return 'Use a colour like #2FD4E8.';
+          return '';
+        },
+        onSave: function (v) {
+          var nm = v.n.trim();
+          if (isNew) {
+            var base = 'g_' + (nm.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 24) || 'group'), k = base, i = 2;
+            while (all.some(function (x) { return x.k === k; })) k = base + '_' + i++;
+            all.splice(all.length - 1, 0, { k: k, n: nm, c: v.c.toUpperCase(), fixed: false });
+          } else all.forEach(function (x) { if (x.k === g.k) { x.n = nm; x.c = v.c.toUpperCase(); } });
+          return saveGroups(all);
+        },
+        onDelete: g && !g.fixed ? function () {
+          var u = used(g.k);
+          if (u.length) return Promise.resolve({ ok: false, error: 'Move these event types to another group first: ' + u.join(', ') + '.' });
+          return saveGroups(all.filter(function (x) { return x.k !== g.k; }));
+        } : null,
+        after: function () { Site.refresh(); }
+      }, M);
+    }
+    M.body.addEventListener('click', function (e) {
+      if (e.target.closest('[data-add]')) edit(null);
+      var b = e.target.closest('[data-g]'); if (b) edit(V.GROUPS[Number(b.getAttribute('data-g'))]);
+    });
+    list();
+  }
   var EDITORS = {
     dates: function () {
       Site.manager({
@@ -622,14 +679,14 @@
       Site.manager({
         title: 'Event types & colours', tab: 'Event types', addLabel: 'Add event type', addTitle: 'Add an event type',
         intro: 'These are the titles in the dropdown, their colour, short timeline label and subtitle choices.',
-        label: function (v) { return { t: v.Name, sub: (GROUPS.filter(function (g) { return g.v === v.Group; })[0] || { l: v.Group }).l + (v.Short ? ' · “' + v.Short + '”' : '') + (v.Subtitles ? ' · ' + String(v.Subtitles).split('|').length + ' subtitles' : ''), color: v.Color }; },
+        label: function (v) { return { t: v.Name, sub: (V.GROUP_NAMES[v.Group] || 'Other') + (v.Short ? ' · “' + v.Short + '”' : '') + (v.Subtitles ? ' · ' + String(v.Subtitles).split('|').length + ' subtitles' : ''), color: v.Color }; },
         editTitle: function (v) { return 'Edit ' + v.Name; },
         defaults: function () { return { Group: 'stage', Color: '#3DD68C' }; },
         fields: function (v) {
           return [
             { key: 'Name', label: 'Title', required: true, value: v.Name || '', max: 40 },
             { key: 'Short', label: 'Short label on the timeline', value: v.Short || '', max: 12, placeholder: 'e.g. P4' },
-            { key: 'Group', label: 'Shows on the timeline as', type: 'select', required: true, full: true, value: v.Group || 'stage', options: GROUPS },
+            { key: 'Group', label: 'Group (row, filter button and legend it shows under)', type: 'select', required: true, full: true, value: V.GROUP_NAMES[v.Group] ? v.Group : (v.Group ? 'other' : 'stage'), options: groupOpts(), help: 'Need a new group? Close this and use “Groups”.' },
             { key: 'Color', label: 'Colour', type: 'color', full: true, value: v.Color || '#3DD68C' },
             { key: 'Subtitles', label: 'Subtitle choices (one per line)', type: 'textarea', full: true, rows: 4, value: String(v.Subtitles || '').split('|').filter(Boolean).join('\n'), placeholder: 'Infantry\nCavalry\nArcher' }
           ];
@@ -637,6 +694,7 @@
         toSheet: function (v) { v.Subtitles = String(v.Subtitles || '').split(/\n/).map(function (x) { return x.replace(/[|]/g, '/').trim(); }).filter(Boolean).join('|'); return v; }
       });
     },
+    groups: function () { groupsEditor(); },
     view: function () {
       var v = V.view;
       Site.form({

@@ -182,7 +182,11 @@ var Core = (function () {
     var tx = texts(t);
     var view = { mode: tx.cal_view === 'range' ? 'range' : 'history', days: Math.max(0, Math.min(365, num(tx.cal_history_days) || (tx.cal_history_days === '0' ? 0 : 10))),
       from: toTime(tx.cal_from), to: toTime(tx.cal_to) };
-    return { dates: ds, kingdoms: ks, types: ty, view: view };
+    /* groups: built-in names/colours can be renamed, and admins can add their own (Site text key "groups") */
+    var gs = []; try { gs = JSON.parse(tx.groups || '[]'); } catch (e) { gs = []; }
+    gs = (Array.isArray(gs) ? gs : []).filter(function (g) { return g && /^[a-z0-9_]{1,32}$/.test(str(g.k)); })
+      .map(function (g) { return { k: str(g.k), n: str(g.n).slice(0, 40), c: /^#[0-9a-fA-F]{6}$/.test(str(g.c)) ? str(g.c) : '' }; });
+    return { dates: ds, kingdoms: ks, types: ty, view: view, groups: gs };
   }
 
   /* Credit totals for every player (used to fill the Credits tab) */
