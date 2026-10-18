@@ -41,13 +41,16 @@
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     events: '<path d="m14 13-7.5 7.5a2.1 2.1 0 0 1-3-3L11 10"/><path d="m16 16 6-6M8 8l6-6M9 7l8 8M21 11l-8-8"/>',
     migrate: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>',
-    discord: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/>'
+    discord: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/>',
+    admin: '<path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>'
   };
   function nav() {
     var page = document.body.getAttribute('data-page');
     var links = [['index.html', 'home', 'Home'], ['calendar.html', 'calendar', 'Calendar'], ['events.html', 'events', 'MGE & GH'], ['migration.html', 'migrate', 'Migrate'], ['#discord', 'discord', 'Discord']];
     var el = document.getElementById('site-nav'); if (!el) return;
-    var who = session.get(), LOCK = '<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="members only"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+    var who = session.get();
+    if (who && who.admin) links.splice(4, 0, ['admin.html', 'admin', 'Admin']);
+    var LOCK = '<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="members only"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
     el.innerHTML =
       '<header class="topbar"><div class="wrap">' +
         '<a class="brand" href="index.html"><span class="crest" aria-hidden="true"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h18l-2-10-5 4-2-6-2 6-5-4z"/><path d="M5 21h14"/></svg></span>' +
@@ -76,14 +79,16 @@
   }
 
   /* ---------- backend connection ---------- */
-  var MEMBERS = { home: 1, calendar: 1, events: 1 };
+  var MEMBERS = { home: 1, calendar: 1, events: 1, admin: 1 };
   function membersPage() { return !!MEMBERS[document.body.getAttribute('data-page')]; }
   function api(payload) {
     payload = payload || {};
     if (!payload.gov && (membersPage() || /^(admin|textSave)/.test(payload.action || '')) && !/^(apply|login)|^text$/.test(payload.action || '')) {
       var se = session.get(); if (se) { payload.gov = se.gov; payload.pin = se.pin; }
     }
-    var req = !C.API_URL ? demoCall(payload) : fetch(C.API_URL, {
+    /* migration applications can go to a different server (Google keeps the screenshots in Drive) */
+    var url = /^apply/.test(payload.action || '') && C.APPLY_URL ? C.APPLY_URL : C.API_URL;
+    var req = !C.API_URL ? demoCall(payload) : fetch(url, {
       method: 'POST', redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload || {})
@@ -108,7 +113,7 @@
   }
 
   /* ---------- members-only lock screen ---------- */
-  var PAGE_NAME = { home: 'the kingdom home page', calendar: 'the KvK calendar', events: 'MGE & GH bidding' };
+  var PAGE_NAME = { home: 'the kingdom home page', calendar: 'the KvK calendar', events: 'MGE & GH bidding', admin: 'the admin page' };
   function lock(msg) {
     var main = document.querySelector('main'), chip = document.querySelector('.who-chip');
     if (chip) chip.parentNode.removeChild(chip);
@@ -284,7 +289,7 @@
 
   var SWATCHES = ['#3DD68C', '#E8B84A', '#F5C542', '#D86CF2', '#FF8A4C', '#F0555A', '#4C8DFF', '#2FD4E8', '#C2C8D2', '#9B7BFF'];
   /* Form. fields: {key,label,type,value,options(array|fn(values)),required,help,full,placeholder}
-     types: text, textarea, select, date, datetime, number, color, checkbox */
+     types: text, textarea, select, date, datetime, time24 (24-hour time, two dropdowns), number, color, checkbox */
   function form(opts, host) {
     var M = host || modal(opts.title);
     if (host) M.title(opts.title);
@@ -295,6 +300,12 @@
       var id = 'f_' + f.key.replace(/[^a-z0-9]/gi, '_'), v = vals[f.key], lab = '<label for="' + id + '">' + esc(f.label) + (f.required ? '' : ' <span class="opt">(optional)</span>') + '</label>', inner;
       if (f.type === 'textarea') inner = '<textarea id="' + id + '" rows="' + (f.rows || 4) + '" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>';
       else if (f.type === 'select') inner = '<select id="' + id + '">' + optList(f).map(function (o) { return '<option value="' + esc(o.v) + '"' + (String(o.v) === String(v) ? ' selected' : '') + '>' + esc(o.l) + '</option>'; }).join('') + '</select>';
+      else if (f.type === 'time24') {
+        var hm = String(v || '00:00').split(':'), hh = ('0' + (parseInt(hm[0], 10) || 0)).slice(-2), mm = ('0' + (parseInt(hm[1], 10) || 0)).slice(-2), mins = ['00', '15', '30', '45'];
+        if (mins.indexOf(mm) < 0) mins.push(mm);
+        inner = '<div class="t24" id="' + id + '"><select data-t24="h" aria-label="' + esc(f.label) + ' hour">' + Array.apply(null, Array(24)).map(function (_, i) { var x = ('0' + i).slice(-2); return '<option' + (x === hh ? ' selected' : '') + '>' + x + '</option>'; }).join('') +
+          '</select><b>:</b><select data-t24="m" aria-label="' + esc(f.label) + ' minutes">' + mins.sort().map(function (x) { return '<option' + (x === mm ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select><span class="t24-z">UTC · 24-hour</span></div>';
+      }
       else if (f.type === 'checkbox') return '<label class="chk' + (f.full !== false ? ' full' : '') + '"><input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '> ' + esc(f.label) + '</label>';
       else if (f.type === 'color') inner = '<div class="colorrow"><input type="color" id="' + id + '" value="' + esc(/^#[0-9a-f]{6}$/i.test(v) ? v : '#3DD68C') + '"><input type="text" class="hex" data-hex-for="' + id + '" value="' + esc(v) + '" placeholder="#3DD68C" maxlength="7"></div>' +
         '<div class="swatches">' + SWATCHES.map(function (c) { return '<button type="button" class="sw-btn" data-sw="' + c + '" data-sw-for="' + id + '" style="background:' + c + '" aria-label="' + c + '"></button>'; }).join('') + '</div>';
@@ -309,7 +320,7 @@
     function read() {
       opts.fields.forEach(function (f) {
         var el = document.getElementById('f_' + f.key.replace(/[^a-z0-9]/gi, '_')); if (!el) return;
-        vals[f.key] = f.type === 'checkbox' ? el.checked : f.type === 'color' ? (F.querySelector('[data-hex-for="' + el.id + '"]').value.trim() || '') : el.value;
+        vals[f.key] = f.type === 'checkbox' ? el.checked : f.type === 'time24' ? el.querySelector('[data-t24=h]').value + ':' + el.querySelector('[data-t24=m]').value : f.type === 'color' ? (F.querySelector('[data-hex-for="' + el.id + '"]').value.trim() || '') : el.value;
       });
     }
     F.addEventListener('input', function (e) {
@@ -362,7 +373,7 @@
       M.body.querySelector('[data-add]').onclick = function () { edit(null); };
       api({ action: 'adminLoad', tab: o.tab }).then(function (res) {
         if (!res || !res.ok) throw new Error((res && res.error) || 'Could not load.');
-        var rows = res.rows.slice(); if (o.sort) rows.sort(o.sort);
+        var rows = res.rows.slice(); if (o.filter) rows = rows.filter(function (r) { return o.filter(r.v); }); if (o.sort) rows.sort(o.sort);
         M.rows = rows;
         M.body.querySelector('.mdl-list').innerHTML = rows.length ? rows.map(function (r, i) {
           var L = o.label(r.v);

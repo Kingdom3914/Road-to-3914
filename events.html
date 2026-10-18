@@ -138,7 +138,8 @@
 
   <div class="edit-tools" style="display:none" role="toolbar" aria-label="Edit auctions">
     <b>Edit:</b>
-    <button class="btn gold sm" type="button" data-ed="auctions">MGE &amp; GH auctions</button>
+    <button class="btn gold sm" type="button" data-ed="auctionsMGE">MGE auctions</button>
+    <button class="btn gold sm" type="button" data-ed="auctionsGH">GH auctions</button>
     <button class="btn gold sm" type="button" data-ed="rules">Bidding rules</button>
   </div>
 
@@ -559,34 +560,43 @@
     var n = 0; events().forEach(function (e) { var m = String(e.id).match(/([0-9]+)$/); if (e.type === type && m) n = Math.max(n, Number(m[1])); });
     return type + '-' + String(n + 1).padStart(2, '0');
   }
+  function hhmm(t) { return t ? new Date(t).toISOString().slice(11, 16) : '00:00'; }
+  /* One list per auction type: MGE auctions and GH auctions are added and edited separately */
+  function auctions(type) {
+    S.manager({
+      title: type + ' auctions', tab: 'Events', addLabel: 'New ' + type + ' auction', addTitle: 'New ' + type + ' auction',
+      intro: 'Times are server time (UTC, 24-hour). Draft = hidden from players. Auctions with bids can be closed but not deleted.',
+      filter: function (v) { return String(v.Type || '').toUpperCase() === type; },
+      sort: function (p, q) { return (q.v.Opens || 0) - (p.v.Opens || 0); },
+      label: function (v) { return { t: v.EventID + ' · ' + (v.Title || v.Type), sub: v.Status + ' · ' + (v.Opens ? S.dateTime(v.Opens) : '?') + ' → ' + (v.Closes ? S.dateTime(v.Closes) : '?'), color: v.Status === 'open' ? 'var(--green)' : v.Status === 'draft' ? 'var(--blue)' : '#5B6476' }; },
+      editTitle: function (v) { return 'Edit ' + v.EventID; },
+      defaults: function () { var h = Math.ceil(Date.now() / 3600000) * 3600000; return { EventID: nextId(type), Type: type, Opens: h, Closes: h + 3 * 86400000, Ranks: type === 'GH' ? 10 : 15, Increment: 50, Status: 'draft' }; },
+      fields: function (v) {
+        return [
+          { key: 'EventID', label: 'Code', required: true, value: v.EventID || '', placeholder: type + '-03', help: 'Short and unique.' },
+          { key: 'Status', label: 'Status', type: 'select', required: true, value: v.Status || 'draft', options: [{ v: 'draft', l: 'Draft (hidden)' }, { v: 'open', l: 'Open (live on the website)' }, { v: 'closed', l: 'Closed (ended early)' }] },
+          { key: 'Title', label: 'Title', full: true, value: v.Title || '', placeholder: type === 'MGE' ? 'MGE · Infantry week' : 'GH bidding' },
+          { key: 'Subject', label: type === 'MGE' ? 'Commander' : 'Prize', full: true, value: v.Subject || '' },
+          { key: 'OpensDate', label: 'Bidding opens — date', type: 'date', required: true, value: S.isoDate(v.Opens) },
+          { key: 'OpensTime', label: 'Bidding opens — time (UTC)', type: 'time24', required: true, value: hhmm(v.Opens) },
+          { key: 'ClosesDate', label: 'Bidding closes — date', type: 'date', required: true, value: S.isoDate(v.Closes) },
+          { key: 'ClosesTime', label: 'Bidding closes — time (UTC)', type: 'time24', required: true, value: hhmm(v.Closes) },
+          { key: 'Ranks', label: 'Number of ranks', type: 'number', required: true, value: String(v.Ranks || 15) },
+          { key: 'Increment', label: 'Minimum step between bids', type: 'number', required: true, value: String(v.Increment || 50) },
+          { key: 'Rewards', label: 'Reward per rank (one per line, rank 1 first)', type: 'textarea', full: true, rows: 5, value: lines(v.Rewards) },
+          { key: 'Minimums', label: 'Minimum first bid per rank (one per line)', type: 'textarea', full: true, rows: 3, value: lines(v.Minimums), help: 'If there are fewer lines than ranks, the last one is used for the rest.' }
+        ];
+      },
+      check: function (v) { return (v.ClosesDate + 'T' + v.ClosesTime) <= (v.OpensDate + 'T' + v.OpensTime) ? 'Closing time must be after the opening time.' : ''; },
+      toSheet: function (v) {
+        return { EventID: v.EventID, Type: type, Title: v.Title, Subject: v.Subject, Opens: v.OpensDate + 'T' + v.OpensTime, Closes: v.ClosesDate + 'T' + v.ClosesTime,
+          Ranks: v.Ranks, Increment: v.Increment, Rewards: joinLines(v.Rewards), Minimums: joinLines(v.Minimums), Status: v.Status };
+      }
+    });
+  }
   var EDITORS = {
-    auctions: function () {
-      S.manager({
-        title: 'MGE & GH auctions', tab: 'Events', addLabel: 'New auction', addTitle: 'New auction',
-        intro: 'Times are server time (UTC). Draft = hidden from players. Auctions with bids can be closed but not deleted.',
-        sort: function (p, q) { return (q.v.Opens || 0) - (p.v.Opens || 0); },
-        label: function (v) { return { t: v.EventID + ' · ' + (v.Title || v.Type), sub: v.Status + ' · ' + (v.Opens ? S.dateTime(v.Opens) : '?') + ' → ' + (v.Closes ? S.dateTime(v.Closes) : '?'), color: v.Status === 'open' ? 'var(--green)' : v.Status === 'draft' ? 'var(--blue)' : '#5B6476' }; },
-        editTitle: function (v) { return 'Edit ' + v.EventID; },
-        defaults: function () { var h = Math.ceil(Date.now() / 3600000) * 3600000; return { EventID: nextId(st.type), Type: st.type, Opens: h, Closes: h + 3 * 86400000, Ranks: 15, Increment: 50, Status: 'draft' }; },
-        fields: function (v) {
-          return [
-            { key: 'Type', label: 'Type', type: 'select', required: true, value: v.Type || 'MGE', options: ['MGE', 'GH'] },
-            { key: 'EventID', label: 'Code', required: true, value: v.EventID || '', placeholder: 'MGE-03', help: 'Short and unique.' },
-            { key: 'Title', label: 'Title', full: true, value: v.Title || '', placeholder: 'MGE · Infantry week' },
-            { key: 'Subject', label: 'Commander / prize', full: true, value: v.Subject || '' },
-            { key: 'Opens', label: 'Bidding opens (UTC)', type: 'datetime', required: true, value: S.isoDT(v.Opens) },
-            { key: 'Closes', label: 'Bidding closes (UTC)', type: 'datetime', required: true, value: S.isoDT(v.Closes) },
-            { key: 'Ranks', label: 'Number of ranks', type: 'number', required: true, value: String(v.Ranks || 15) },
-            { key: 'Increment', label: 'Minimum step between bids', type: 'number', required: true, value: String(v.Increment || 50) },
-            { key: 'Rewards', label: 'Reward per rank (one per line, rank 1 first)', type: 'textarea', full: true, rows: 5, value: lines(v.Rewards) },
-            { key: 'Minimums', label: 'Minimum first bid per rank (one per line)', type: 'textarea', full: true, rows: 3, value: lines(v.Minimums), help: 'If there are fewer lines than ranks, the last one is used for the rest.' },
-            { key: 'Status', label: 'Status', type: 'select', required: true, full: true, value: v.Status || 'draft', options: [{ v: 'draft', l: 'Draft (hidden)' }, { v: 'open', l: 'Open (live on the website)' }, { v: 'closed', l: 'Closed (ended early)' }] }
-          ];
-        },
-        check: function (v) { return v.Closes <= v.Opens ? 'Closing time must be after the opening time.' : ''; },
-        toSheet: function (v) { v.Rewards = joinLines(v.Rewards); v.Minimums = joinLines(v.Minimums); return v; }
-      });
-    },
+    auctionsMGE: function () { auctions('MGE'); },
+    auctionsGH: function () { auctions('GH'); },
     rules: function () {
       var t = {}; try { t = JSON.parse(S.store.get('k3914-text') || '{}'); } catch (e) {}
       var keys = Object.keys(t).filter(function (k) { return /^rule_[0-9]+$/.test(k); });

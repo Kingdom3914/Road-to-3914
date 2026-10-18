@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kingdom 3914 · Admin</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px}
+  .head p{color:var(--soft);font-size:16px;margin-top:8px;max-width:640px}
+  .tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:none;min-height:44px;padding:0 16px;border:none;border-radius:10px;background:transparent;color:var(--soft);font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+  .tabs button[aria-selected="true"]{background:var(--gold);color:#18130A}
+  .tabs .cnt{font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(154,166,186,.16);color:var(--soft)}
+  .tabs button[aria-selected="true"] .cnt{background:rgba(24,19,10,.18);color:#18130A}
+
+  .bar2{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  .bar2 .grow{flex:1 1 220px;min-width:0}
+  .search,.sel{width:100%;background:#0D1320;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:15px;min-height:44px;color:var(--text)}
+  .sel{width:auto;max-width:100%}
+  .search:focus,.sel:focus{border-color:var(--gold);outline:none}
+
+  .sums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+  .sum{background:#0D1320;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .sum span{display:block;font-size:12px;color:var(--muted);font-weight:600}
+  .sum b{font-family:'Barlow Condensed',sans-serif;font-size:28px;line-height:1.1}
+  @media(max-width:700px){.sums{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+  .tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  th{position:sticky;top:0;background:#0D1320;text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+  th[data-sort]:hover{color:var(--text)}
+  th .arr{opacity:.6;margin-left:4px}
+  th.r,td.r{text-align:right}
+  td{padding:10px 12px;border-bottom:1px solid var(--line2);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:rgba(255,255,255,.02)}
+  td .sub{display:block;font-size:12.5px;color:var(--muted)}
+  td.n{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.act{text-align:right;white-space:nowrap}
+  .badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:6px;text-transform:uppercase;white-space:nowrap}
+  .b-admin{background:rgba(232,184,74,.16);color:var(--gold)}
+  .b-player{background:rgba(154,166,186,.12);color:var(--soft)}
+  .b-ok{background:rgba(61,214,140,.15);color:var(--green)}
+  .b-bad{background:rgba(240,85,90,.15);color:var(--red)}
+  .b-blue{background:rgba(76,141,255,.15);color:#8DB4FF}
+  .b-mute{background:rgba(154,166,186,.1);color:var(--muted)}
+  .b-purple{background:rgba(216,108,242,.15);color:#E3A2F5}
+  tr.cancelled td{opacity:.55}
+  tr.cancelled td.act{opacity:1}
+  .neg{color:var(--red)} .pos{color:var(--green)}
+  .show-sm{display:none}
+  .nowrap{white-space:nowrap}
+  @media(max-width:760px){.hide-sm{display:none}.show-sm{display:inline}span.sub.show-sm{display:block}td.act .btn.sm{padding:6px 10px;font-size:13px}th,td{padding:9px 8px}td.n{font-size:16px}.tabs button{padding:0 12px;font-size:14px}}
+  .more{display:flex;justify-content:center;margin-top:12px}
+  .denied{max-width:520px;margin:40px auto;text-align:center}
+  .note{font-size:13px;color:var(--muted);margin-top:10px}
+</style>
+</head>
+<body data-page="admin">
+<div id="site-nav"></div>
+
+<main class="wrap page">
+  <div class="head">
+    <div>
+      <div class="eyebrow">Kingdom admin</div>
+      <h1>Admin</h1>
+      <p>Players, credits, bids and a record of every change. Only admins can see this page.</p>
+    </div>
+  </div>
+
+  <div id="denied" class="panel denied" hidden>
+    <h2>Admins only</h2>
+    <p class="note">Your account isn’t an admin. Ask a kingdom admin if you need access.</p>
+  </div>
+
+  <div id="app" hidden>
+    <div class="tabs" role="tablist" aria-label="Admin sections">
+      <button role="tab" data-tab="players">Players <span class="cnt" id="cPlayers">·</span></button>
+      <button role="tab" data-tab="credits">Credits</button>
+      <button role="tab" data-tab="bids">Bids <span class="cnt" id="cBids">·</span></button>
+      <button role="tab" data-tab="log">Activity log</button>
+    </div>
+
+    <!-- Players -->
+    <section class="panel" data-pane="players" style="margin-top:16px">
+      <div class="bar2">
+        <input class="search grow" id="qPlayers" type="search" placeholder="Search name, ID or alliance…" aria-label="Search players">
+        <select class="sel" id="fRole" aria-label="Role"><option value="">Everyone</option><option value="admin">Admins</option><option value="player">Players</option><option value="nopin">No PIN yet</option></select>
+        <button class="btn ghost sm" type="button" data-csv="players">Download Excel (CSV)</button>
+        <button class="btn gold sm" type="button" id="addPlayer">+ Add player</button>
+      </div>
+      <div class="tscroll"><table>
+        <thead><tr><th data-sort="name">Player</th><th class="hide-sm" data-sort="gov">Governor ID</th><th data-sort="role">Role</th><th class="hide-sm">PIN</th><th class="r" data-sort="available">Available</th><th></th></tr></thead>
+        <tbody id="tPlayers"><tr><td colspan="6"><div class="empty">Loading…</div></td></tr></tbody>
+      </table></div>
+      <p class="note">PINs are never shown — not even to admins. To change one, open the player and type a new PIN, then send it to them privately.</p>
+    </section>
+
+    <!-- Credits -->
+    <section class="panel" data-pane="credits" style="margin-top:16px" hidden>
+      <div class="sums" id="sums"></div>
+      <div class="bar2">
+        <input class="search grow" id="qCredits" type="search" placeholder="Search player…" aria-label="Search credits">
+        <button class="btn ghost sm" type="button" data-csv="credits">Download Excel (CSV)</button>
+      </div>
+      <div class="tscroll"><table>
+        <thead><tr><th data-sort="name">Player</th><th class="r" data-sort="balance">Total given</th><th class="r hide-sm" data-sort="spent">Won</th><th class="r hide-sm" data-sort="reserved">In bids</th><th class="r" data-sort="available">Available</th><th></th></tr></thead>
+        <tbody id="tCredits"></tbody>
+      </table></div>
+      <p class="note">Total given = all credits handed out. Won = spent on ranks already won. In bids = held while leading a rank. Every change needs a reason and is saved in the activity log.</p>
+    </section>
+
+    <!-- Bids -->
+    <section class="panel" data-pane="bids" style="margin-top:16px" hidden>
+      <div class="bar2">
+        <select class="sel" id="fEvent" aria-label="Auction"><option value="">All auctions</option></select>
+        <select class="sel" id="fStatus" aria-label="Status"><option value="">All bids</option><option value="lead">Leading / won</option><option value="out">Outbid</option><option value="cancelled">Cancelled</option></select>
+        <input class="search grow" id="qBids" type="search" placeholder="Search player…" aria-label="Search bids">
+        <button class="btn ghost sm" type="button" data-csv="bids">Download Excel (CSV)</button>
+      </div>
+      <div class="tscroll"><table>
+        <thead><tr><th class="hide-sm">Time (UTC)</th><th class="hide-sm">Auction</th><th class="r">Rank</th><th>Player</th><th class="r">Amount</th><th class="hide-sm">State</th><th></th></tr></thead>
+        <tbody id="tBids"><tr><td colspan="7"><div class="empty">Loading…</div></td></tr></tbody>
+      </table></div>
+      <div class="more" id="moreBids" hidden><button class="btn ghost sm" type="button">Show more</button></div>
+      <p class="note">Cancelling a bid frees that player’s credits; the next-highest bid on that rank leads again. Cancelled bids stay on record and can be restored.</p>
+    </section>
+
+    <!-- Activity log -->
+    <section class="panel" data-pane="log" style="margin-top:16px" hidden>
+      <div class="bar2">
+        <select class="sel" id="fAction" aria-label="Type">
+          <option value="">Everything</option><option value="bid">Bids</option><option value="credits">Credits</option><option value="player">Players &amp; PINs</option>
+          <option value="edit">Website edits</option><option value="text">Page text</option><option value="locked">Sign-in lockouts</option><option value="import">Data copies</option>
+        </select>
+        <input class="search grow" id="qLog" type="search" placeholder="Search who or what…" aria-label="Search log">
+        <button class="btn ghost sm" type="button" data-csv="log">Download Excel (CSV)</button>
+      </div>
+      <div class="tscroll"><table>
+        <thead><tr><th>When (UTC)</th><th>Who</th><th>What</th><th>Details</th></tr></thead>
+        <tbody id="tLog"><tr><td colspan="4"><div class="empty">Loading…</div></td></tr></tbody>
+      </table></div>
+      <div class="more" id="moreLog" hidden><button class="btn ghost sm" type="button">Show more</button></div>
+    </section>
+  </div>
+</main>
+<footer class="foot"><div class="wrap">Kingdom 3914 · admin tools</div></footer>
+
+<script src="config.js"></script>
+<script src="core.js"></script>
+<script src="site.js"></script>
+<script>
+(function () {
+  var S = window.Site, esc = S.esc, n = S.n, $ = function (id) { return document.getElementById(id); };
+  var st = { tab: 'players', people: null, me: '', bids: null, events: [], log: null, sort: { players: ['name', 1], credits: ['name', 1] }, bidLimit: 200, logLimit: 200 };
+  try { var saved = S.store.get('k3914-admin-tab'); if (saved) st.tab = saved; } catch (e) {}
+
+  if (!S.session.get()) return; /* lock screen is shown by site.js */
+  if (!S.isAdmin()) { $('denied').hidden = false; return; }
+  $('app').hidden = false;
+
+  function api(o) { return S.api(o).then(function (r) { if (!r || r.ok === false) throw new Error((r && r.error) || 'Something went wrong.'); return r; }); }
+  function fail(el, cols) { return function (x) { $(el).innerHTML = '<tr><td colspan="' + cols + '"><div class="empty"><b>Couldn’t load</b>' + esc(x.message) + '</div></td></tr>'; }; }
+  function when(t) { return t ? S.dateTime(t).replace(' UTC', '') : '—'; }
+  function has(q, parts) { q = q.trim().toLowerCase(); return !q || parts.join(' ').toLowerCase().indexOf(q) > -1; }
+  function sortRows(list, key) {
+    var s = st.sort[key]; if (!s) return list;
+    return list.slice().sort(function (a, b) { var x = a[s[0]], y = b[s[0]]; return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'en', { numeric: true })) * s[1]; });
+  }
+
+  /* ---------- tabs ---------- */
+  function showTab(t) {
+    st.tab = t; S.store.set('k3914-admin-tab', t);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-tab]'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-tab') === t)); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-pane]'), function (p) { p.hidden = p.getAttribute('data-pane') !== t; });
+    if ((t === 'players' || t === 'credits') && !st.people) loadPeople();
+    if (t === 'bids' && !st.bids) loadBids();
+    if (t === 'log') loadLog();
+  }
+  document.querySelector('.tabs').addEventListener('click', function (e) { var b = e.target.closest('[data-tab]'); if (b) showTab(b.getAttribute('data-tab')); });
+
+  /* ---------- players & credits ---------- */
+  function loadPeople() {
+    return api({ action: 'adminPeople' }).then(function (r) { st.people = r.people; st.me = r.me; $('cPlayers').textContent = r.people.length; renderPlayers(); renderCredits(); })
+      .catch(function (x) { fail('tPlayers', 6)(x); fail('tCredits', 6)(x); });
+  }
+  function playerRows() {
+    var q = $('qPlayers').value, f = $('fRole').value;
+    return sortRows(st.people.filter(function (p) {
+      return has(q, [p.name, p.gov, p.alliance]) && (!f || (f === 'nopin' ? !p.hasPin : p.role === f));
+    }), 'players');
+  }
+  function renderPlayers() {
+    if (!st.people) return;
+    var rows = playerRows();
+    $('tPlayers').innerHTML = rows.length ? rows.map(function (p) {
+      return '<tr><td><b>' + esc(p.name) + '</b>' + (p.gov === st.me ? ' <span class="badge b-blue">you</span>' : '') + '<span class="sub">' + esc(p.alliance || '—') + '<span class="show-sm"> · ID ' + esc(p.gov) + '</span></span></td>' +
+        '<td class="n hide-sm">' + esc(p.gov) + '</td><td><span class="badge ' + (p.role === 'admin' ? 'b-admin' : 'b-player') + '">' + p.role + '</span></td>' +
+        '<td class="hide-sm">' + (p.hasPin ? '<span class="badge b-ok">set</span>' : '<span class="badge b-bad">none</span>') + '</td>' +
+        '<td class="n r">' + n(p.available) + '</td><td class="act"><button class="btn ghost sm" type="button" data-player="' + esc(p.gov) + '">Edit</button></td></tr>';
+    }).join('') : '<tr><td colspan="6"><div class="empty">No players match.</div></td></tr>';
+  }
+  function renderCredits() {
+    if (!st.people) return;
+    var tot = { balance: 0, spent: 0, reserved: 0, available: 0 };
+    st.people.forEach(function (p) { tot.balance += p.balance; tot.spent += p.spent; tot.reserved += p.reserved; tot.available += p.available; });
+    $('sums').innerHTML = [['Total given', tot.balance], ['Won (spent)', tot.spent], ['In bids', tot.reserved], ['Available', tot.available]].map(function (s) { return '<div class="sum"><span>' + s[0] + '</span><b>' + n(s[1]) + '</b></div>'; }).join('');
+    var q = $('qCredits').value, rows = sortRows(st.people.filter(function (p) { return has(q, [p.name, p.gov, p.alliance]); }), 'credits');
+    $('tCredits').innerHTML = rows.length ? rows.map(function (p) {
+      return '<tr><td><b>' + esc(p.name) + '</b><span class="sub">ID ' + esc(p.gov) + '</span></td><td class="n r">' + n(p.balance) + '</td><td class="n r hide-sm">' + n(p.spent) + '</td>' +
+        '<td class="n r hide-sm">' + n(p.reserved) + '</td><td class="n r"><b>' + n(p.available) + '</b></td><td class="act"><button class="btn gold sm" type="button" data-credit="' + esc(p.gov) + '">±<span class="hide-sm"> Credits</span></button></td></tr>';
+    }).join('') : '<tr><td colspan="6"><div class="empty">No players match.</div></td></tr>';
+  }
+  ['qPlayers', 'fRole'].forEach(function (id) { $(id).addEventListener('input', renderPlayers); });
+  $('qCredits').addEventListener('input', renderCredits);
+  document.addEventListener('click', function (e) {
+    var th = e.target.closest('th[data-sort]'); if (!th) return;
+    var key = th.closest('[data-pane]').getAttribute('data-pane'), k = th.getAttribute('data-sort'), s = st.sort[key];
+    st.sort[key] = [k, s && s[0] === k ? -s[1] : (/available|balance|spent|reserved/.test(k) ? -1 : 1)];
+    if (key === 'players') renderPlayers(); else renderCredits();
+  });
+
+  function randomPin() { var a = new Uint32Array(1); (window.crypto || window.msCrypto).getRandomValues(a); return String(100000 + a[0] % 900000); }
+  function editPlayer(p) {
+    var isNew = !p, pin = isNew ? randomPin() : '';
+    var M = S.form({
+      title: isNew ? 'Add player' : 'Edit · ' + p.name,
+      fields: [
+        { key: 'GovID', label: 'Governor ID', value: p ? p.gov : '', required: true, help: isNew ? 'The ID from the game (numbers only).' : 'Can’t be changed.' },
+        { key: 'Name', label: 'Name', value: p ? p.name : '', required: true, max: 40 },
+        { key: 'Alliance', label: 'Alliance', value: p ? p.alliance : 'RB3', max: 20 },
+        { key: 'Role', label: 'Role', type: 'select', value: p ? p.role : 'player', required: true, options: [{ v: 'player', l: 'Player' }, { v: 'admin', l: 'Admin (can edit the website)' }] },
+        { key: 'PIN', label: isNew ? 'PIN' : 'New PIN', value: pin, required: isNew, full: true, help: isNew ? 'A random PIN is filled in — change it if you like. Send it to the player privately.' : 'Leave empty to keep their current PIN. Type a new one to reset it.' }
+      ],
+      saveLabel: isNew ? 'Add player' : 'Save',
+      check: function (v) {
+        if (!/^[0-9]{3,20}$/.test(String(v.GovID).trim())) return 'Governor ID: numbers only.';
+        if (String(v.PIN).trim() && !/^[0-9A-Za-z]{4,20}$/.test(String(v.PIN).trim())) return 'PIN: 4 to 20 letters or numbers.';
+        return '';
+      },
+      onSave: function (v) { pin = String(v.PIN).trim(); return S.api({ action: 'adminPlayer', row: p ? p.r : 0, sig: p ? p.sig : '', values: v }); },
+      onDelete: p && p.gov !== st.me ? function () { return S.api({ action: 'adminPlayer', row: p.r, sig: p.sig, del: true }); } : null,
+      after: function (res, M2) {
+        M2.close();
+        var removed = !!(M2.el.querySelector('[data-del][data-armed]'));
+        S.toast(removed ? 'Player removed' : isNew ? 'Player added' : 'Saved', removed ? '' : pin ? 'PIN: ' + pin + ' — send it to them privately. It won’t be shown again.' : '', 'good');
+        st.bids = null; loadPeople();
+      }
+    });
+    if (!isNew) { var g = M.body.querySelector('#f_GovID'); g.readOnly = true; g.style.opacity = '.6'; }
+    var pinIn = M.body.querySelector('#f_PIN'); if (pinIn) { pinIn.setAttribute('inputmode', 'numeric'); pinIn.setAttribute('autocomplete', 'off'); }
+  }
+  $('addPlayer').addEventListener('click', function () { editPlayer(null); });
+
+  function editCredits(p) {
+    S.form({
+      title: 'Credits · ' + p.name,
+      fields: [
+        { key: 'mode', label: 'What to do', type: 'select', value: 'add', required: true, full: true, options: [{ v: 'add', l: 'Give or take credits' }, { v: 'set', l: 'Set the total to an exact number' }] },
+        { key: 'amount', label: 'Credits', type: 'number', value: '', required: true, help: 'Give: 500 · Take: −200 · Now: total ' + n(p.balance) + ', available ' + n(p.available) + ', in bids ' + n(p.reserved) + '.' },
+        { key: 'reason', label: 'Reason', value: '', required: true, max: 200, placeholder: 'e.g. KvK honor top 10', help: 'Saved in the activity log.' }
+      ],
+      saveLabel: 'Save credits',
+      check: function (v) { var a = Number(v.amount); if (!(a % 1 === 0)) return 'Enter a whole number.'; if (v.mode === 'add' && !a) return 'Enter how many credits.'; if (v.mode === 'set' && a < 0) return 'The total can’t be below zero.'; return ''; },
+      onSave: function (v) { return S.api({ action: 'adminCredit', player: p.gov, mode: v.mode, amount: Number(v.amount), reason: v.reason }); },
+      after: function (res, M) { M.close(); S.toast('Credits saved', p.name + ': ' + n(res.before) + ' → ' + n(res.after), 'good'); loadPeople(); }
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-player]'), c = e.target.closest('[data-credit]');
+    if (b) editPlayer(st.people.filter(function (p) { return p.gov === b.getAttribute('data-player'); })[0]);
+    if (c) editCredits(st.people.filter(function (p) { return p.gov === c.getAttribute('data-credit'); })[0]);
+  });
+
+  /* ---------- bids ---------- */
+  function loadBids() {
+    return api({ action: 'adminBids' }).then(function (r) {
+      st.bids = r.bids; st.events = r.events;
+      var phase = {}, top = {};
+      r.events.forEach(function (ev) { phase[ev.id] = ev.phase; });
+      /* who leads each rank: highest valid bid (earliest wins a tie) */
+      r.bids.slice().reverse().forEach(function (b) { if (b.status !== 'valid') return; var k = b.event + '#' + b.rank; if (!top[k] || b.amount > top[k].amount) top[k] = b; });
+      r.bids.forEach(function (b) {
+        if (b.status === 'cancelled') b.state = 'cancelled';
+        else if (top[b.event + '#' + b.rank] === b) b.state = phase[b.event] === 'closed' ? 'won' : 'leading';
+        else b.state = 'outbid';
+      });
+      var cur = $('fEvent').value;
+      $('fEvent').innerHTML = '<option value="">All auctions</option>' + r.events.map(function (ev) { return '<option value="' + esc(ev.id) + '">' + esc(ev.id + (ev.title ? ' · ' + ev.title : '') + ' (' + ev.phase + ')') + '</option>'; }).join('');
+      $('fEvent').value = cur;
+      $('cBids').textContent = r.bids.filter(function (b) { return b.status === 'valid'; }).length;
+      renderBids();
+    }).catch(fail('tBids', 7));
+  }
+  function bidRows() {
+    var ev = $('fEvent').value, f = $('fStatus').value, q = $('qBids').value;
+    return st.bids.filter(function (b) {
+      return (!ev || b.event === ev) && has(q, [b.name, b.gov]) && (!f || (f === 'lead' ? (b.state === 'leading' || b.state === 'won') : f === 'out' ? b.state === 'outbid' : b.state === 'cancelled'));
+    });
+  }
+  var STATE = { leading: ['b-ok', 'Leading'], won: ['b-admin', 'Won'], outbid: ['b-mute', 'Outbid'], cancelled: ['b-bad', 'Cancelled'] };
+  function renderBids() {
+    if (!st.bids) return;
+    var rows = bidRows(), shown = rows.slice(0, st.bidLimit);
+    $('tBids').innerHTML = shown.length ? shown.map(function (b) {
+      var s = STATE[b.state];
+      return '<tr class="' + b.state + '"><td class="n hide-sm">' + when(b.time) + '</td><td class="hide-sm">' + esc(b.event) + '</td><td class="n r">#' + b.rank + '</td><td><b>' + esc(b.name) + '</b><span class="sub">ID ' + esc(b.gov) + '</span><span class="sub show-sm nowrap">' + esc(b.event) + '</span><span class="sub show-sm nowrap">' + when(b.time).replace(/ 20[0-9]{2}/, '') + '</span></td>' +
+        '<td class="n r">' + n(b.amount) + '<span class="show-sm" style="display:block;margin-top:4px"><span class="badge ' + s[0] + '">' + s[1] + '</span></span></td><td class="hide-sm"><span class="badge ' + s[0] + '">' + s[1] + '</span></td><td class="act">' +
+        (b.state === 'cancelled' ? '<button class="btn ghost sm" type="button" data-restore="' + b.r + '">Restore</button>' : '<button class="btn ghost sm" type="button" data-cancel="' + b.r + '">Cancel</button>') + '</td></tr>';
+    }).join('') : '<tr><td colspan="7"><div class="empty">No bids match.</div></td></tr>';
+    $('moreBids').hidden = rows.length <= st.bidLimit;
+  }
+  ['fEvent', 'fStatus', 'qBids'].forEach(function (id) { $(id).addEventListener('input', function () { st.bidLimit = 200; renderBids(); }); });
+  $('moreBids').addEventListener('click', function () { st.bidLimit += 300; renderBids(); });
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-cancel]'), r = e.target.closest('[data-restore]'), btn = c || r; if (!btn) return;
+    var b = st.bids.filter(function (x) { return String(x.r) === btn.getAttribute(c ? 'data-cancel' : 'data-restore'); })[0]; if (!b) return;
+    S.form({
+      title: (c ? 'Cancel bid · ' : 'Restore bid · ') + b.name,
+      fields: [{ key: 'reason', label: 'Reason', value: '', required: !!c, full: true, max: 200, placeholder: c ? 'e.g. Bid for another governor' : '',
+        help: b.event + ' rank #' + b.rank + ' · ' + n(b.amount) + ' credits · ' + when(b.time) + ' UTC. ' + (c ? 'Their credits are freed and the next-highest bid leads again.' : 'The bid counts again.') }],
+      saveLabel: c ? 'Cancel this bid' : 'Restore this bid',
+      onSave: function (v) { return S.api({ action: 'adminBid', row: b.r, sig: b.sig, cancel: !!c, reason: v.reason }); },
+      after: function (res, M) { M.close(); S.toast(c ? 'Bid cancelled' : 'Bid restored', b.name + ' · ' + b.event + ' rank #' + b.rank, 'good'); st.people = null; loadBids(); }
+    });
+  });
+
+  /* ---------- activity log ---------- */
+  var ACT = { bid: ['b-ok', 'Bid'], credits: ['b-admin', 'Credits'], player: ['b-blue', 'Player'], edit: ['b-purple', 'Edit'], text: ['b-purple', 'Page text'], locked: ['b-bad', 'Lockout'], import: ['b-mute', 'Data copy'] };
+  function loadLog() {
+    return api({ action: 'adminLog', limit: 1000 }).then(function (r) { st.log = r.log; renderLog(); }).catch(fail('tLog', 4));
+  }
+  function logRows() {
+    var f = $('fAction').value, q = $('qLog').value;
+    return st.log.filter(function (l) { return (!f || l.action === f) && has(q, [l.name, l.gov, l.detail]); });
+  }
+  function renderLog() {
+    if (!st.log) return;
+    var rows = logRows(), shown = rows.slice(0, st.logLimit);
+    $('tLog').innerHTML = shown.length ? shown.map(function (l) {
+      var a = ACT[l.action] || ['b-mute', l.action];
+      return '<tr><td class="n">' + when(l.ts) + '<span class="sub">' + S.ago(l.ts) + '</span></td><td><b>' + esc(l.name || '—') + '</b>' + (l.gov ? '<span class="sub">ID ' + esc(l.gov) + '</span>' : '') + '</td>' +
+        '<td><span class="badge ' + a[0] + '">' + esc(a[1]) + '</span></td><td>' + esc(l.detail) + '</td></tr>';
+    }).join('') : '<tr><td colspan="4"><div class="empty">' + (st.log.length ? 'Nothing matches.' : '<b>Nothing yet</b>Bids, credit changes, player changes and website edits will show up here.') + '</div></td></tr>';
+    $('moreLog').hidden = rows.length <= st.logLimit;
+  }
+  ['fAction', 'qLog'].forEach(function (id) { $(id).addEventListener('input', function () { st.logLimit = 200; renderLog(); }); });
+  $('moreLog').addEventListener('click', function () { st.logLimit += 300; renderLog(); });
+
+  /* ---------- download as CSV (opens in Excel / Google Sheets) ---------- */
+  function csv(rows) { return '﻿' + rows.map(function (r) { return r.map(function (v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\r\n'); }
+  function iso(t) { return t ? new Date(t).toISOString().replace('T', ' ').slice(0, 16) : ''; }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-csv]'); if (!b) return;
+    var k = b.getAttribute('data-csv'), rows;
+    if (k === 'players') rows = [['Name', 'Governor ID', 'Alliance', 'Role', 'PIN set', 'Available credits']].concat(playerRows().map(function (p) { return [p.name, p.gov, p.alliance, p.role, p.hasPin ? 'yes' : 'no', p.available]; }));
+    if (k === 'credits') rows = [['Name', 'Governor ID', 'Total given', 'Won', 'In bids', 'Available']].concat(st.people.map(function (p) { return [p.name, p.gov, p.balance, p.spent, p.reserved, p.available]; }));
+    if (k === 'bids') rows = [['Time (UTC)', 'Auction', 'Rank', 'Player', 'Governor ID', 'Amount', 'State']].concat(bidRows().map(function (x) { return [iso(x.time), x.event, x.rank, x.name, x.gov, x.amount, x.state]; }));
+    if (k === 'log') rows = [['Time (UTC)', 'Who', 'Governor ID', 'What', 'Details']].concat(logRows().map(function (l) { return [iso(l.ts), l.name, l.gov, l.action, l.detail]; }));
+    if (!rows) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv(rows)], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'kingdom3914-' + k + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+
+  showTab(st.tab);
+  if (st.tab !== 'players' && st.tab !== 'credits') loadPeople();
+})();
+</script>
+</body>
+</html>
