@@ -35,6 +35,9 @@ h1,h2{font-family:'Cinzel',serif;color:var(--gold)}
 h1{font-size:clamp(34px,5.5vw,60px);line-height:1.02}
 h2{font-size:23px}
 
+/* ---------- logo watermark in the page background ---------- */
+html::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:url(logo.webp) 50% 58%/auto min(70vh,620px) no-repeat;opacity:.055}
+@media(max-width:680px){html::after{background-size:auto min(52vh,420px);background-position:50% 62%}}
 /* ---------- logo + banner ---------- */
 .brand .crest.logo{width:auto;height:46px;background:none;border:0;border-radius:0}
 .brand .crest.logo img{display:block;height:46px;width:auto}
@@ -151,14 +154,29 @@ h2{font-size:23px}
 /* ---------- members-only lock ---------- */
 .navlinks a{position:relative}
 .navlinks svg.lk{position:absolute;top:5px;right:5px;width:11px;height:11px;color:var(--muted);opacity:.85}
-.who-chip{display:flex;align-items:center;gap:10px;padding-left:4px}
-.who-chip span{display:flex;flex-direction:column;line-height:1.15;text-align:right}
-.who-chip b{font-size:14px;color:var(--text)}
-.who-chip small{font-size:11.5px;color:var(--muted)}
+.acct{position:relative;margin-left:6px}
+.acct-btn{display:flex;align-items:center;gap:9px;min-height:44px;padding:4px 10px 4px 4px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);transition:border-color .15s,background .15s}
+.acct-btn:hover,.acct.open .acct-btn{border-color:rgba(231,198,144,.45);background:var(--panel2)}
+.acct-av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;background:linear-gradient(160deg,#F4DEB4,#C9A56A);color:#14110B;font-family:'Cinzel',serif;font-weight:700;font-size:15px}
+.acct-nm{display:flex;flex-direction:column;line-height:1.15;text-align:left}
+.acct-nm b{font-size:14px}
+.acct-nm small{font-size:11.5px;color:var(--muted)}
+.acct-cv{width:15px;height:15px;color:var(--muted);transition:transform .15s}
+.acct.open .acct-cv{transform:rotate(180deg)}
+.acct-menu{display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:60;min-width:230px;padding:8px;border-radius:14px;border:1px solid var(--line);background:var(--panel);box-shadow:0 18px 40px rgba(0,0,0,.55);flex-direction:column;gap:6px}
+.acct.open .acct-menu{display:flex;animation:fadeUp .15s ease}
+.acct-head{display:flex;flex-direction:column;padding:6px 8px 10px;border-bottom:1px solid var(--line2);margin-bottom:2px}
+.acct-head b{font-size:15px}
+.acct-head small{font-size:12px;color:var(--muted)}
+.acct-menu .edit-switch{width:100%;justify-content:flex-start;border-radius:10px;min-height:42px}
+.acct-out{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:8px 12px;border-radius:10px;border:1px solid transparent;background:none;color:var(--soft);font-weight:700;font-size:14px;text-align:left}
+.acct-out:hover{background:rgba(240,85,90,.10);color:#FF9A9D}
+.acct-out svg{width:17px;height:17px}
 @media(max-width:680px){
   .topbar .brand{order:1}
-  .who-chip{order:2;margin-left:auto}
-  .who-chip .btn.sm{min-height:36px;padding:6px 10px;font-size:12.5px}
+  .acct{order:2;margin-left:auto}
+  .acct-btn{min-height:40px}
+  .acct-av{width:30px;height:30px;font-size:13px}
   .navlinks{order:3}
 }
 main.locked{filter:blur(9px) saturate(.7);opacity:.55;pointer-events:none;user-select:none;-webkit-user-select:none;transition:filter .3s}

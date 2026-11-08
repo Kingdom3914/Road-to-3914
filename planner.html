@@ -9,7 +9,7 @@
 <title>Kingdom 3914 · RB3 Planner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site.css?v=18">
+<link rel="stylesheet" href="site.css?v=19">
 <style>
 .rb3 .panel{position:relative;
   background:linear-gradient(145deg,rgba(18,22,29,.98),rgba(8,10,14,.98));
@@ -307,6 +307,38 @@
 .rb3 .mx-sep{background:var(--line)}
 .rb3 .matrix{grid-template-columns:minmax(178px,1.05fr) repeat(4,minmax(118px,1fr)) 42px;min-width:750px}
 @media (max-width:1160px){.rb3 .mx-corner,.rb3 .mx-row-h,.rb3 .mx-total-h{background:var(--panel)}}
+
+.rb3 .tb-hidden{display:none}
+.rb3 .tb{display:flex;flex-direction:column;gap:14px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.rb3 .tb-row{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center}
+.rb3 .tb-l{font-family:'Barlow',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.rb3 .chips{display:flex;flex-wrap:wrap;gap:7px}
+.rb3 .tb-amt{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.rb3 .tb-amt input{max-width:220px;text-align:right;font-size:1.25rem;padding:9px 13px}
+.rb3 .tb-go{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-left:100px}
+.rb3 .tb-hint{font-size:14px;color:var(--muted)}
+.rb3 .tb-hint.warn{color:#FF8A8A}
+.rb3 .tb-list{display:flex;flex-direction:column;margin-top:6px}
+.rb3 .tb-line{display:grid;grid-template-columns:1fr auto 36px;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line2)}
+.rb3 .tb-line .nm{display:flex;flex-direction:column;gap:2px;border-left:3px solid var(--lane);padding-left:12px}
+.rb3 .tb-line .nm b{font-size:15.5px;color:var(--text)}
+.rb3 .tb-line .nm span{font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--muted)}
+.rb3 .tb-line input{width:170px;text-align:right;font-size:1.15rem;padding:8px 12px;color:var(--gold-h)}
+.rb3 .tb-x{appearance:none;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;font-size:16px}
+.rb3 .tb-x:hover{color:var(--text);border-color:#3E4051}
+.rb3 .tb-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0 2px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:13px;color:var(--gold)}
+.rb3 .tb-total b{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;letter-spacing:0;color:var(--gold-h)}
+.rb3 .tb-empty{padding:22px 0;text-align:center;color:var(--muted);font-size:14.5px}
+@media(max-width:600px){
+  .rb3 .tb-row{grid-template-columns:1fr;gap:7px}
+  .rb3 .tb-go{padding-left:0}
+  .rb3 .tb-go .btn{flex:1}
+  .rb3 .tb-amt input{max-width:none;flex:1 1 100%}
+  .rb3 .tb-line{grid-template-columns:1fr 36px;row-gap:8px}
+  .rb3 .tb-line input{grid-column:1/2;width:100%}
+  .rb3 .tb-line .tb-x{grid-row:1;grid-column:2}
+}
+
 @media (max-width:600px){
   .rb3 .panel{padding:16px 14px}
   .rb3 .speed-field{width:100%;max-width:220px}
@@ -319,7 +351,6 @@
 <div id="site-nav"></div>
 
 <main class="wrap page rb3">
-  <div class="k-banner" role="img" aria-label="Calligraphy coffee pot under a night sky"><span class="k-moon"></span><span class="k-twinkle"></span><img src="logo.webp" alt="" width="245" height="300"></div>
   <div class="head">
     <div class="eyebrow">Troop training</div>
     <h1>RB3 Planner</h1>
@@ -348,7 +379,14 @@
   <div class="sec-head"><h2>What Are You Training</h2><p>Every tier you are converting, and what you train fresh</p></div>
 
   <section class="panel" >
-    <div class="quickfill">
+    <div class="tb">
+      <div class="tb-row"><span class="tb-l">Troop</span><div class="chips" id="tb-unit" role="group" aria-label="Troop type"></div></div>
+      <div class="tb-row"><span class="tb-l">Upgrade</span><div class="chips" id="tb-lane" role="group" aria-label="Upgrade"></div></div>
+      <div class="tb-row"><span class="tb-l">Amount</span><div class="tb-amt"><input type="text" id="tb-amount" inputmode="numeric" autocomplete="off" placeholder="e.g. 250,000"><div class="chips" id="tb-presets"></div></div></div>
+      <div class="tb-go"><button class="btn gold" type="button" id="tb-add">+ Add</button><span class="tb-hint" id="tb-hint" aria-live="polite"></span></div>
+    </div>
+    <div class="tb-list" id="tb-list"></div>
+    <div class="tb-hidden" aria-hidden="true"><div class="quickfill">
       <span class="qf-l">Quick fill</span>
       <div id="qf-chips" style="display:flex;flex-wrap:wrap;gap:7px"></div>
       <span class="qf-target" id="qf-target">Click a box first, then a preset</span>
@@ -358,6 +396,7 @@
       <div class="matrix" id="matrix"></div>
     </div>
 
+    </div>
     <details class="costs">
       <summary>Cost per troop &mdash; full table</summary>
       <div class="costs-scroll">
@@ -453,9 +492,9 @@
   </section>
 </main>
 
-<script src="config.js?v=18"></script>
-<script src="core.js?v=18"></script>
-<script src="site.js?v=18"></script>
+<script src="config.js?v=19"></script>
+<script src="core.js?v=19"></script>
+<script src="site.js?v=19"></script>
 <script>
 (function(){
 "use strict";
@@ -1313,6 +1352,54 @@ syncBoostInputs();
 render();
 renderBoost();
 
+})();
+</script>
+<script>
+/* ---------- "add lines" troop picker: drives the calculator's own (hidden) boxes ---------- */
+(function(){
+  var UN=[['infantry','Infantry'],['cavalry','Cavalry'],['archer','Archer'],['siege','Siege']];
+  var LN=[['t1','T1 → T5','--l1'],['t2','T2 → T5','--l2'],['t3','T3 → T5','--l3'],['t4','T4 → T5','--l4'],['new','New T5','--l5']];
+  var PR=[['100K',100000],['250K',250000],['500K',500000],['1M',1000000],['2M',2000000]];
+  var sel={u:'infantry',l:'t4'};
+  function q(s){return document.querySelector(s);}
+  function box(l,u){return q('.tb-hidden input[data-lane="'+l+'"][data-troop="'+u+'"]');}
+  function num(v){var d=String(v||'').replace(/[^0-9]/g,'');return d?parseInt(d,10):0;}
+  function fmt(n){return Number(n||0).toLocaleString('en-US');}
+  function setBox(l,u,n){var b=box(l,u);if(!b)return;b.value=fmt(Math.max(0,Math.min(999999999,n)));b.dispatchEvent(new Event('input',{bubbles:true}));}
+  function chips(id,list,key){q(id).innerHTML=list.map(function(x){return '<button class="chip" type="button" data-'+key+'="'+x[0]+'" aria-pressed="'+(sel[key]===x[0])+'">'+x[1]+'</button>';}).join('');}
+  function drawChips(){chips('#tb-unit',UN,'u');chips('#tb-lane',LN,'l');}
+  q('#tb-presets').innerHTML=PR.map(function(p){return '<button class="chip" type="button" data-amt="'+p[1]+'">'+p[0]+'</button>';}).join('');
+  function hint(t,w){var h=q('#tb-hint');h.textContent=t||'';h.className='tb-hint'+(w?' warn':'');}
+  function drawList(){
+    var rows=[],tot=0;
+    LN.forEach(function(l){UN.forEach(function(u){var b=box(l[0],u[0]);var n=b?num(b.value):0;if(n>0){tot+=n;var spt=(q('[data-spt="'+l[0]+'"]')||{}).textContent||'';
+      rows.push('<div class="tb-line" style="--lane:var('+l[2]+')"><div class="nm"><b>'+u[1]+' · '+l[1]+'</b><span>'+spt+' s / troop</span></div>'+
+        '<input type="text" inputmode="numeric" autocomplete="off" value="'+fmt(n)+'" data-ed-l="'+l[0]+'" data-ed-u="'+u[0]+'" aria-label="'+u[1]+' '+l[1]+' amount">'+
+        '<button class="tb-x" type="button" data-rm-l="'+l[0]+'" data-rm-u="'+u[0]+'" aria-label="Remove '+u[1]+' '+l[1]+'">✕</button></div>');}});});
+    q('#tb-list').innerHTML=rows.length?rows.join('')+'<div class="tb-total"><span>Total troops</span><b>'+fmt(tot)+'</b></div>':'<div class="tb-empty">Nothing added yet. Pick a troop, an upgrade and an amount, then press “+ Add”.</div>';
+  }
+  document.addEventListener('click',function(e){
+    var t=e.target.closest&&e.target.closest('button'); if(!t)return;
+    if(t.dataset.u){sel.u=t.dataset.u;drawChips();return;}
+    if(t.dataset.l){sel.l=t.dataset.l;drawChips();return;}
+    if(t.dataset.amt){q('#tb-amount').value=fmt(t.dataset.amt);hint('');return;}
+    if(t.id==='tb-add'){
+      var n=num(q('#tb-amount').value); if(!n){hint('Type an amount first.',true);q('#tb-amount').focus();return;}
+      var b=box(sel.l,sel.u),had=b?num(b.value):0; setBox(sel.l,sel.u,had+n); q('#tb-amount').value='';
+      var un=UN.filter(function(x){return x[0]===sel.u;})[0][1], ln=LN.filter(function(x){return x[0]===sel.l;})[0][1];
+      hint(had?('Added to your existing '+un+' · '+ln+' line.'):(un+' · '+ln+' added.')); drawList(); return;}
+    if(t.dataset.rmL){setBox(t.dataset.rmL,t.dataset.rmU,0);drawList();return;}
+    if(t.id==='clear-all'||t.id==='reset'||t.id==='bst-send'){setTimeout(drawList,30);}
+  });
+  document.addEventListener('input',function(e){
+    var el=e.target;
+    if(el.id==='tb-amount'){var n=num(el.value);el.value=n?fmt(n):'';hint('');}
+    if(el.dataset&&el.dataset.edL){var m=num(el.value);setBox(el.dataset.edL,el.dataset.edU,m);el.value=m?fmt(m):'';var tt=0;document.querySelectorAll('.tb-line input').forEach(function(i){tt+=num(i.value);});var tb=document.querySelector('.tb-total b');if(tb)tb.textContent=fmt(tt);}
+    if(el.id==='speed'){setTimeout(drawList,30);}
+  });
+  
+  q('#tb-amount').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();q('#tb-add').click();}});
+  drawChips(); drawList();
 })();
 </script>
 </body>

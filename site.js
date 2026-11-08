@@ -60,8 +60,15 @@
           if (l[1] === 'discord') return '<a href="#" data-discord target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS.discord + '</svg>' + l[2] + '</a>';
           return '<a href="' + l[0] + '"' + (page === l[1] ? ' aria-current="page"' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[l[1]] + '</svg>' + l[2] + (!who && MEMBERS[l[1]] ? LOCK : '') + '</a>';
         }).join('') + '</nav>' +
-        (who ? '<div class="who-chip">' + (who.admin ? '<button type="button" class="edit-switch" data-edit-toggle aria-pressed="' + editOn() + '"><span class="knob"></span>Edit mode</button>' : '') +
-          '<span><b>' + esc(who.name || 'Governor') + '</b><small>ID ' + esc(who.gov) + '</small></span><button type="button" class="btn ghost sm" data-signout>Sign out</button></div>' : '') +
+        (who ? '<div class="who-chip acct">' +
+          '<button type="button" class="acct-btn" data-acct aria-haspopup="true" aria-expanded="false"><span class="acct-av" aria-hidden="true">' + esc(String(who.name || 'G').trim().charAt(0).toUpperCase()) + '</span>' +
+          '<span class="acct-nm"><b>' + esc(who.name || 'Governor') + '</b><small>' + (who.admin ? 'Admin · ' : '') + 'ID ' + esc(who.gov) + '</small></span>' +
+          '<svg class="acct-cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>' +
+          '<div class="acct-menu" role="menu">' +
+            '<div class="acct-head"><b>' + esc(who.name || 'Governor') + '</b><small>Governor ID ' + esc(who.gov) + '</small></div>' +
+            (who.admin ? '<button type="button" class="edit-switch" role="menuitemcheckbox" data-edit-toggle aria-pressed="' + editOn() + '"><span class="knob"></span>Edit mode</button>' : '') +
+            '<button type="button" class="acct-out" role="menuitem" data-signout><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</button>' +
+          '</div></div>' : '') +
       '</div></header>' +
       (who && who.admin ? '<div class="edit-banner edit-block"><div class="wrap"><b>Edit mode is on.</b> Click any title or text with a dashed outline to change it. Use the gold buttons to edit dates, news and auctions. <button type="button" class="btn ghost sm" data-edit-discord>Discord link</button></div></div>' : '') +
       (C.API_URL ? '' : '<div class="demo-banner"><div class="wrap"><b>Demo mode:</b> showing sample data. Bids are saved only on this device until the Google Sheet link is added in config.js.</div></div>');
@@ -432,10 +439,16 @@
   if (membersPage() && !session.get()) {
     if (document.querySelector('main')) lock(''); else document.addEventListener('DOMContentLoaded', function () { lock(''); });
   }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { var a = document.querySelector('.acct.open'); if (a) { a.classList.remove('open'); a.querySelector('[data-acct]').setAttribute('aria-expanded', 'false'); } } });
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('[data-discord][data-nolink]');
     if (a) { e.preventDefault(); toast('Discord link coming soon', 'Leadership will add the invite link shortly.'); }
     if (e.target.closest && e.target.closest('[data-signout]')) signOut();
+    var ab = e.target.closest && e.target.closest('[data-acct]'), acct = document.querySelector('.acct');
+    if (acct) {
+      var open = ab ? !acct.classList.contains('open') : (e.target.closest('.acct-menu') && !e.target.closest('[data-signout]') ? acct.classList.contains('open') : false);
+      acct.classList.toggle('open', open); var bt = acct.querySelector('[data-acct]'); if (bt) bt.setAttribute('aria-expanded', String(open));
+    }
   });
   try { var cached = JSON.parse(store.get('k3914-text') || 'null'); if (cached) setText(cached, false); } catch (e) {}
   document.addEventListener('DOMContentLoaded', applyText);
