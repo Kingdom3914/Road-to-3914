@@ -298,7 +298,8 @@
     function optList(f) { var o = typeof f.options === 'function' ? f.options(vals) : (f.options || []); return o.map(function (x) { return typeof x === 'object' ? x : { v: x, l: x }; }); }
     function fieldHTML(f) {
       var id = 'f_' + f.key.replace(/[^a-z0-9]/gi, '_'), v = vals[f.key], lab = '<label for="' + id + '">' + esc(f.label) + (f.required ? '' : ' <span class="opt">(optional)</span>') + '</label>', inner;
-      if (f.type === 'textarea') inner = '<textarea id="' + id + '" rows="' + (f.rows || 4) + '" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>';
+      if (f.type === 'textarea') inner = '<textarea id="' + id + '" rows="' + (f.rows || 4) + '" placeholder="' + esc(f.placeholder || '') + '"' + (f.max ? ' maxlength="' + f.max + '" data-max="' + f.max + '"' : '') + '>' + esc(v) + '</textarea>' +
+        (f.max ? '<small class="count" data-count-for="' + id + '">' + String(v == null ? '' : v).length + ' / ' + f.max + ' characters</small>' : '');
       else if (f.type === 'select') inner = '<select id="' + id + '">' + optList(f).map(function (o) { return '<option value="' + esc(o.v) + '"' + (String(o.v) === String(v) ? ' selected' : '') + '>' + esc(o.l) + '</option>'; }).join('') + '</select>';
       else if (f.type === 'time24') {
         var hm = String(v || '00:00').split(':'), hh = ('0' + (parseInt(hm[0], 10) || 0)).slice(-2), mm = ('0' + (parseInt(hm[1], 10) || 0)).slice(-2), mins = ['00', '15', '30', '45'];
@@ -324,6 +325,7 @@
       });
     }
     F.addEventListener('input', function (e) {
+      if (e.target.hasAttribute('data-max')) { var cn = F.querySelector('[data-count-for="' + e.target.id + '"]'), mx = Number(e.target.getAttribute('data-max')), ln = e.target.value.length; if (cn) { cn.textContent = ln + ' / ' + mx + ' characters' + (ln >= mx ? ' \u2014 limit reached' : ''); cn.className = 'count' + (ln >= mx ? ' full' : ln > mx * 0.9 ? ' near' : ''); } }
       if (e.target.type === 'color') { F.querySelector('[data-hex-for="' + e.target.id + '"]').value = e.target.value.toUpperCase(); }
       if (e.target.classList.contains('hex') && /^#[0-9a-f]{6}$/i.test(e.target.value)) document.getElementById(e.target.getAttribute('data-hex-for')).value = e.target.value;
     });

@@ -188,6 +188,7 @@ body.edit-on .edit-tools{display:flex !important}
 .mdl-grid select:focus,.mdl-grid textarea:focus,.mdl-grid input:focus{border-color:var(--gold);outline:none}
 .mdl-grid .opt{font-weight:400;color:#6F7A8E}
 .mdl-grid .help{font-size:12px;color:var(--muted)}
+.mdl-grid .count{display:block;text-align:right;font-size:12px;color:var(--muted);margin-top:4px}.mdl-grid .count.near{color:#F3D58E}.mdl-grid .count.full{color:#FF8A8A;font-weight:700}
 .mdl-grid .chk{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--soft);min-height:44px}
 .mdl-grid .chk input{width:20px;height:20px;accent-color:var(--gold)}
 .colorrow{display:flex;gap:8px;align-items:center}

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site.css?v=16">
+<link rel="stylesheet" href="site.css?v=17">
 <style>
   .hero{position:relative;overflow:hidden;border-radius:20px;border:1px solid var(--line);background:radial-gradient(120% 140% at 100% 0%,rgba(232,184,74,.16),transparent 55%),radial-gradient(90% 120% at 0% 100%,rgba(61,214,140,.10),transparent 60%),var(--panel);padding:36px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:end}
   .hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:32px 32px;-webkit-mask-image:radial-gradient(80% 90% at 100% 0,#000,transparent 70%);mask-image:radial-gradient(80% 90% at 100% 0,#000,transparent 70%);pointer-events:none}
@@ -19,7 +19,7 @@
   @media(max-width:860px){.hero{grid-template-columns:1fr;padding:24px}}
 
   .grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px}
-  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  @media(max-width:900px){.grid2{grid-template-columns:minmax(0,1fr)}}
 
   .ann{display:flex;flex-direction:column;gap:12px}
   .ann-card{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 18px 18px 22px;animation:fadeUp .5s ease both;overflow:hidden}
@@ -28,6 +28,25 @@
   .ann-meta{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);margin-bottom:6px}
   .ann-card h3{font-size:18px;margin-bottom:4px}
   .ann-card p{color:var(--soft);font-size:15px;white-space:pre-line}
+  /* long words and links wrap inside the box instead of stretching the page */
+  .ann-card h3,.ann-card p,.news-item h3,.news-item p{overflow-wrap:anywhere}
+  .news-item>div:last-child{min-width:0;flex:1}
+  .post-link{color:var(--gold);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
+  .post-link:hover{color:#F7D587}
+  @media(max-width:600px){
+    .grid2{gap:14px}
+    .grid2 .panel{padding:16px 14px}
+    .ann{gap:10px}
+    .ann-card{padding:14px 14px 14px 17px;border-radius:12px}
+    .ann-card::before{width:3px}
+    .ann-card h3{font-size:16.5px;line-height:1.3;margin-bottom:6px}
+    .ann-card p{font-size:14px;line-height:1.6}
+    .news-item{gap:10px;padding:12px 0}
+    .news-date{width:44px}
+    .news-date b{font-size:19px}
+    .news-item h3{font-size:15px}
+    .news-item p{font-size:14px;line-height:1.55}
+  }
   .pin{font-size:11px;font-weight:800;letter-spacing:.1em;color:#18130A;background:var(--gold);padding:2px 7px;border-radius:5px}
 
   .news{display:flex;flex-direction:column}
@@ -118,10 +137,10 @@
   <footer class="foot">All dates and times are server time (UTC). <span id="updated"></span></footer>
 </main>
 
-<script src="config.js?v=16"></script>
-<script src="core.js?v=16"></script>
-<script src="site.js?v=16"></script>
-<script src="kvk.js?v=16"></script>
+<script src="config.js?v=17"></script>
+<script src="core.js?v=17"></script>
+<script src="site.js?v=17"></script>
+<script src="kvk.js?v=17"></script>
 <script>
 (function () {
   "use strict";
@@ -162,6 +181,13 @@
 
   /* ---------- news, announcements, live bidding from the sheet ---------- */
   var data = null;
+  /* post text: escaped, with web links made clickable */
+  function rich(t) {
+    return esc(t).replace(/https?:\/\/[^\s<]+/g, function (u) {
+      var tail = (u.match(/(?:[).,!?;:]|&#39;|&quot;)+$/) || [''])[0]; if (tail) u = u.slice(0, -tail.length);
+      return '<a class="post-link" href="' + u + '" target="_blank" rel="noopener noreferrer">' + u + '</a>' + tail;
+    });
+  }
   function renderNews() {
     var items = data.news || [];
     var ann = items.filter(function (x) { return /announce/i.test(x.type) || x.pinned; });
@@ -169,12 +195,12 @@
     document.getElementById('announcements').innerHTML = ann.length ? ann.slice(0, 4).map(function (a, i) {
       return '<article class="ann-card' + (a.pinned ? ' pinned' : '') + '" style="animation-delay:' + (i * 0.08) + 's">' +
         '<div class="ann-meta">' + (a.pinned ? '<span class="pin">PINNED</span>' : '') + '<span>' + (a.time ? S.date(a.time) : '') + '</span></div>' +
-        '<h3>' + esc(a.title) + '</h3>' + (a.body ? '<p>' + esc(a.body) + '</p>' : '') + '</article>';
+        '<h3>' + esc(a.title) + '</h3>' + (a.body ? '<p>' + rich(a.body) + '</p>' : '') + '</article>';
     }).join('') : '<div class="empty"><b>No announcements yet</b>Leadership posts appear here.</div>';
     document.getElementById('news').innerHTML = news.length ? news.slice(0, 8).map(function (a, i) {
       var d = new Date(a.time || Date.now());
       return '<article class="news-item" style="animation-delay:' + (i * 0.06) + 's"><div class="news-date"><b>' + d.getUTCDate() + '</b><span>' + KVK.MON[d.getUTCMonth()] + '</span></div>' +
-        '<div><h3>' + esc(a.title) + '</h3>' + (a.body ? '<p>' + esc(a.body) + '</p>' : '') + '</div></article>';
+        '<div><h3>' + esc(a.title) + '</h3>' + (a.body ? '<p>' + rich(a.body) + '</p>' : '') + '</div></article>';
     }).join('') : '<div class="empty"><b>No news yet</b>Check back soon.</div>';
   }
   function renderLive() {
@@ -215,7 +241,7 @@
       fields: function (v) {
         return [
           { key: 'Title', label: 'Title', required: true, full: true, value: v.Title || '', max: 120 },
-          { key: 'Body', label: 'Text', type: 'textarea', full: true, rows: 5, value: v.Body || '' },
+          { key: 'Body', label: 'Text', type: 'textarea', full: true, rows: 8, max: 6000, value: v.Body || '', help: 'Web links (https://\u2026) become clickable automatically.' },
           { key: 'Type', label: 'Type', type: 'select', required: true, value: v.Type || 'Announcement', options: ['Announcement', 'News'] },
           { key: 'Date', label: 'Date', type: 'date', required: true, value: S.isoDate(v.Date) },
           { key: 'Pinned', label: 'Pin to the top', type: 'checkbox', value: v.Pinned === true }
