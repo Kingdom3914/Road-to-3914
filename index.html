@@ -3,14 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05060B">
+<link rel="icon" type="image/png" href="icon-180.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Kingdom 3914 · Home</title>
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site.css?v=17">
+<link rel="stylesheet" href="site.css?v=18">
 <style>
-  .hero{position:relative;overflow:hidden;border-radius:20px;border:1px solid var(--line);background:radial-gradient(120% 140% at 100% 0%,rgba(232,184,74,.16),transparent 55%),radial-gradient(90% 120% at 0% 100%,rgba(61,214,140,.10),transparent 60%),var(--panel);padding:36px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:end}
+  .hero{position:relative;overflow:hidden;border-radius:20px;border:1px solid var(--line);background:radial-gradient(120% 140% at 100% 0%,rgba(231,198,144,.16),transparent 55%),radial-gradient(90% 120% at 0% 100%,rgba(236,207,159,.06),transparent 60%),var(--panel);padding:36px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:end}
   .hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:32px 32px;-webkit-mask-image:radial-gradient(80% 90% at 100% 0,#000,transparent 70%);mask-image:radial-gradient(80% 90% at 100% 0,#000,transparent 70%);pointer-events:none}
   .hero>*{position:relative}
   .hero-text{display:flex;flex-direction:column;gap:14px;animation:fadeUp .6s ease both}
@@ -24,7 +27,7 @@
   .ann{display:flex;flex-direction:column;gap:12px}
   .ann-card{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 18px 18px 22px;animation:fadeUp .5s ease both;overflow:hidden}
   .ann-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold)}
-  .ann-card.pinned{border-color:rgba(232,184,74,.5);background:linear-gradient(100deg,rgba(232,184,74,.08),transparent 60%),var(--panel2)}
+  .ann-card.pinned{border-color:rgba(231,198,144,.5);background:linear-gradient(100deg,rgba(231,198,144,.08),transparent 60%),var(--panel2)}
   .ann-meta{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);margin-bottom:6px}
   .ann-card h3{font-size:18px;margin-bottom:4px}
   .ann-card p{color:var(--soft);font-size:15px;white-space:pre-line}
@@ -32,7 +35,7 @@
   .ann-card h3,.ann-card p,.news-item h3,.news-item p{overflow-wrap:anywhere}
   .news-item>div:last-child{min-width:0;flex:1}
   .post-link{color:var(--gold);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
-  .post-link:hover{color:#F7D587}
+  .post-link:hover{color:#F3DAB0}
   @media(max-width:600px){
     .grid2{gap:14px}
     .grid2 .panel{padding:16px 14px}
@@ -84,6 +87,7 @@
 
 <main class="wrap page">
 
+  <div class="k-banner" role="img" aria-label="Calligraphy coffee pot under a night sky"><span class="k-moon"></span><span class="k-twinkle"></span><img src="logo.webp" alt="" width="245" height="300"></div>
   <section class="hero" aria-label="Welcome">
     <div class="hero-text">
       <div class="eyebrow" data-text="home_eyebrow">Rise of Kingdoms · RB3 League</div>
@@ -137,10 +141,10 @@
   <footer class="foot">All dates and times are server time (UTC). <span id="updated"></span></footer>
 </main>
 
-<script src="config.js?v=17"></script>
-<script src="core.js?v=17"></script>
-<script src="site.js?v=17"></script>
-<script src="kvk.js?v=17"></script>
+<script src="config.js?v=18"></script>
+<script src="core.js?v=18"></script>
+<script src="site.js?v=18"></script>
+<script src="kvk.js?v=18"></script>
 <script>
 (function () {
   "use strict";
@@ -235,7 +239,7 @@
       title: 'News & announcements', tab: 'News', addLabel: 'Add post', addTitle: 'New post',
       intro: 'Announcements show big at the top of Home; Pinned keeps a post first.',
       sort: function (p, q) { return (q.v.Pinned === true) - (p.v.Pinned === true) || (q.v.Date || 0) - (p.v.Date || 0); },
-      label: function (v) { return { t: (v.Pinned === true ? '📌 ' : '') + v.Title, sub: v.Type + ' · ' + (v.Date ? S.date(v.Date) : ''), color: v.Type === 'Announcement' ? 'var(--gold)' : '#5B6476' }; },
+      label: function (v) { return { t: (v.Pinned === true ? '📌 ' : '') + v.Title, sub: v.Type + ' · ' + (v.Date ? S.date(v.Date) : ''), color: v.Type === 'Announcement' ? 'var(--gold)' : '#6E6859' }; },
       editTitle: function () { return 'Edit post'; },
       defaults: function () { return { Date: Date.now(), Type: 'Announcement' }; },
       fields: function (v) {

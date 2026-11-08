@@ -3,11 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05060B">
+<link rel="icon" type="image/png" href="icon-180.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Kingdom 3914 · Admin</title>
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site.css?v=17">
+<link rel="stylesheet" href="site.css?v=18">
 <style>
   .head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px}
   .head p{color:var(--soft);font-size:16px;margin-top:8px;max-width:640px}
@@ -15,24 +18,24 @@
   .tabs::-webkit-scrollbar{display:none}
   .tabs button{flex:none;min-height:44px;padding:0 16px;border:none;border-radius:10px;background:transparent;color:var(--soft);font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
   .tabs button[aria-selected="true"]{background:var(--gold);color:#18130A}
-  .tabs .cnt{font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(154,166,186,.16);color:var(--soft)}
+  .tabs .cnt{font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(151,143,128,.16);color:var(--soft)}
   .tabs button[aria-selected="true"] .cnt{background:rgba(24,19,10,.18);color:#18130A}
 
   .bar2{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
   .bar2 .grow{flex:1 1 220px;min-width:0}
-  .search,.sel{width:100%;background:#0D1320;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:15px;min-height:44px;color:var(--text)}
+  .search,.sel{width:100%;background:#090A11;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:15px;min-height:44px;color:var(--text)}
   .sel{width:auto;max-width:100%}
   .search:focus,.sel:focus{border-color:var(--gold);outline:none}
 
   .sums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
-  .sum{background:#0D1320;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .sum{background:#090A11;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
   .sum span{display:block;font-size:12px;color:var(--muted);font-weight:600}
   .sum b{font-family:'Barlow Condensed',sans-serif;font-size:28px;line-height:1.1}
   @media(max-width:700px){.sums{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
   .tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
   table{width:100%;border-collapse:collapse;font-size:14.5px}
-  th{position:sticky;top:0;background:#0D1320;text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+  th{position:sticky;top:0;background:#090A11;text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
   th[data-sort]:hover{color:var(--text)}
   th .arr{opacity:.6;margin-left:4px}
   th.r,td.r{text-align:right}
@@ -43,12 +46,12 @@
   td.n{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
   td.act{text-align:right;white-space:nowrap}
   .badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:6px;text-transform:uppercase;white-space:nowrap}
-  .b-admin{background:rgba(232,184,74,.16);color:var(--gold)}
-  .b-player{background:rgba(154,166,186,.12);color:var(--soft)}
+  .b-admin{background:rgba(231,198,144,.16);color:var(--gold)}
+  .b-player{background:rgba(151,143,128,.12);color:var(--soft)}
   .b-ok{background:rgba(61,214,140,.15);color:var(--green)}
   .b-bad{background:rgba(240,85,90,.15);color:var(--red)}
   .b-blue{background:rgba(76,141,255,.15);color:#8DB4FF}
-  .b-mute{background:rgba(154,166,186,.1);color:var(--muted)}
+  .b-mute{background:rgba(151,143,128,.1);color:var(--muted)}
   .b-purple{background:rgba(216,108,242,.15);color:#E3A2F5}
   tr.cancelled td{opacity:.55}
   tr.cancelled td.act{opacity:1}
@@ -151,9 +154,9 @@
 </main>
 <footer class="foot"><div class="wrap">Kingdom 3914 · admin tools</div></footer>
 
-<script src="config.js?v=17"></script>
-<script src="core.js?v=17"></script>
-<script src="site.js?v=17"></script>
+<script src="config.js?v=18"></script>
+<script src="core.js?v=18"></script>
+<script src="site.js?v=18"></script>
 <script>
 (function () {
   var S = window.Site, esc = S.esc, n = S.n, $ = function (id) { return document.getElementById(id); };

@@ -41,19 +41,20 @@
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     events: '<path d="m14 13-7.5 7.5a2.1 2.1 0 0 1-3-3L11 10"/><path d="m16 16 6-6M8 8l6-6M9 7l8 8M21 11l-8-8"/>',
     migrate: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>',
+    planner: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 18h.01M12 18h4"/>',
     discord: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/>',
     admin: '<path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>'
   };
   function nav() {
     var page = document.body.getAttribute('data-page');
-    var links = [['index.html', 'home', 'Home'], ['calendar.html', 'calendar', 'Calendar'], ['events.html', 'events', 'MGE & GH'], ['migration.html', 'migrate', 'Migrate'], ['#discord', 'discord', 'Discord']];
+    var links = [['index.html', 'home', 'Home'], ['calendar.html', 'calendar', 'Calendar'], ['events.html', 'events', 'MGE & GH'], ['migration.html', 'migrate', 'Migrate'], ['planner.html', 'planner', 'Planner'], ['#discord', 'discord', 'Discord']];
     var el = document.getElementById('site-nav'); if (!el) return;
     var who = session.get();
-    if (who && who.admin) links.splice(4, 0, ['admin.html', 'admin', 'Admin']);
+    if (who && who.admin) links.splice(5, 0, ['admin.html', 'admin', 'Admin']);
     var LOCK = '<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="members only"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
     el.innerHTML =
       '<header class="topbar"><div class="wrap">' +
-        '<a class="brand" href="index.html"><span class="crest" aria-hidden="true"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h18l-2-10-5 4-2-6-2 6-5-4z"/><path d="M5 21h14"/></svg></span>' +
+        '<a class="brand" href="index.html"><span class="crest logo"><img src="logo.webp" alt="" width="38" height="46"></span>' +
         '<span><b data-text="kingdom_name">' + esc(C.KINGDOM) + '</b><small data-text="tagline">' + esc(C.TAGLINE) + '</small></span></a>' +
         '<nav class="navlinks" aria-label="Main">' + links.map(function (l) {
           if (l[1] === 'discord') return '<a href="#" data-discord target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS.discord + '</svg>' + l[2] + '</a>';
