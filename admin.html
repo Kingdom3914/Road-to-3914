@@ -87,6 +87,16 @@
   .bulk-grid{display:grid;grid-template-columns:160px 1fr;gap:10px}
   .bulk-grid input,.bulk-ta{width:100%;background:#090A11;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:15px;color:var(--text);min-height:44px}
   .bulk-ta{min-height:140px;font-family:ui-monospace,Consolas,monospace;font-size:14px}
+  .dir{display:flex;gap:6px}
+  .dir button{flex:1;min-height:44px;border:1px solid var(--line);border-radius:11px;background:#090A11;color:var(--soft);font-weight:700;font-size:15px}
+  .dir button[data-d="add"][aria-pressed="true"]{background:rgba(61,214,140,.16);border-color:#3DD68C;color:#3DD68C}
+  .dir button[data-d="deduct"][aria-pressed="true"]{background:rgba(240,85,90,.16);border-color:var(--red);color:var(--red)}
+  .dir button[data-d="set"][aria-pressed="true"]{background:rgba(231,198,144,.16);border-color:var(--gold);color:var(--gold)}
+  .cr-now{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .cr-now div{background:#090A11;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:12px;color:var(--muted);font-weight:600}
+  .cr-now b{display:block;font-size:20px;color:var(--text);font-family:'Barlow Condensed',sans-serif;margin-top:2px}
+  .cr-f{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);font-weight:600}
+  .cr-f input{background:#090A11;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:15px;color:var(--text);min-height:44px}
   .bulk-sum{background:rgba(231,198,144,.08);border:1px solid rgba(231,198,144,.3);border-radius:12px;padding:12px 14px;font-size:14px}
   .bulk-err{color:var(--red);font-size:13.5px}
   @media(max-width:560px){.bulk-grid{grid-template-columns:1fr}}
@@ -341,18 +351,47 @@
   $('addPlayer').addEventListener('click', function () { editPlayer(null); });
 
   function editCredits(p) {
-    S.form({
-      title: 'Credits · ' + p.name,
-      fields: [
-        { key: 'mode', label: 'What to do', type: 'select', value: 'add', required: true, full: true, options: [{ v: 'add', l: 'Give or take credits' }, { v: 'set', l: 'Set the total to an exact number' }] },
-        { key: 'amount', label: 'Credits', type: 'number', value: '', required: true, help: 'Give: 500 · Take: −200 · Now: total ' + n(p.balance) + ', available ' + n(p.available) + ', in bids ' + n(p.reserved) + '.' },
-        { key: 'reason', label: 'Reason', value: '', required: true, max: 200, placeholder: 'e.g. KvK honor top 10', help: 'Saved in the activity log.' }
-      ],
-      saveLabel: 'Save credits',
-      check: function (v) { var a = Number(v.amount); if (!(a % 1 === 0)) return 'Enter a whole number.'; if (v.mode === 'add' && !a) return 'Enter how many credits.'; if (v.mode === 'set' && a < 0) return 'The total can’t be below zero.'; return ''; },
-      onSave: function (v) { return S.api({ action: 'adminCredit', player: p.gov, mode: v.mode, amount: Number(v.amount), reason: v.reason }); },
-      after: function (res, M) { M.close(); S.toast('Credits saved', p.name + ': ' + n(res.before) + ' → ' + n(res.after), 'good'); loadPeople(); }
+    var M = S.modal('Credits · ' + p.name), dir = 'add', free = Math.max(0, p.available), used = p.spent + p.reserved;
+    M.body.innerHTML =
+      '<div class="cr-now"><div>Total<b>' + n(p.balance) + '</b></div><div>Free to use<b>' + n(free) + '</b></div><div>Spent or in bids<b>' + n(used) + '</b></div></div>' +
+      '<div class="dir" style="margin-top:14px"><button type="button" data-d="add" aria-pressed="true">+ Add</button><button type="button" data-d="deduct" aria-pressed="false">− Deduct</button><button type="button" data-d="set" aria-pressed="false">Set total</button></div>' +
+      '<div class="bulk-grid" style="margin-top:12px"><label class="cr-f"><span id="crLab">Credits to add</span><input id="crAmt" inputmode="numeric" placeholder="e.g. 500"></label>' +
+      '<label class="cr-f">Reason (saved in the activity log)<input id="crWhy" maxlength="200" placeholder="e.g. KvK honor top 10"></label></div>' +
+      '<div class="bulk-sum" id="crSum" style="margin-top:12px">Type how many credits.</div><div class="bulk-err" id="crErr" style="margin-top:8px"></div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn gold" type="button" id="crGo" disabled>Save</button></div>';
+    var B = M.body, q = function (x) { return B.querySelector(x); };
+    function calc(keep) {
+      var a = Math.abs(Number(String(q('#crAmt').value).replace(/[, −-]/g, ''))), why = q('#crWhy').value.trim(), bad = '', after = null;
+      if (!String(q('#crAmt').value).trim()) bad = ' ';
+      else if (!(a % 1 === 0) || (!a && dir !== 'set')) bad = 'Enter a whole number of credits.';
+      else {
+        after = dir === 'add' ? p.balance + a : dir === 'deduct' ? p.balance - a : a;
+        if (after < used) bad = dir === 'deduct' ? p.name + ' has only ' + n(free) + ' free credits, so you can deduct at most ' + n(free) + '. The rest is spent or held in bids.' : 'The total can’t be below ' + n(used) + ', because that much is already spent or held in bids.';
+        else if (!why) bad = 'Write a short reason.';
+      }
+      q('#crSum').innerHTML = after === null ? 'Type how many credits.' : 'Total <b>' + n(p.balance) + ' → ' + n(after) + '</b> · free to use ' + n(free) + ' → ' + n(Math.max(0, after - used));
+      q('#crErr').textContent = bad.trim();
+      var go = q('#crGo'); go.disabled = !!bad; if (keep) return { a: a, why: why, ok: !bad }; go.removeAttribute('data-armed');
+      go.textContent = after === null ? 'Save' : dir === 'add' ? 'Add ' + n(a) + ' to ' + p.name : dir === 'deduct' ? 'Deduct ' + n(a) + ' from ' + p.name : 'Set ' + p.name + '’s total to ' + n(a);
+      return { a: a, why: why, ok: !bad };
+    }
+    B.addEventListener('input', function () { calc(); });
+    B.addEventListener('click', function (e) {
+      var d = e.target.closest('[data-d]'); if (!d) return;
+      dir = d.getAttribute('data-d'); B.querySelectorAll('[data-d]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === d)); });
+      q('#crLab').textContent = dir === 'add' ? 'Credits to add' : dir === 'deduct' ? 'Credits to deduct' : 'New total';
+      calc(); q('#crAmt').focus();
     });
+    q('#crGo').addEventListener('click', function () {
+      var r = calc(true), btn = q('#crGo'); if (!r.ok) return;
+      if (dir === 'deduct' && !btn.hasAttribute('data-armed')) { btn.setAttribute('data-armed', ''); btn.textContent = 'Tap again to deduct ' + n(r.a); return; }
+      btn.disabled = true; btn.textContent = 'Saving…';
+      S.api({ action: 'adminCredit', player: p.gov, mode: dir === 'set' ? 'set' : 'add', amount: dir === 'deduct' ? -r.a : r.a, reason: r.why }).then(function (res) {
+        if (res && res.ok === false) throw new Error(res.error || 'Could not save.');
+        M.close(); S.toast('Credits saved', p.name + ': ' + n(res.before) + ' → ' + n(res.after), 'good'); loadPeople();
+      }).catch(function (x) { calc(); q('#crErr').textContent = x.message || 'Could not save.'; });
+    });
+    setTimeout(function () { q('#crAmt').focus(); }, 40);
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-player]'), c = e.target.closest('[data-credit]');
@@ -603,7 +642,7 @@
   /* ---------- give credits to many players ---------- */
   function openBulk() {
     var go = function () {
-      var M = S.modal('Give credits to many players'), mode = 'pick', picked = {};
+      var M = S.modal('Add or deduct credits for many players'), mode = 'pick', dir = 'add', picked = {};
       var people = st.people.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
       var alliances = []; people.forEach(function (p) { if (p.alliance && alliances.indexOf(p.alliance) < 0) alliances.push(p.alliance); });
       var byGov = {}; people.forEach(function (p) { byGov[p.gov] = p; });
@@ -613,18 +652,19 @@
           alliances.map(function (a) { return '<button class="btn ghost sm" type="button" data-al="' + esc(a) + '">All ' + esc(a) + '</button>'; }).join('') +
           '<button class="btn ghost sm" type="button" data-none>Clear</button></div>' +
           '<div class="pick" style="margin-top:10px">' + people.map(function (p) { return '<label><input type="checkbox" data-g="' + esc(p.gov) + '"> <b>' + esc(p.name) + '</b><small>' + esc(p.alliance || '') + ' · ' + n(p.available) + ' available</small></label>'; }).join('') + '</div>' +
-          '<div class="bulk-grid" style="margin-top:12px"><input id="bkAmt" inputmode="numeric" placeholder="Amount, e.g. 500"><input id="bkWhy" maxlength="200" placeholder="Reason (goes in the activity log)"></div></div>' +
-        '<div data-sec="paste" hidden><textarea class="bulk-ta" id="bkList" placeholder="One player per line: Governor ID, then amount\n52446230 500\n61660070 750\n33887393 -200"></textarea>' +
+          '<div class="dir" style="margin-top:12px"><button type="button" data-d="add" aria-pressed="true">+ Add</button><button type="button" data-d="deduct" aria-pressed="false">− Deduct</button></div>' +
+          '<div class="bulk-grid" style="margin-top:10px"><input id="bkAmt" inputmode="numeric" placeholder="Credits, e.g. 500"><input id="bkWhy" maxlength="200" placeholder="Reason (goes in the activity log)"></div></div>' +
+        '<div data-sec="paste" hidden><textarea class="bulk-ta" id="bkList" placeholder="One player per line: Governor ID, then credits. Put a minus to deduct.\n52446230 500\n61660070 750\n33887393 -200"></textarea>' +
           '<input class="search" id="bkWhy2" maxlength="200" placeholder="Reason (goes in the activity log)" style="margin-top:10px"></div>' +
         '<div class="bulk-sum" id="bkSum">Pick players and an amount.</div><div class="bulk-err" id="bkErr"></div>' +
-        '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn gold" type="button" id="bkGo" disabled>Give credits</button></div>';
+        '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn gold" type="button" id="bkGo" disabled>Save</button></div>';
       var B = M.body, q = function (s) { return B.querySelector(s); };
       function items() {
         var out = [], bad = [];
         if (mode === 'pick') {
-          var a = Number(String(q('#bkAmt').value).replace(/[, ]/g, ''));
-          Object.keys(picked).forEach(function (g) { if (picked[g]) out.push({ gov: g, amount: a }); });
-          if (!(a % 1 === 0) || !a) bad.push('Enter a whole number of credits (minus to take away).');
+          var a = Math.abs(Number(String(q('#bkAmt').value).replace(/[, −-]/g, '')));
+          Object.keys(picked).forEach(function (g) { if (picked[g]) out.push({ gov: g, amount: dir === 'deduct' ? -a : a }); });
+          if (!(a % 1 === 0) || !a) bad.push('Enter how many credits, as a whole number.');
         } else {
           String(q('#bkList').value).split(/\n+/).forEach(function (ln, i) {
             ln = ln.trim(); if (!ln) return;
@@ -635,21 +675,25 @@
           });
         }
         var seen = {}; out.forEach(function (x) { if (seen[x.gov]) bad.push(byGov[x.gov].name + ' is listed twice.'); seen[x.gov] = 1; });
-        out.forEach(function (x) { var p = byGov[x.gov]; if (p && p.balance + x.amount < p.spent + p.reserved) bad.push(p.name + ' has already used ' + n(p.spent + p.reserved) + ' credits, so their total can’t drop to ' + n(p.balance + x.amount) + '.'); });
+        out.forEach(function (x) { var p = byGov[x.gov]; if (p && p.balance + x.amount < p.spent + p.reserved) bad.push(p.name + ' has only ' + n(Math.max(0, p.balance - p.spent - p.reserved)) + ' free credits, so you can’t deduct ' + n(-x.amount) + ' (the rest is spent or held in bids).'); });
         return { out: out, bad: bad, why: (mode === 'pick' ? q('#bkWhy') : q('#bkWhy2')).value.trim() };
       }
-      function refresh() {
+      function refresh(keep) {
         var r = items(), tot = 0; r.out.forEach(function (x) { tot += x.amount; });
         if (!r.why) r.bad.push('Write a short reason.');
         q('#bkSum').innerHTML = r.out.length ? '<b>' + r.out.length + ' player' + (r.out.length > 1 ? 's' : '') + '</b> · ' + (mode === 'pick' ? (r.out[0].amount >= 0 ? '+' : '') + n(r.out[0].amount) + ' each · ' : '') + 'total ' + (tot >= 0 ? '+' : '') + n(tot) + ' credits' : 'Pick players and an amount.';
         q('#bkErr').innerHTML = r.out.length ? r.bad.map(esc).join('<br>') : '';
         q('#bkGo').disabled = !r.out.length || r.bad.length > 0;
+        var gb = q('#bkGo'); if (keep) return r; gb.removeAttribute('data-armed');
+        gb.textContent = !r.out.length ? 'Save' : mode === 'pick' ? (dir === 'deduct' ? 'Deduct ' : 'Add ') + n(Math.abs(r.out[0].amount)) + (dir === 'deduct' ? ' from ' : ' to ') + r.out.length + ' player' + (r.out.length > 1 ? 's' : '') : 'Save changes for ' + r.out.length + ' player' + (r.out.length > 1 ? 's' : '');
         return r;
       }
-      B.addEventListener('input', refresh);
+      B.addEventListener('input', function () { refresh(); });
       B.addEventListener('change', function (e) { var c = e.target.closest('[data-g]'); if (c) { picked[c.getAttribute('data-g')] = c.checked; refresh(); } });
       B.addEventListener('click', function (e) {
         var m = e.target.closest('[data-m]');
+        var dd = e.target.closest('[data-d]');
+        if (dd) { dir = dd.getAttribute('data-d'); B.querySelectorAll('[data-d]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === dd)); }); refresh(); return; }
         if (m) { mode = m.getAttribute('data-m'); B.querySelectorAll('[data-m]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === m)); }); B.querySelectorAll('[data-sec]').forEach(function (x) { x.hidden = x.getAttribute('data-sec') !== mode; }); refresh(); return; }
         var setAll = function (fn) { B.querySelectorAll('[data-g]').forEach(function (c) { c.checked = fn(byGov[c.getAttribute('data-g')]); picked[c.getAttribute('data-g')] = c.checked; }); refresh(); };
         if (e.target.closest('[data-all]')) setAll(function () { return true; });
@@ -657,13 +701,13 @@
         var al = e.target.closest('[data-al]'); if (al) setAll(function (p) { return p.alliance === al.getAttribute('data-al'); });
       });
       q('#bkGo').addEventListener('click', function () {
-        var r = refresh(); if (q('#bkGo').disabled) return;
+        var r = refresh(true); if (q('#bkGo').disabled) return;
         var btn = q('#bkGo');
         if (!btn.hasAttribute('data-armed')) { btn.setAttribute('data-armed', ''); btn.textContent = 'Tap again to confirm'; return; }
         btn.disabled = true; btn.textContent = 'Saving…';
         api({ action: 'adminCreditBulk', items: r.out, reason: r.why }).then(function (res) {
           M.close(); S.toast('Credits saved', res.count + ' players updated · total ' + (res.total >= 0 ? '+' : '') + n(res.total), 'good'); st.people = null; loadPeople();
-        }).catch(function (x) { btn.disabled = false; btn.removeAttribute('data-armed'); btn.textContent = 'Give credits'; q('#bkErr').textContent = x.message; });
+        }).catch(function (x) { btn.disabled = false; refresh(); q('#bkErr').textContent = x.message; });
       });
     };
     if (st.people) go(); else loadPeople().then(function () { if (st.people) go(); });
