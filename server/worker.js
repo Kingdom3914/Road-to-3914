@@ -1,4 +1,4 @@
-/* Built 2026-11-12T00:45Z — deployed automatically from GitHub (server/ folder) */
+/* Built 2026-11-12T01:00Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
@@ -407,6 +407,7 @@ async function handle(env, p) {
     if (action === 'adminPeople') return adminPeople(t, g.me);
     if (action === 'adminPlayer') return adminPlayer(env, p, g.me);
     if (action === 'adminCredit') return adminCredit(env, p, g.me);
+    if (action === 'adminCreditBulk') return adminCreditBulk(env, p, g.me);
     if (action === 'adminBids') return adminBids(t);
     if (action === 'adminBid') return adminBid(env, p, g.me);
     if (action === 'adminApps') return adminApps(env);
@@ -696,6 +697,51 @@ async function adminCredit(env, p, who) {
     return { ok: true, before: before, after: after };
   });
   if (r.ok) { var d = info.after - info.before; await log(env, who, 'credits', (d >= 0 ? '+' : '') + fmtN(d) + ' to ' + info.name + ' (' + fmtN(info.before) + ' → ' + fmtN(info.after) + '): ' + reason); }
+  return r;
+}
+
+/* Give or take credits for many players at once: items = [{gov, amount}], one reason. All or nothing. */
+async function adminCreditBulk(env, p, who) {
+  var items = Array.isArray(p.items) ? p.items : [], reason = str(p.reason).slice(0, 200), seen = {}, done = [];
+  if (!items.length) return { ok: false, error: 'Pick at least one player.' };
+  if (items.length > 500) return { ok: false, error: 'At most 500 players at once.' };
+  if (!reason) return { ok: false, error: 'Write a short reason (it goes in the activity log).' };
+  for (var i = 0; i < items.length; i++) {
+    var g0 = str(items[i] && items[i].gov), a0 = Number(items[i] && items[i].amount);
+    if (!g0 || !(a0 % 1 === 0) || !a0 || Math.abs(a0) > 100000000) return { ok: false, error: 'Every line needs a Governor ID and a whole, non-zero amount.' };
+    if (seen[g0]) return { ok: false, error: 'Governor ID ' + g0 + ' is listed twice.' };
+    seen[g0] = 1;
+  }
+  var r = await withRetry(env, async function (dv, t) {
+    var bal = Core.balances(t, Date.now()), stmts = [], bad = [], changes = [];
+    items.forEach(function (it) {
+      var gov = str(it.gov), amount = Number(it.amount), pl = null;
+      t.players.forEach(function (x) { if (str(x.GovID) === gov) pl = x; });
+      if (!pl) { bad.push('Governor ID ' + gov + ' is not a player.'); return; }
+      var rows = t.credits.filter(function (c) { return str(c.GovID) === gov; }), before = 0;
+      rows.forEach(function (c) { before += Number(c.Balance) || 0; });
+      var after = before + amount, b = bal[gov] || { spent: 0, reserved: 0 };
+      if (after < 0 || after < b.spent + b.reserved) { bad.push(str(pl.Name) + ' has already used ' + fmtN(b.spent + b.reserved) + ' credits, so their total can’t drop to ' + fmtN(after) + '.'); return; }
+      if (rows.length) { var first = clean(rows[0]); first.Balance = after; stmts.push(updateRow(rows[0]._row, first)); rows.slice(1).forEach(function (c) { stmts.push(deleteRow(c._row)); }); }
+      else stmts.push(insertRow('Credits', { GovID: gov, Name: str(pl.Name), Balance: after }));
+      changes.push({ name: str(pl.Name), before: before, after: after });
+    });
+    if (bad.length) return { ok: false, error: bad.slice(0, 5).join(' ') + (bad.length > 5 ? ' (+' + (bad.length - 5) + ' more)' : '') };
+    if (!(await commit(env, dv, stmts))) return RETRY;
+    done = changes;
+    var total = 0; changes.forEach(function (c) { total += c.after - c.before; });
+    return { ok: true, count: changes.length, total: total };
+  });
+  if (r.ok && done.length) {
+    var now = Date.now();
+    try {
+      await env.DB.batch(done.map(function (c) {
+        var d = c.after - c.before;
+        return env.DB.prepare('INSERT INTO log (ts, gov, name, action, detail) VALUES (?, ?, ?, ?, ?)').bind(now, str(who.GovID), str(who.Name), 'credits',
+          ((d >= 0 ? '+' : '') + fmtN(d) + ' to ' + c.name + ' (' + fmtN(c.before) + ' → ' + fmtN(c.after) + '): ' + reason + ' [bulk]').slice(0, 500));
+      }));
+    } catch (e) {}
+  }
   return r;
 }
 
