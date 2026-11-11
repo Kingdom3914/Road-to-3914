@@ -62,6 +62,40 @@
   .more{display:flex;justify-content:center;margin-top:12px}
   .denied{max-width:520px;margin:40px auto;text-align:center}
   .note{font-size:13px;color:var(--muted);margin-top:10px}
+  .ov{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .ov .card{background:#090A11;border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .ov .card h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0}
+  .ov .big{font-family:'Barlow Condensed',sans-serif;font-size:40px;line-height:1;font-weight:700}
+  .ov .big small{font-size:14px;color:var(--muted);font-family:inherit;font-weight:600;margin-left:6px}
+  .ov .line{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;border-top:1px solid var(--line2)}
+  .ov .line:first-of-type{border-top:none}
+  .ov .line span{color:var(--soft);min-width:0;overflow-wrap:anywhere}
+  .ov .line b{white-space:nowrap;font-weight:600}
+  .ov .warn{color:#F3C97A}
+  .ov .wide{grid-column:span 2}
+  .ov .go{margin-top:auto;align-self:flex-start}
+  @media(max-width:900px){.ov{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:600px){.ov{grid-template-columns:1fr}.ov .wide{grid-column:auto}}
+  .bulk-mode{display:flex;gap:6px;background:#090A11;border:1px solid var(--line);border-radius:12px;padding:4px}
+  .bulk-mode button{flex:1;min-height:40px;border:none;border-radius:9px;background:transparent;color:var(--soft);font-weight:700}
+  .bulk-mode button[aria-pressed="true"]{background:var(--gold);color:#18130A}
+  .pick{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+  .pick label{display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--line2);font-size:14px;cursor:pointer}
+  .pick label:first-child{border-top:none}
+  .pick label small{color:var(--muted);margin-left:auto}
+  .quick{display:flex;flex-wrap:wrap;gap:6px}
+  .bulk-grid{display:grid;grid-template-columns:160px 1fr;gap:10px}
+  .bulk-grid input,.bulk-ta{width:100%;background:#090A11;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:15px;color:var(--text);min-height:44px}
+  .bulk-ta{min-height:140px;font-family:ui-monospace,Consolas,monospace;font-size:14px}
+  .bulk-sum{background:rgba(231,198,144,.08);border:1px solid rgba(231,198,144,.3);border-radius:12px;padding:12px 14px;font-size:14px}
+  .bulk-err{color:var(--red);font-size:13.5px}
+  @media(max-width:560px){.bulk-grid{grid-template-columns:1fr}}
+  .addp{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .addp label{font-size:12px;color:var(--muted);font-weight:600;display:flex;flex-direction:column;gap:6px}
+  .addp input{background:#090A11;border:1px solid var(--line);border-radius:10px;padding:9px 10px;color:var(--text);font-size:15px;min-height:42px}
+  .addp .full{grid-column:1/-1}
+  .pinbox{font-family:'Barlow Condensed',sans-serif;font-size:34px;letter-spacing:.12em;font-weight:700}
+  @media(max-width:560px){.addp{grid-template-columns:1fr}}
   .appv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;margin-bottom:14px}
   .appv div{min-width:0}
   .appv span{display:block;font-size:12px;color:var(--muted);font-weight:600}
@@ -86,7 +120,7 @@
     <div>
       <div class="eyebrow">Kingdom admin</div>
       <h1>Admin</h1>
-      <p>Players, credits, bids, migration applications and a record of every change. Only admins can see this page.</p>
+      <p>An overview of what needs attention, plus players, credits, bids, migration applications and a record of every change. Only admins can see this page.</p>
     </div>
   </div>
 
@@ -97,12 +131,18 @@
 
   <div id="app" hidden>
     <div class="tabs" role="tablist" aria-label="Admin sections">
+      <button role="tab" data-tab="overview">Overview</button>
       <button role="tab" data-tab="players">Players <span class="cnt" id="cPlayers">·</span></button>
       <button role="tab" data-tab="credits">Credits</button>
       <button role="tab" data-tab="bids">Bids <span class="cnt" id="cBids">·</span></button>
       <button role="tab" data-tab="apps">Applications <span class="cnt" id="cApps">·</span></button>
       <button role="tab" data-tab="log">Activity log</button>
     </div>
+
+    <!-- Overview -->
+    <section class="panel" data-pane="overview" style="margin-top:16px" hidden>
+      <div class="ov" id="ov"><div class="empty">Loading…</div></div>
+    </section>
 
     <!-- Players -->
     <section class="panel" data-pane="players" style="margin-top:16px">
@@ -125,6 +165,7 @@
       <div class="bar2">
         <input class="search grow" id="qCredits" type="search" placeholder="Search player…" aria-label="Search credits">
         <button class="btn ghost sm" type="button" data-csv="credits">Download Excel (CSV)</button>
+        <button class="btn gold sm" type="button" id="bulkBtn">Give to many</button>
       </div>
       <div class="tscroll"><table>
         <thead><tr><th data-sort="name">Player</th><th class="r" data-sort="balance">Total given</th><th class="r hide-sm" data-sort="spent">Won</th><th class="r hide-sm" data-sort="reserved">In bids</th><th class="r" data-sort="available">Available</th><th></th></tr></thead>
@@ -189,7 +230,7 @@
 <script>
 (function () {
   var S = window.Site, esc = S.esc, n = S.n, $ = function (id) { return document.getElementById(id); };
-  var st = { tab: 'players', people: null, me: '', bids: null, events: [], log: null, sort: { players: ['name', 1], credits: ['name', 1] }, bidLimit: 200, logLimit: 200 };
+  var st = { tab: 'overview', people: null, me: '', bids: null, events: [], log: null, sort: { players: ['name', 1], credits: ['name', 1] }, bidLimit: 200, logLimit: 200 };
   try { var saved = S.store.get('k3914-admin-tab'); if (saved) st.tab = saved; } catch (e) {}
 
   if (!S.session.get()) return; /* lock screen is shown by site.js */
@@ -222,6 +263,7 @@
     if (t === 'bids' && !st.bids) loadBids();
     if (t === 'log') loadLog();
     if (t === 'apps' && !st.apps) loadApps();
+    if (t === 'overview') loadOverview();
   }
   document.querySelector('.tabs').addEventListener('click', function (e) { var b = e.target.closest('[data-tab]'); if (b) showTab(b.getAttribute('data-tab')); });
 
@@ -432,7 +474,8 @@
       '<div id="appShots"><div class="note">Loading screenshots…</div></div>' +
       '<div class="app-save"><select class="sel" id="apSt" aria-label="Status">' + st.appStatuses.map(function (x) { return '<option' + (x === a.status ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' +
       '<textarea id="apNote" maxlength="500" placeholder="Note for other officers (optional)">' + esc(a.note || '') + '</textarea></div>' +
-      '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn gold" type="button" id="apSave">Save status</button></div>';
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap">' + (R4 ? '' : '<button class="btn ghost" type="button" id="apAdd">Add as player</button>') + '<button class="btn gold" type="button" id="apSave">Save status</button></div>' +
+      '<div id="apAddBox"></div>';
     var closeM = M.close; M.close = function () { urls.forEach(function (u) { URL.revokeObjectURL(u); }); closeM(); };
     M.el.addEventListener('click', function (e) { if (e.target === M.el || e.target.closest('[data-mdl-close]')) urls.forEach(function (u) { URL.revokeObjectURL(u); }); });
     api({ action: 'adminApp', ref: a.ref }).then(function (r) {
@@ -455,6 +498,42 @@
       }
       next(); next(); next();
     }).catch(function (x) { var box = document.getElementById('appShots'); if (box) box.innerHTML = '<div class="note">Couldn’t load screenshots: ' + esc(x.message) + '</div>'; });
+    var addBtn = M.body.querySelector('#apAdd');
+    if (addBtn) {
+      var whenPeople = st.people ? Promise.resolve() : loadPeople();
+      whenPeople.then(function () {
+        if ((st.people || []).some(function (p) { return p.gov === String(d.gov); })) { addBtn.disabled = true; addBtn.textContent = 'Already a player'; }
+      });
+      addBtn.addEventListener('click', function () {
+        var box = M.body.querySelector('#apAddBox'), pin = randomPin();
+        addBtn.disabled = true;
+        box.innerHTML = '<div class="addp"><label>Governor ID<input value="' + esc(d.gov) + '" disabled></label>' +
+          '<label>Name<input id="apName" maxlength="40" value="' + esc(d.name || '') + '"></label>' +
+          '<label>Alliance<input id="apAll" maxlength="20" placeholder="e.g. RB3"></label>' +
+          '<label class="full">PIN (random — you can change it)<input id="apPin" maxlength="20" value="' + pin + '"></label>' +
+          '<div class="full" style="display:flex;justify-content:flex-end;gap:8px"><button class="btn ghost sm" type="button" id="apAddCancel">Cancel</button><button class="btn gold sm" type="button" id="apAddGo">Add player and mark Accepted</button></div></div>';
+        box.querySelector('#apAddCancel').addEventListener('click', function () { box.innerHTML = ''; addBtn.disabled = false; });
+        box.querySelector('#apAddGo').addEventListener('click', function () {
+          var go = this, name = box.querySelector('#apName').value.trim(), all = box.querySelector('#apAll').value.trim(), p2 = box.querySelector('#apPin').value.trim();
+          if (!name) { S.toast('Name is required', '', 'bad'); return; }
+          if (!/^[0-9A-Za-z]{4,20}$/.test(p2)) { S.toast('PIN: 4 to 20 letters or numbers', '', 'bad'); return; }
+          go.disabled = true; go.textContent = 'Adding…';
+          api({ action: 'adminPlayer', row: 0, sig: '', values: { GovID: String(d.gov), Name: name, Alliance: all, Role: 'player', PIN: p2 } }).then(function () {
+            var note = (M.body.querySelector('#apNote').value.trim() ? M.body.querySelector('#apNote').value.trim() + ' · ' : '') + 'Added as player';
+            return api({ action: 'adminAppSave', ref: a.ref, status: 'Accepted', note: note });
+          }).then(function () {
+            st.people = null; st.apps = null; loadApps();
+            M.body.querySelector('#apSt').value = 'Accepted';
+            M.body.querySelector('#apNote').value = (M.body.querySelector('#apNote').value.trim() ? M.body.querySelector('#apNote').value.trim() + ' · ' : '') + 'Added as player';
+            addBtn.textContent = 'Already a player';
+            box.innerHTML = '<div class="addp"><div class="full"><b>' + esc(name) + '</b> is now a player and the application is marked Accepted.</div>' +
+              '<div class="full">PIN — send it to them privately. It won’t be shown again.</div><div class="full pinbox" id="apPinShow">' + esc(p2) + '</div>' +
+              '<div class="full" style="display:flex;gap:8px"><button class="btn gold sm" type="button" id="apCopy">Copy PIN</button><button class="btn ghost sm" type="button" data-mdl-close>Done</button></div></div>';
+            box.querySelector('#apCopy').addEventListener('click', function () { try { navigator.clipboard.writeText(p2); S.toast('PIN copied', '', 'good'); } catch (e) {} });
+          }).catch(function (x) { go.disabled = false; go.textContent = 'Add player and mark Accepted'; S.toast('Couldn’t add player', x.message, 'bad'); });
+        });
+      });
+    }
     M.body.querySelector('#apSave').addEventListener('click', function () {
       var btn = this, status = M.body.querySelector('#apSt').value, note = M.body.querySelector('#apNote').value;
       btn.disabled = true;
@@ -467,6 +546,129 @@
     var b = e.target.closest('[data-app]'); if (!b) return;
     var a = (st.apps || []).filter(function (x) { return x.ref === b.getAttribute('data-app'); })[0]; if (a) openApp(a);
   });
+
+  /* ---------- overview ---------- */
+  function ago(t) { return t ? S.ago(t) : ''; }
+  function loadOverview() {
+    var box = $('ov');
+    Promise.all([
+      api({ action: 'adminPeople' }).catch(function () { return null; }),
+      api({ action: 'adminApps' }).catch(function () { return null; }),
+      api({ action: 'adminLoad', tab: 'Events' }).catch(function () { return null; }),
+      S.api({ action: 'calendar' }).catch(function () { return null; }),
+      api({ action: 'adminLog', limit: 5 }).catch(function () { return null; })
+    ]).then(function (r) {
+      var people = r[0] ? r[0].people : [], apps = r[1] ? r[1].apps || [] : [], evRows = r[2] ? r[2].rows : [], cal = r[3] && r[3].calendar, log = r[4] ? r[4].log : [];
+      if (r[0]) { st.people = r[0].people; st.me = r[0].me; $('cPlayers').textContent = people.length; }
+      var now = Date.now(), pend = apps.filter(function (a) { return a.status === 'Pending'; });
+      if (r[1]) $('cApps').textContent = pend.length;
+      var evs = evRows.map(function (x) { var v = x.v; return { id: v.EventID, title: v.Title, st: String(v.Status || '').toLowerCase(), o: Number(v.Opens) || 0, c: Number(v.Closes) || 0 }; });
+      var open = evs.filter(function (e) { return e.st === 'open' && e.o <= now && now < e.c; });
+      var soon = evs.filter(function (e) { return e.st === 'open' && e.o > now; }).sort(function (a, b) { return a.o - b.o; });
+      var drafts = evs.filter(function (e) { return e.st === 'draft' && (!e.c || e.c > now); });
+      var noPin = people.filter(function (p) { return !p.hasPin; }), admins = people.filter(function (p) { return p.role === 'admin'; }).length, r4s = people.filter(function (p) { return p.role === 'r4'; }).length;
+      var avail = 0, held = 0; people.forEach(function (p) { avail += p.available || 0; held += p.reserved || 0; });
+      var names = {}; ((cal && cal.types) || []).forEach(function (t) { names[t.n] = t; });
+      var day = 86400000, today = Math.floor(now / day) * day;
+      var next = ((cal && cal.dates) || []).filter(function (d) { return (d.b || d.a) >= today; }).sort(function (a, b) { return a.a - b.a; }).slice(0, 5);
+      function line(l, v, cls) { return '<div class="line"><span>' + l + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</b></div>'; }
+      function evName(e) { return esc(e.id + (e.title ? ' · ' + e.title : '')); }
+      box.innerHTML =
+        '<div class="card"><h3>Applications</h3><div class="big">' + pend.length + '<small>pending</small></div>' +
+          line('Total received', n(apps.length)) + line('Newest', pend[0] ? esc(pend[0].data.name || '') + ' · ' + ago(pend[0].ts) : '—') +
+          '<button class="btn ghost sm go" type="button" data-goto="apps">Open applications</button></div>' +
+        '<div class="card"><h3>Auctions</h3><div class="big">' + open.length + '<small>open now</small></div>' +
+          (open.map(function (e) { return line(evName(e), 'closes ' + S.dateTime(e.c).replace(' UTC', '')); }).join('')) +
+          (soon.slice(0, 2).map(function (e) { return line(evName(e), 'opens ' + S.dateTime(e.o).replace(' UTC', '')); }).join('')) +
+          (drafts.map(function (e) { return line(evName(e), 'draft: not visible yet', 'warn'); }).join('')) +
+          (!open.length && !soon.length && !drafts.length ? line('Nothing scheduled', '—') : '') + '</div>' +
+        '<div class="card"><h3>Players</h3><div class="big">' + people.length + '<small>players</small></div>' +
+          line('Without a PIN', noPin.length ? '<span class="warn">' + noPin.length + '</span>' : '0') + line('Admins', admins) + line('R4', r4s) +
+          '<button class="btn ghost sm go" type="button" data-goto="players">Open players</button></div>' +
+        '<div class="card"><h3>Credits</h3><div class="big">' + n(avail) + '<small>available</small></div>' +
+          line('Held in bids now', n(held)) +
+          '<button class="btn ghost sm go" type="button" data-goto="credits">Open credits</button></div>' +
+        '<div class="card wide"><h3>Coming up</h3>' + (next.length ? next.map(function (d) {
+            var t = names[d.e], span = d.b && d.b !== d.a ? S.date(d.a) + ' – ' + S.date(d.b) : S.date(d.a);
+            return line(esc(d.e + (d.x ? ' · ' + d.x : '')), span);
+          }).join('') : line('No upcoming dates', '—')) + '</div>' +
+        '<div class="card" style="grid-column:1/-1"><h3>Latest activity</h3>' + (log.length ? log.map(function (l) {
+            return line(esc((l.name || 'System') + ': ' + l.detail), ago(l.ts));
+          }).join('') : line('Nothing yet', '—')) +
+          '<button class="btn ghost sm go" type="button" data-goto="log">Open activity log</button></div>';
+    });
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-goto]'); if (b) showTab(b.getAttribute('data-goto')); });
+
+  /* ---------- give credits to many players ---------- */
+  function openBulk() {
+    var go = function () {
+      var M = S.modal('Give credits to many players'), mode = 'pick', picked = {};
+      var people = st.people.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+      var alliances = []; people.forEach(function (p) { if (p.alliance && alliances.indexOf(p.alliance) < 0) alliances.push(p.alliance); });
+      var byGov = {}; people.forEach(function (p) { byGov[p.gov] = p; });
+      M.body.innerHTML =
+        '<div class="bulk-mode"><button type="button" data-m="pick" aria-pressed="true">Same amount to many</button><button type="button" data-m="paste" aria-pressed="false">Paste a list</button></div>' +
+        '<div data-sec="pick"><div class="quick"><button class="btn ghost sm" type="button" data-all>Select all</button>' +
+          alliances.map(function (a) { return '<button class="btn ghost sm" type="button" data-al="' + esc(a) + '">All ' + esc(a) + '</button>'; }).join('') +
+          '<button class="btn ghost sm" type="button" data-none>Clear</button></div>' +
+          '<div class="pick" style="margin-top:10px">' + people.map(function (p) { return '<label><input type="checkbox" data-g="' + esc(p.gov) + '"> <b>' + esc(p.name) + '</b><small>' + esc(p.alliance || '') + ' · ' + n(p.available) + ' available</small></label>'; }).join('') + '</div>' +
+          '<div class="bulk-grid" style="margin-top:12px"><input id="bkAmt" inputmode="numeric" placeholder="Amount, e.g. 500"><input id="bkWhy" maxlength="200" placeholder="Reason (goes in the activity log)"></div></div>' +
+        '<div data-sec="paste" hidden><textarea class="bulk-ta" id="bkList" placeholder="One player per line: Governor ID, then amount\n52446230 500\n61660070 750\n33887393 -200"></textarea>' +
+          '<input class="search" id="bkWhy2" maxlength="200" placeholder="Reason (goes in the activity log)" style="margin-top:10px"></div>' +
+        '<div class="bulk-sum" id="bkSum">Pick players and an amount.</div><div class="bulk-err" id="bkErr"></div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn gold" type="button" id="bkGo" disabled>Give credits</button></div>';
+      var B = M.body, q = function (s) { return B.querySelector(s); };
+      function items() {
+        var out = [], bad = [];
+        if (mode === 'pick') {
+          var a = Number(String(q('#bkAmt').value).replace(/[, ]/g, ''));
+          Object.keys(picked).forEach(function (g) { if (picked[g]) out.push({ gov: g, amount: a }); });
+          if (!(a % 1 === 0) || !a) bad.push('Enter a whole number of credits (minus to take away).');
+        } else {
+          String(q('#bkList').value).split(/\n+/).forEach(function (ln, i) {
+            ln = ln.trim(); if (!ln) return;
+            var m = ln.match(/^([0-9]{3,20})[\s,;:\t]+(-?[0-9][0-9,]*)$/);
+            if (!m) { bad.push('Line ' + (i + 1) + ': “' + ln + '” — use “GovernorID amount”.'); return; }
+            if (!byGov[m[1]]) { bad.push('Line ' + (i + 1) + ': Governor ID ' + m[1] + ' is not a player.'); return; }
+            out.push({ gov: m[1], amount: Number(m[2].replace(/,/g, '')) });
+          });
+        }
+        var seen = {}; out.forEach(function (x) { if (seen[x.gov]) bad.push(byGov[x.gov].name + ' is listed twice.'); seen[x.gov] = 1; });
+        out.forEach(function (x) { var p = byGov[x.gov]; if (p && p.balance + x.amount < p.spent + p.reserved) bad.push(p.name + ' has already used ' + n(p.spent + p.reserved) + ' credits, so their total can’t drop to ' + n(p.balance + x.amount) + '.'); });
+        return { out: out, bad: bad, why: (mode === 'pick' ? q('#bkWhy') : q('#bkWhy2')).value.trim() };
+      }
+      function refresh() {
+        var r = items(), tot = 0; r.out.forEach(function (x) { tot += x.amount; });
+        if (!r.why) r.bad.push('Write a short reason.');
+        q('#bkSum').innerHTML = r.out.length ? '<b>' + r.out.length + ' player' + (r.out.length > 1 ? 's' : '') + '</b> · ' + (mode === 'pick' ? (r.out[0].amount >= 0 ? '+' : '') + n(r.out[0].amount) + ' each · ' : '') + 'total ' + (tot >= 0 ? '+' : '') + n(tot) + ' credits' : 'Pick players and an amount.';
+        q('#bkErr').innerHTML = r.out.length ? r.bad.map(esc).join('<br>') : '';
+        q('#bkGo').disabled = !r.out.length || r.bad.length > 0;
+        return r;
+      }
+      B.addEventListener('input', refresh);
+      B.addEventListener('change', function (e) { var c = e.target.closest('[data-g]'); if (c) { picked[c.getAttribute('data-g')] = c.checked; refresh(); } });
+      B.addEventListener('click', function (e) {
+        var m = e.target.closest('[data-m]');
+        if (m) { mode = m.getAttribute('data-m'); B.querySelectorAll('[data-m]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === m)); }); B.querySelectorAll('[data-sec]').forEach(function (x) { x.hidden = x.getAttribute('data-sec') !== mode; }); refresh(); return; }
+        var setAll = function (fn) { B.querySelectorAll('[data-g]').forEach(function (c) { c.checked = fn(byGov[c.getAttribute('data-g')]); picked[c.getAttribute('data-g')] = c.checked; }); refresh(); };
+        if (e.target.closest('[data-all]')) setAll(function () { return true; });
+        if (e.target.closest('[data-none]')) setAll(function () { return false; });
+        var al = e.target.closest('[data-al]'); if (al) setAll(function (p) { return p.alliance === al.getAttribute('data-al'); });
+      });
+      q('#bkGo').addEventListener('click', function () {
+        var r = refresh(); if (q('#bkGo').disabled) return;
+        var btn = q('#bkGo');
+        if (!btn.hasAttribute('data-armed')) { btn.setAttribute('data-armed', ''); btn.textContent = 'Tap again to confirm'; return; }
+        btn.disabled = true; btn.textContent = 'Saving…';
+        api({ action: 'adminCreditBulk', items: r.out, reason: r.why }).then(function (res) {
+          M.close(); S.toast('Credits saved', res.count + ' players updated · total ' + (res.total >= 0 ? '+' : '') + n(res.total), 'good'); st.people = null; loadPeople();
+        }).catch(function (x) { btn.disabled = false; btn.removeAttribute('data-armed'); btn.textContent = 'Give credits'; q('#bkErr').textContent = x.message; });
+      });
+    };
+    if (st.people) go(); else loadPeople().then(function () { if (st.people) go(); });
+  }
+  $('bulkBtn').addEventListener('click', openBulk);
 
   /* ---------- download as CSV (opens in Excel / Google Sheets) ---------- */
   function csv(rows) { return '﻿' + rows.map(function (r) { return r.map(function (v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\r\n'); }
