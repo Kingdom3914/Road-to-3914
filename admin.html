@@ -10,7 +10,7 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site.css?v=19">
+<link rel="stylesheet" href="site.css?v=20">
 <style>
   .head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px}
   .head p{color:var(--soft);font-size:16px;margin-top:8px;max-width:640px}
@@ -183,9 +183,9 @@
 </main>
 <footer class="foot"><div class="wrap">Kingdom 3914 · admin tools</div></footer>
 
-<script src="config.js?v=19"></script>
-<script src="core.js?v=19"></script>
-<script src="site.js?v=19"></script>
+<script src="config.js?v=20"></script>
+<script src="core.js?v=20"></script>
+<script src="site.js?v=20"></script>
 <script>
 (function () {
   var S = window.Site, esc = S.esc, n = S.n, $ = function (id) { return document.getElementById(id); };
@@ -193,7 +193,7 @@
   try { var saved = S.store.get('k3914-admin-tab'); if (saved) st.tab = saved; } catch (e) {}
 
   if (!S.session.get()) return; /* lock screen is shown by site.js */
-  var R4 = S.isR4();
+  var R4 = !!(S.isR4 && S.isR4());
   if (!S.isAdmin() && !R4) { $('denied').hidden = false; return; }
   $('app').hidden = false;
   if (R4) {
