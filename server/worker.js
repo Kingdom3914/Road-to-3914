@@ -1,4 +1,4 @@
-/* Built 2026-11-11T21:10Z — do not edit here; edit src/server.js and core.js */
+/* Built 2026-11-11T21:10Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
