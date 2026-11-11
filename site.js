@@ -50,7 +50,7 @@
     var links = [['index.html', 'home', 'Home'], ['calendar.html', 'calendar', 'Calendar'], ['events.html', 'events', 'MGE & GH'], ['migration.html', 'migrate', 'Migrate'], ['planner.html', 'planner', 'Planner'], ['#discord', 'discord', 'Discord']];
     var el = document.getElementById('site-nav'); if (!el) return;
     var who = session.get();
-    if (who && who.admin) links.splice(5, 0, ['admin.html', 'admin', 'Admin']);
+    if (who && (who.admin || who.r4)) links.splice(5, 0, ['admin.html', 'admin', who.admin ? 'Admin' : 'Applications']);
     var LOCK = '<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="members only"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
     el.innerHTML =
       '<header class="topbar"><div class="wrap">' +
@@ -62,7 +62,7 @@
         }).join('') + '</nav>' +
         (who ? '<div class="who-chip acct">' +
           '<button type="button" class="acct-btn" data-acct aria-haspopup="true" aria-expanded="false"><span class="acct-av" aria-hidden="true">' + esc(String(who.name || 'G').trim().charAt(0).toUpperCase()) + '</span>' +
-          '<span class="acct-nm"><b>' + esc(who.name || 'Governor') + '</b><small>' + (who.admin ? 'Admin · ' : '') + 'ID ' + esc(who.gov) + '</small></span>' +
+          '<span class="acct-nm"><b>' + esc(who.name || 'Governor') + '</b><small>' + (who.admin ? 'Admin · ' : who.r4 ? 'R4 · ' : '') + 'ID ' + esc(who.gov) + '</small></span>' +
           '<svg class="acct-cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>' +
           '<div class="acct-menu" role="menu">' +
             '<div class="acct-head"><b>' + esc(who.name || 'Governor') + '</b><small>Governor ID ' + esc(who.gov) + '</small></div>' +
@@ -104,8 +104,8 @@
     return req.then(function (res) {
       if (res && res.text) setText(res.text, true);
       if (res && typeof res.admin === 'boolean') {
-        var cur = session.get();
-        if (cur && !!cur.admin !== res.admin) { cur.admin = res.admin; store.set('k3914-session', JSON.stringify(cur)); if (!res.admin) setEdit(false); nav(); }
+        var cur = session.get(), r4 = !!res.r4;
+        if (cur && (!!cur.admin !== res.admin || !!cur.r4 !== r4)) { cur.admin = res.admin; cur.r4 = r4; store.set('k3914-session', JSON.stringify(cur)); if (!res.admin) setEdit(false); nav(); }
       }
       if (res && res.ok && !res.locked && !res.authError && payload.gov && /^(state|calendar)$/.test(payload.action || '')) {
         store.set('k3914-c-' + payload.action + '-' + payload.gov, JSON.stringify(res));
@@ -147,7 +147,7 @@
         if (!gov || !pin) { err.textContent = 'Enter your Governor ID and PIN.'; err.className = 'err on'; return; }
         btn.disabled = true; btn.textContent = 'Signing in…'; err.className = 'err';
         api({ action: 'login', gov: gov, pin: pin }).then(function (res) {
-          if (res && res.ok && res.me) { session.set(gov, pin, res.me.name, !!res.me.admin); location.reload(); return; }
+          if (res && res.ok && res.me) { session.set(gov, pin, res.me.name, !!res.me.admin, !!res.me.r4); location.reload(); return; }
           throw new Error((res && (res.authError || res.error)) || 'Wrong governor ID or PIN.');
         }).catch(function (x) {
           err.textContent = x.message || 'Could not sign in. Try again.'; err.className = 'err on';
@@ -266,7 +266,7 @@
   /* ---------- signed-in governor (kept on this device) ---------- */
   var session = {
     get: function () { var s = store.get('k3914-session'); try { return s ? JSON.parse(s) : null; } catch (e) { return null; } },
-    set: function (gov, pin, name, admin) { store.set('k3914-session', JSON.stringify({ gov: gov, pin: pin, name: name || '', admin: !!admin })); },
+    set: function (gov, pin, name, admin, r4) { store.set('k3914-session', JSON.stringify({ gov: gov, pin: pin, name: name || '', admin: !!admin, r4: !!r4 })); },
     clear: function () { store.del('k3914-session'); }
   };
 
@@ -433,7 +433,7 @@
   });
 
   window.Site = { onText: onText, esc: esc, n: n, date: date, dateTime: dateTime, ago: ago, left: left, shortLeft: shortLeft, pad: pad, store: store, toast: toast, api: api, session: session, signOut: signOut, cached: cached,
-    isAdmin: function () { var se = session.get(); return !!(se && se.admin); }, editOn: editOn, form: form, manager: manager, modal: modal, saveText: saveText, refresh: refresh, isoDate: isoDate, isoDT: isoDT, config: C, demo: !C.API_URL };
+    isAdmin: function () { var se = session.get(); return !!(se && se.admin); }, isR4: function () { var se = session.get(); return !!(se && se.r4 && !se.admin); }, editOn: editOn, form: form, manager: manager, modal: modal, saveText: saveText, refresh: refresh, isoDate: isoDate, isoDT: isoDT, config: C, demo: !C.API_URL };
   nav();
   if (editOn()) document.body.classList.add('edit-on');
   if (membersPage() && !session.get()) {

@@ -108,7 +108,7 @@
     <section class="panel" data-pane="players" style="margin-top:16px">
       <div class="bar2">
         <input class="search grow" id="qPlayers" type="search" placeholder="Search name, ID or alliance…" aria-label="Search players">
-        <select class="sel" id="fRole" aria-label="Role"><option value="">Everyone</option><option value="admin">Admins</option><option value="player">Players</option><option value="nopin">No PIN yet</option></select>
+        <select class="sel" id="fRole" aria-label="Role"><option value="">Everyone</option><option value="admin">Admins</option><option value="r4">R4</option><option value="player">Players</option><option value="nopin">No PIN yet</option></select>
         <button class="btn ghost sm" type="button" data-csv="players">Download Excel (CSV)</button>
         <button class="btn gold sm" type="button" id="addPlayer">+ Add player</button>
       </div>
@@ -193,8 +193,16 @@
   try { var saved = S.store.get('k3914-admin-tab'); if (saved) st.tab = saved; } catch (e) {}
 
   if (!S.session.get()) return; /* lock screen is shown by site.js */
-  if (!S.isAdmin()) { $('denied').hidden = false; return; }
+  var R4 = S.isR4();
+  if (!S.isAdmin() && !R4) { $('denied').hidden = false; return; }
   $('app').hidden = false;
+  if (R4) {
+    /* R4 officers only see migration applications */
+    st.tab = 'apps';
+    document.querySelector('.tabs').hidden = true;
+    document.querySelector('.head h1').textContent = 'Applications';
+    document.querySelector('.head p').textContent = 'Migration applications sent from the Migrate page. As an R4 you can review them and set their status.';
+  }
 
   function api(o) { return S.api(o).then(function (r) { if (!r || r.ok === false) throw new Error((r && r.error) || 'Something went wrong.'); return r; }); }
   function fail(el, cols) { return function (x) { $(el).innerHTML = '<tr><td colspan="' + cols + '"><div class="empty"><b>Couldn’t load</b>' + esc(x.message) + '</div></td></tr>'; }; }
@@ -233,7 +241,7 @@
     var rows = playerRows();
     $('tPlayers').innerHTML = rows.length ? rows.map(function (p) {
       return '<tr><td><b>' + esc(p.name) + '</b>' + (p.gov === st.me ? ' <span class="badge b-blue">you</span>' : '') + '<span class="sub">' + esc(p.alliance || '—') + '<span class="show-sm"> · ID ' + esc(p.gov) + '</span></span></td>' +
-        '<td class="n hide-sm">' + esc(p.gov) + '</td><td><span class="badge ' + (p.role === 'admin' ? 'b-admin' : 'b-player') + '">' + p.role + '</span></td>' +
+        '<td class="n hide-sm">' + esc(p.gov) + '</td><td><span class="badge ' + (p.role === 'admin' ? 'b-admin' : p.role === 'r4' ? 'b-blue' : 'b-player') + '">' + (p.role === 'r4' ? 'R4' : p.role) + '</span></td>' +
         '<td class="hide-sm">' + (p.hasPin ? '<span class="badge b-ok">set</span>' : '<span class="badge b-bad">none</span>') + '</td>' +
         '<td class="n r">' + n(p.available) + '</td><td class="act"><button class="btn ghost sm" type="button" data-player="' + esc(p.gov) + '">Edit</button></td></tr>';
     }).join('') : '<tr><td colspan="6"><div class="empty">No players match.</div></td></tr>';
@@ -267,7 +275,7 @@
         { key: 'GovID', label: 'Governor ID', value: p ? p.gov : '', required: true, help: isNew ? 'The ID from the game (numbers only).' : 'Can’t be changed.' },
         { key: 'Name', label: 'Name', value: p ? p.name : '', required: true, max: 40 },
         { key: 'Alliance', label: 'Alliance', value: p ? p.alliance : 'RB3', max: 20 },
-        { key: 'Role', label: 'Role', type: 'select', value: p ? p.role : 'player', required: true, options: [{ v: 'player', l: 'Player' }, { v: 'admin', l: 'Admin (can edit the website)' }] },
+        { key: 'Role', label: 'Role', type: 'select', value: p ? p.role : 'player', required: true, options: [{ v: 'player', l: 'Player' }, { v: 'r4', l: 'R4 (can review migration applications)' }, { v: 'admin', l: 'Admin (can edit the website)' }] },
         { key: 'PIN', label: isNew ? 'PIN' : 'New PIN', value: pin, required: isNew, full: true, help: isNew ? 'A random PIN is filled in — change it if you like. Send it to the player privately.' : 'Leave empty to keep their current PIN. Type a new one to reset it.' }
       ],
       saveLabel: isNew ? 'Add player' : 'Save',
@@ -479,7 +487,7 @@
   });
 
   showTab(st.tab);
-  if (st.tab !== 'players' && st.tab !== 'credits') loadPeople();
+  if (!R4 && st.tab !== 'players' && st.tab !== 'credits') loadPeople();
 })();
 </script>
 </body>
