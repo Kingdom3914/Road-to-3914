@@ -1,4 +1,4 @@
-/* Built 2026-11-11T21:10Z — deployed automatically from GitHub (server/ folder) */
+/* Built 2026-11-12T00:45Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
@@ -250,6 +250,8 @@ export default {
     var p = {};
     if (req.method === 'POST') { try { p = JSON.parse(await req.text()) || {}; } catch (e) { p = {}; } }
     else { new URL(req.url).searchParams.forEach(function (v, k) { p[k] = v; }); }
+    if (!p || typeof p !== 'object' || Array.isArray(p)) p = {};
+    p._ip = str(req.headers.get('CF-Connecting-IP')).slice(0, 64);
     try { return json(await handle(env, p)); }
     catch (err) { return json({ ok: false, error: String((err && err.message) || err) }); }
   }
@@ -315,20 +317,39 @@ async function hmacHex(key, msg) {
   var sig = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(msg));
   return Array.prototype.map.call(new Uint8Array(sig), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
 }
+/* h1$ = scrambled without the secret pepper (older); h2$ = scrambled with the secret PIN_PEPPER.
+   With PIN_PEPPER set, a player's h1 PIN is upgraded to h2 the next time they sign in. Never change PIN_PEPPER once set. */
+function pepper(env) { return str(env.PIN_PEPPER); }
 async function hashPin(env, pin) {
-  var salt = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
-  return 'h1$' + salt + '$' + await hmacHex((env.PIN_PEPPER || '') + salt, str(pin));
+  var salt = crypto.randomUUID().replace(/-/g, '').slice(0, 16), pep = pepper(env);
+  return (pep ? 'h2$' : 'h1$') + salt + '$' + await hmacHex(pep + salt, str(pin));
 }
 async function pinMatches(env, stored, pin) {
   stored = str(stored); pin = str(pin);
   if (!stored || !pin) return false;
-  if (stored.indexOf('h1$') !== 0) return stored === pin; /* not scrambled yet */
+  var v = stored.slice(0, 3);
+  if (v !== 'h1$' && v !== 'h2$') return stored === pin; /* not scrambled yet */
+  if (v === 'h2$' && !pepper(env)) return false;
   var parts = stored.split('$');
-  var want = parts[2], got = await hmacHex((env.PIN_PEPPER || '') + parts[1], pin);
+  var want = parts[2], got = await hmacHex((v === 'h2$' ? pepper(env) : '') + parts[1], pin);
   if (want.length !== got.length) return false;
   var diff = 0; for (var i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ got.charCodeAt(i);
   return diff === 0;
 }
+/* Re-scramble an older PIN with the pepper after a correct sign-in (best effort; never blocks the sign-in) */
+async function upgradePin(env, gov, oldStored, pin) {
+  try {
+    var hashed = await hashPin(env, pin);
+    await withRetry(env, async function (dv, t) {
+      var pl = null; t.players.forEach(function (x) { if (str(x.GovID) === gov) pl = x; });
+      if (!pl || str(pl.PIN) !== oldStored) return { ok: true };
+      var o = clean(pl); o.PIN = hashed;
+      if (!(await commit(env, dv, [updateRow(pl._row, o)]))) return RETRY;
+      return { ok: true };
+    });
+  } catch (e) {}
+}
+
 /* Shared rules (Core) compare PINs directly, so after checking the scrambled PIN we put
    the typed PIN back on this player in memory only, for this one request. */
 function unlock(t, gov, pin) { t.players.forEach(function (pl) { if (str(pl.GovID) === gov) pl.PIN = str(pin); }); }
@@ -350,6 +371,7 @@ async function memberGate(env, t, p) {
     return { error: fails + 1 >= 5 ? 'Too many wrong PINs. Try again in 15 minutes.' : 'Wrong governor ID or PIN.' };
   }
   if (f) await env.DB.prepare('DELETE FROM fails WHERE gov = ?').bind(key).run();
+  if (pepper(env) && str(me.PIN).indexOf('h2$') !== 0) await upgradePin(env, gov, str(me.PIN), pin);
   unlock(t, gov, pin);
   return { me: me };
 }
@@ -564,7 +586,7 @@ async function adminImport(env, p) {
     for (var o of list) {
       var row = {};
       TABS[tab].forEach(function (h) { row[h] = o[h] === undefined || o[h] === null ? '' : o[h]; });
-      if (tab === 'Players') { if (!str(row.GovID)) continue; if (str(row.PIN) && str(row.PIN).indexOf('h1$') !== 0) row.PIN = await hashPin(env, row.PIN); }
+      if (tab === 'Players') { if (!str(row.GovID)) continue; if (str(row.PIN) && !/^h[12][$]/.test(str(row.PIN))) row.PIN = await hashPin(env, row.PIN); }
       all.push({ tab: tab, data: row }); counts[tab]++;
     }
   }
@@ -772,6 +794,9 @@ async function applyStart(env, p) {
     if (expect[c] < need) missing.push(APP_CATS[c][0]);
   });
   if (missing.length) return { ok: false, error: 'Missing screenshots: ' + missing.join(', ') + '.' };
+  /* spam limits: 3 applications per connection per hour, 2 per Governor ID per day */
+  if (!(await allow(env, 'ip:' + (p._ip || 'unknown'), 3, 3600000))) return { ok: false, error: 'Too many applications from your connection. Please try again in an hour.' };
+  if (!(await allow(env, 'gov:' + gov, 2, 86400000))) return { ok: false, error: 'An application for this Governor ID was already sent today. Our officers will contact you.' };
   await appsTable(env);
   var now = new Date(), d = now.toISOString();
   var ref = 'M' + d.slice(2, 4) + d.slice(5, 7) + d.slice(8, 10) + '-' + gov.slice(-4) + '-' + (100 + Math.floor(Math.random() * 900));
@@ -780,6 +805,18 @@ async function applyStart(env, p) {
     farmCount: farms === 'Yes' ? farmCount : '', farmMin: farms === 'Yes' ? fMin : '', farmMax: farms === 'Yes' ? fMax : '' };
   await env.DB.prepare('INSERT INTO apps (ref, ts, status, token, expect, data) VALUES (?, ?, ?, ?, ?, ?)').bind(ref, now.getTime(), 'Uploading', token, JSON.stringify(expect), JSON.stringify(data)).run();
   return { ok: true, ref: ref, token: token };
+}
+
+/* Simple counter: at most max hits per key within the window. Old counters are cleared as we go. */
+async function allow(env, key, max, windowMs) {
+  var now = Date.now();
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS limits (k TEXT PRIMARY KEY, n INTEGER NOT NULL, until INTEGER NOT NULL)').run();
+  var r = await env.DB.prepare('SELECT n, until FROM limits WHERE k = ?').bind(key).first();
+  if (r && r.until > now && r.n >= max) return false;
+  if (r && r.until > now) await env.DB.prepare('UPDATE limits SET n = n + 1 WHERE k = ?').bind(key).run();
+  else await env.DB.prepare('INSERT INTO limits (k, n, until) VALUES (?, 1, ?) ON CONFLICT(k) DO UPDATE SET n = 1, until = excluded.until').bind(key, now + windowMs).run();
+  if (Math.random() < 0.05) await env.DB.prepare('DELETE FROM limits WHERE until < ?').bind(now).run();
+  return true;
 }
 
 async function appRecord(env, p) {
