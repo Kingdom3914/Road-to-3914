@@ -1,0 +1,20 @@
+# Kingdom 3914 server (Cloudflare Worker "kingdom3914-api").
+# Cloudflare deploys this folder automatically whenever it changes on GitHub.
+# Secrets (DISCORD_APPS_WEBHOOK and any others) are set in the Cloudflare dashboard, never here.
+name = "kingdom3914-api"
+main = "worker.js"
+compatibility_date = "2026-11-08"
+workers_dev = true
+keep_vars = true
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kingdom3914"
+database_id = "530ad236-0599-4e9a-b0fa-dc6d3de04122"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "kingdom3914-files"
