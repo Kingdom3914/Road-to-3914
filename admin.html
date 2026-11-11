@@ -62,6 +62,20 @@
   .more{display:flex;justify-content:center;margin-top:12px}
   .denied{max-width:520px;margin:40px auto;text-align:center}
   .note{font-size:13px;color:var(--muted);margin-top:10px}
+  .appv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;margin-bottom:14px}
+  .appv div{min-width:0}
+  .appv span{display:block;font-size:12px;color:var(--muted);font-weight:600}
+  .appv b{display:block;font-size:15px;overflow-wrap:anywhere}
+  .appv .full{grid-column:1/-1}
+  .appv .why{font-weight:400;white-space:pre-wrap;color:var(--soft)}
+  .shot-h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:14px 0 8px}
+  .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+  .shots a{display:block;aspect-ratio:3/4;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#090A11}
+  .shots img{width:100%;height:100%;object-fit:cover;display:block}
+  .shots .ph{display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;color:var(--muted)}
+  .app-save{display:grid;grid-template-columns:180px 1fr;gap:10px;margin-top:16px;align-items:start}
+  .app-save textarea{width:100%;min-height:44px;background:#090A11;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:15px;color:var(--text);resize:vertical}
+  @media(max-width:600px){.appv{grid-template-columns:1fr}.app-save{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-page="admin">
@@ -72,7 +86,7 @@
     <div>
       <div class="eyebrow">Kingdom admin</div>
       <h1>Admin</h1>
-      <p>Players, credits, bids and a record of every change. Only admins can see this page.</p>
+      <p>Players, credits, bids, migration applications and a record of every change. Only admins can see this page.</p>
     </div>
   </div>
 
@@ -86,6 +100,7 @@
       <button role="tab" data-tab="players">Players <span class="cnt" id="cPlayers">·</span></button>
       <button role="tab" data-tab="credits">Credits</button>
       <button role="tab" data-tab="bids">Bids <span class="cnt" id="cBids">·</span></button>
+      <button role="tab" data-tab="apps">Applications <span class="cnt" id="cApps">·</span></button>
       <button role="tab" data-tab="log">Activity log</button>
     </div>
 
@@ -134,12 +149,26 @@
       <p class="note">Cancelling a bid frees that player’s credits; the next-highest bid on that rank leads again. Cancelled bids stay on record and can be restored.</p>
     </section>
 
+    <!-- Migration applications -->
+    <section class="panel" data-pane="apps" style="margin-top:16px" hidden>
+      <div class="bar2">
+        <select class="sel" id="fApp" aria-label="Status"><option value="">All applications</option><option>Pending</option><option>Contacted</option><option>Accepted</option><option>Rejected</option></select>
+        <input class="search grow" id="qApps" type="search" placeholder="Search name, ID or kingdom…" aria-label="Search applications">
+        <button class="btn ghost sm" type="button" data-csv="apps">Download Excel (CSV)</button>
+      </div>
+      <div class="tscroll"><table>
+        <thead><tr><th class="hide-sm">Sent (UTC)</th><th>Governor</th><th class="r">Power</th><th class="r hide-sm">Kills</th><th class="hide-sm">VIP · Kingdom</th><th>Status</th><th></th></tr></thead>
+        <tbody id="tApps"><tr><td colspan="7"><div class="empty">Loading…</div></td></tr></tbody>
+      </table></div>
+      <p class="note">Applications sent from the Migrate page. Open one to see the answers and screenshots, and to set its status. Older applications from before the move stay in the Google Sheet.</p>
+    </section>
+
     <!-- Activity log -->
     <section class="panel" data-pane="log" style="margin-top:16px" hidden>
       <div class="bar2">
         <select class="sel" id="fAction" aria-label="Type">
           <option value="">Everything</option><option value="bid">Bids</option><option value="credits">Credits</option><option value="player">Players &amp; PINs</option>
-          <option value="edit">Website edits</option><option value="text">Page text</option><option value="locked">Sign-in lockouts</option><option value="import">Data copies</option>
+          <option value="edit">Website edits</option><option value="text">Page text</option><option value="locked">Sign-in lockouts</option><option value="import">Data copies</option><option value="application">Applications</option>
         </select>
         <input class="search grow" id="qLog" type="search" placeholder="Search who or what…" aria-label="Search log">
         <button class="btn ghost sm" type="button" data-csv="log">Download Excel (CSV)</button>
@@ -184,6 +213,7 @@
     if ((t === 'players' || t === 'credits') && !st.people) loadPeople();
     if (t === 'bids' && !st.bids) loadBids();
     if (t === 'log') loadLog();
+    if (t === 'apps' && !st.apps) loadApps();
   }
   document.querySelector('.tabs').addEventListener('click', function (e) { var b = e.target.closest('[data-tab]'); if (b) showTab(b.getAttribute('data-tab')); });
 
@@ -334,7 +364,7 @@
   });
 
   /* ---------- activity log ---------- */
-  var ACT = { bid: ['b-ok', 'Bid'], credits: ['b-admin', 'Credits'], player: ['b-blue', 'Player'], edit: ['b-purple', 'Edit'], text: ['b-purple', 'Page text'], locked: ['b-bad', 'Lockout'], import: ['b-mute', 'Data copy'] };
+  var ACT = { bid: ['b-ok', 'Bid'], credits: ['b-admin', 'Credits'], player: ['b-blue', 'Player'], edit: ['b-purple', 'Edit'], text: ['b-purple', 'Page text'], locked: ['b-bad', 'Lockout'], import: ['b-mute', 'Data copy'], application: ['b-blue', 'Application'] };
   function loadLog() {
     return api({ action: 'adminLog', limit: 1000 }).then(function (r) { st.log = r.log; renderLog(); }).catch(fail('tLog', 4));
   }
@@ -355,6 +385,81 @@
   ['fAction', 'qLog'].forEach(function (id) { $(id).addEventListener('input', function () { st.logLimit = 200; renderLog(); }); });
   $('moreLog').addEventListener('click', function () { st.logLimit += 300; renderLog(); });
 
+  /* ---------- migration applications ---------- */
+  var APPST = { Pending: 'b-blue', Contacted: 'b-purple', Accepted: 'b-ok', Rejected: 'b-bad' };
+  function loadApps() {
+    return api({ action: 'adminApps' }).then(function (r) {
+      st.apps = r.apps || []; st.appCats = r.cats || {}; st.appStatuses = r.statuses || ['Pending', 'Contacted', 'Accepted', 'Rejected'];
+      $('cApps').textContent = st.apps.filter(function (a) { return a.status === 'Pending'; }).length;
+      renderApps();
+    }).catch(fail('tApps', 7));
+  }
+  function appRows() {
+    var f = $('fApp').value, q = $('qApps').value;
+    return (st.apps || []).filter(function (a) { var d = a.data || {}; return (!f || a.status === f) && has(q, [d.name, d.gov, d.kingdom, a.ref]); });
+  }
+  function renderApps() {
+    if (!st.apps) return;
+    var rows = appRows();
+    $('tApps').innerHTML = rows.length ? rows.map(function (a) {
+      var d = a.data || {};
+      return '<tr><td class="n hide-sm">' + when(a.ts) + '<span class="sub">' + S.ago(a.ts) + '</span></td>' +
+        '<td><b>' + esc(d.name || '—') + '</b><span class="sub">ID ' + esc(d.gov || '') + '</span><span class="sub show-sm">' + esc((d.vip || '') + ' · K' + (d.kingdom || '')) + '</span></td>' +
+        '<td class="n r">' + n(d.power || 0) + '</td><td class="n r hide-sm">' + n(d.kills || 0) + '</td>' +
+        '<td class="hide-sm">' + esc(d.vip || '') + ' · K' + esc(d.kingdom || '') + '</td>' +
+        '<td><span class="badge ' + (APPST[a.status] || 'b-mute') + '">' + esc(a.status) + '</span>' + (a.by ? '<span class="sub">by ' + esc(a.by) + '</span>' : '') + '</td>' +
+        '<td class="act"><button class="btn ghost sm" type="button" data-app="' + esc(a.ref) + '">Open</button></td></tr>';
+    }).join('') : '<tr><td colspan="7"><div class="empty">' + (st.apps.length ? 'Nothing matches.' : '<b>No applications yet</b>Applications sent from the Migrate page will show up here.') + '</div></td></tr>';
+  }
+  ['fApp', 'qApps'].forEach(function (id) { $(id).addEventListener('input', renderApps); });
+  function openApp(a) {
+    var d = a.data || {}, M = S.modal('Application ' + a.ref), urls = [];
+    function row(label, v, cls) { return '<div class="' + (cls || '') + '"><span>' + esc(label) + '</span><b' + (cls === 'full' ? ' class="why"' : '') + '>' + esc(v === '' || v == null ? '—' : v) + '</b></div>'; }
+    var farms = d.hasFarms === 'Yes' ? d.farmCount + ' farms · ' + n(d.farmMin || 0) + ' – ' + n(d.farmMax || 0) : 'No';
+    M.body.innerHTML = '<div class="appv">' +
+      row('Governor', d.name) + row('Governor ID', d.gov) + row('Power', n(d.power || 0)) + row('Kill points', n(d.kills || 0)) +
+      row('VIP', d.vip) + row('Current kingdom', d.kingdom) + row('KvK spending', d.spending) + row('Role', d.role) +
+      row('Buys RSS', d.buysRss) + row('Farms', farms) + row('Sent', when(a.ts)) + row('Reference', a.ref) +
+      row('Why they want to migrate', d.why, 'full') + '</div>' +
+      '<div id="appShots"><div class="note">Loading screenshots…</div></div>' +
+      '<div class="app-save"><select class="sel" id="apSt" aria-label="Status">' + st.appStatuses.map(function (x) { return '<option' + (x === a.status ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' +
+      '<textarea id="apNote" maxlength="500" placeholder="Note for other officers (optional)">' + esc(a.note || '') + '</textarea></div>' +
+      '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn gold" type="button" id="apSave">Save status</button></div>';
+    var closeM = M.close; M.close = function () { urls.forEach(function (u) { URL.revokeObjectURL(u); }); closeM(); };
+    M.el.addEventListener('click', function (e) { if (e.target === M.el || e.target.closest('[data-mdl-close]')) urls.forEach(function (u) { URL.revokeObjectURL(u); }); });
+    api({ action: 'adminApp', ref: a.ref }).then(function (r) {
+      var by = {}; (r.files || []).forEach(function (k) { var c = k.split('/')[2]; (by[c] = by[c] || []).push(k); });
+      var cats = Object.keys(st.appCats).filter(function (c) { return by[c]; });
+      var box = document.getElementById('appShots'); if (!box) return;
+      if (!cats.length) { box.innerHTML = '<div class="note">No screenshots were uploaded.</div>'; return; }
+      box.innerHTML = cats.map(function (c) {
+        return '<div class="shot-h">' + esc(st.appCats[c][0]) + ' · ' + by[c].length + '</div><div class="shots">' + by[c].map(function (k) { return '<a href="#" data-key="' + esc(k) + '" target="_blank" rel="noopener"><div class="ph">Loading…</div></a>'; }).join('') + '</div>';
+      }).join('');
+      var links = Array.prototype.slice.call(box.querySelectorAll('[data-key]')), i = 0;
+      function next() {
+        var el = links[i++]; if (!el || !document.body.contains(el)) return;
+        S.api({ action: 'adminAppFile', ref: a.ref, key: el.getAttribute('data-key') }).then(function (f) {
+          if (!f || !f.ok) throw new Error();
+          var bin = atob(f.data), u8 = new Uint8Array(bin.length); for (var j = 0; j < bin.length; j++) u8[j] = bin.charCodeAt(j);
+          var u = URL.createObjectURL(new Blob([u8], { type: f.type })); urls.push(u);
+          el.href = u; el.innerHTML = '<img src="' + u + '" alt="Screenshot" loading="lazy">';
+        }).catch(function () { el.innerHTML = '<div class="ph">Couldn’t load</div>'; }).then(next);
+      }
+      next(); next(); next();
+    }).catch(function (x) { var box = document.getElementById('appShots'); if (box) box.innerHTML = '<div class="note">Couldn’t load screenshots: ' + esc(x.message) + '</div>'; });
+    M.body.querySelector('#apSave').addEventListener('click', function () {
+      var btn = this, status = M.body.querySelector('#apSt').value, note = M.body.querySelector('#apNote').value;
+      btn.disabled = true;
+      api({ action: 'adminAppSave', ref: a.ref, status: status, note: note }).then(function () {
+        M.close(); S.toast('Application saved', (d.name || a.ref) + ' → ' + status, 'good'); st.apps = null; loadApps();
+      }).catch(function (x) { btn.disabled = false; S.toast('Couldn’t save', x.message, 'bad'); });
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-app]'); if (!b) return;
+    var a = (st.apps || []).filter(function (x) { return x.ref === b.getAttribute('data-app'); })[0]; if (a) openApp(a);
+  });
+
   /* ---------- download as CSV (opens in Excel / Google Sheets) ---------- */
   function csv(rows) { return '﻿' + rows.map(function (r) { return r.map(function (v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\r\n'); }
   function iso(t) { return t ? new Date(t).toISOString().replace('T', ' ').slice(0, 16) : ''; }
@@ -364,6 +469,7 @@
     if (k === 'players') rows = [['Name', 'Governor ID', 'Alliance', 'Role', 'PIN set', 'Available credits']].concat(playerRows().map(function (p) { return [p.name, p.gov, p.alliance, p.role, p.hasPin ? 'yes' : 'no', p.available]; }));
     if (k === 'credits') rows = [['Name', 'Governor ID', 'Total given', 'Won', 'In bids', 'Available']].concat(st.people.map(function (p) { return [p.name, p.gov, p.balance, p.spent, p.reserved, p.available]; }));
     if (k === 'bids') rows = [['Time (UTC)', 'Auction', 'Rank', 'Player', 'Governor ID', 'Amount', 'State']].concat(bidRows().map(function (x) { return [iso(x.time), x.event, x.rank, x.name, x.gov, x.amount, x.state]; }));
+    if (k === 'apps') rows = [['Sent (UTC)', 'Reference', 'Governor', 'Governor ID', 'Power', 'Kill points', 'VIP', 'Kingdom', 'KvK spending', 'Role', 'Buys RSS', 'Farms', 'Farm count', 'Weakest farm', 'Strongest farm', 'Why', 'Status', 'Note', 'By']].concat(appRows().map(function (a) { var d = a.data || {}; return [iso(a.ts), a.ref, d.name, d.gov, d.power, d.kills, d.vip, d.kingdom, d.spending, d.role, d.buysRss, d.hasFarms, d.farmCount, d.farmMin, d.farmMax, d.why, a.status, a.note, a.by]; }));
     if (k === 'log') rows = [['Time (UTC)', 'Who', 'Governor ID', 'What', 'Details']].concat(logRows().map(function (l) { return [iso(l.ts), l.name, l.gov, l.action, l.detail]; }));
     if (!rows) return;
     var a = document.createElement('a');

@@ -5,9 +5,10 @@ window.CONFIG = {
   KINGDOM: "Kingdom 3914",
   TAGLINE: "RB3 League",
 
-  // Paste your Google Apps Script "Web app" URL between the quotes.
+  // The website's server (Cloudflare). Old Google address, kept as a backup:
+  // https://script.google.com/macros/s/AKfycbyDJgInlCXr3p1SOmyobID0Ba1c2eJ8d_IYCBC8aJmsOCxkEgr3SF9mXHdiNF7l/exec
   // While it is empty, the site runs in DEMO mode with sample data.
-  API_URL: "https://script.google.com/macros/s/AKfycbyDJgInlCXr3p1SOmyobID0Ba1c2eJ8d_IYCBC8aJmsOCxkEgr3SF9mXHdiNF7l/exec",
+  API_URL: "https://kingdom3914-api.sba-44.workers.dev",
 
   // Optional: your Discord invite link (shows a button on Home)
   DISCORD: "",
