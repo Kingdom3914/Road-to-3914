@@ -87,6 +87,12 @@
   .bulk-grid{display:grid;grid-template-columns:160px 1fr;gap:10px}
   .bulk-grid input,.bulk-ta{width:100%;background:#090A11;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:15px;color:var(--text);min-height:44px}
   .bulk-ta{min-height:140px;font-family:ui-monospace,Consolas,monospace;font-size:14px}
+  .tk{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border-radius:12px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.10);font-size:14px}
+  .tk b{font-weight:700}
+  .tk .sp{flex:1 1 auto}
+  .tk.bad{border-color:rgba(240,85,90,.45);background:rgba(240,85,90,.10);color:#FF9A9D}
+  .tk.off{border-color:var(--line);background:#090A11;color:var(--soft)}
+  .btn.dcb{background:#5865F2;color:#fff;border-color:#5865F2}
   .dir{display:flex;gap:6px}
   .dir button{flex:1;min-height:44px;border:1px solid var(--line);border-radius:11px;background:#090A11;color:var(--soft);font-weight:700;font-size:15px}
   .dir button[data-d="add"][aria-pressed="true"]{background:rgba(61,214,140,.16);border-color:#3DD68C;color:#3DD68C}
@@ -211,6 +217,7 @@
         <thead><tr><th class="hide-sm">Sent (UTC)</th><th>Governor</th><th class="r">Power</th><th class="r hide-sm">Kills</th><th class="hide-sm">VIP · Kingdom</th><th>Status</th><th></th></tr></thead>
         <tbody id="tApps"><tr><td colspan="7"><div class="empty">Loading…</div></td></tr></tbody>
       </table></div>
+      <div class="tk" id="dcPanelBox" hidden style="margin-top:14px"><span>🎫 <b>Discord ticket button</b> · players who didn’t connect Discord open their ticket with it by pasting their application reference.</span><span class="sp"></span><button class="btn dcb sm" type="button" id="dcPanelBtn">Post the button in Discord</button></div>
       <p class="note">Applications sent from the Migrate page. Open one to see the answers and screenshots, and to set its status. Older applications from before the move stay in the Google Sheet.</p>
     </section>
 
@@ -478,7 +485,8 @@
   var APPST = { Pending: 'b-blue', Contacted: 'b-purple', Accepted: 'b-ok', Rejected: 'b-bad' };
   function loadApps() {
     return api({ action: 'adminApps' }).then(function (r) {
-      st.apps = r.apps || []; st.appCats = r.cats || {}; st.appStatuses = r.statuses || ['Pending', 'Contacted', 'Accepted', 'Rejected'];
+      st.apps = r.apps || []; st.appCats = r.cats || {};
+      $('dcPanelBox').hidden = !(r.panel && !R4); st.appStatuses = r.statuses || ['Pending', 'Contacted', 'Accepted', 'Rejected'];
       $('cApps').textContent = st.apps.filter(function (a) { return a.status === 'Pending'; }).length;
       renderApps();
     }).catch(fail('tApps', 7));
@@ -493,7 +501,7 @@
     $('tApps').innerHTML = rows.length ? rows.map(function (a) {
       var d = a.data || {};
       return '<tr><td class="n hide-sm">' + when(a.ts) + '<span class="sub">' + S.ago(a.ts) + '</span></td>' +
-        '<td><b>' + esc(d.name || '—') + '</b><span class="sub">ID ' + esc(d.gov || '') + '</span><span class="sub show-sm">' + esc((d.vip || '') + ' · K' + (d.kingdom || '')) + '</span></td>' +
+        '<td><b>' + esc(d.name || '—') + '</b><span class="sub">ID ' + esc(d.gov || '') + '</span>' + (a.ticket ? '<span class="sub">' + ({ open: '💬 ', closed: '🔒 ', failed: '⚠️ ', gone: '— ' }[a.ticket.state] || '') + 'Discord ' + esc(a.ticket.user || '') + '</span>' : '') + '<span class="sub show-sm">' + esc((d.vip || '') + ' · K' + (d.kingdom || '')) + '</span></td>' +
         '<td class="n r">' + n(d.power || 0) + '</td><td class="n r hide-sm">' + n(d.kills || 0) + '</td>' +
         '<td class="hide-sm">' + esc(d.vip || '') + ' · K' + esc(d.kingdom || '') + '</td>' +
         '<td><span class="badge ' + (APPST[a.status] || 'b-mute') + '">' + esc(a.status) + '</span>' + (a.by ? '<span class="sub">by ' + esc(a.by) + '</span>' : '') + '</td>' +
@@ -501,6 +509,14 @@
     }).join('') : '<tr><td colspan="7"><div class="empty">' + (st.apps.length ? 'Nothing matches.' : '<b>No applications yet</b>Applications sent from the Migrate page will show up here.') + '</div></td></tr>';
   }
   ['fApp', 'qApps'].forEach(function (id) { $(id).addEventListener('input', renderApps); });
+  $('dcPanelBtn').addEventListener('click', function () {
+    var b = this;
+    if (!b.hasAttribute('data-armed')) { b.setAttribute('data-armed', ''); b.textContent = 'Tap again to post it'; return; }
+    b.disabled = true; b.textContent = 'Posting…';
+    api({ action: 'adminDiscordPanel' }).then(function () { S.toast('Button posted in Discord', 'Players can now open their ticket from there.', 'good'); })
+      .catch(function (x) { S.toast('Couldn’t post it', x.message, 'bad'); })
+      .then(function () { b.disabled = false; b.removeAttribute('data-armed'); b.textContent = 'Post the button in Discord'; });
+  });
   function openApp(a) {
     var d = a.data || {}, M = S.modal('Application ' + a.ref), urls = [];
     function row(label, v, cls) { return '<div class="' + (cls || '') + '"><span>' + esc(label) + '</span><b' + (cls === 'full' ? ' class="why"' : '') + '>' + esc(v === '' || v == null ? '—' : v) + '</b></div>'; }
@@ -510,10 +526,11 @@
       row('VIP', d.vip) + row('Current kingdom', d.kingdom) + row('KvK spending', d.spending) + row('Role', d.role) +
       row('Buys RSS', d.buysRss) + row('Farms', farms) + row('Sent', when(a.ts)) + row('Reference', a.ref) +
       row('Why they want to migrate', d.why, 'full') + '</div>' +
+      '<div id="apTk"></div>' +
       '<div id="appShots"><div class="note">Loading screenshots…</div></div>' +
       '<div class="app-save"><select class="sel" id="apSt" aria-label="Status">' + st.appStatuses.map(function (x) { return '<option' + (x === a.status ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' +
       '<textarea id="apNote" maxlength="500" placeholder="Note for other officers (optional)">' + esc(a.note || '') + '</textarea></div>' +
-      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap">' + (R4 ? '' : '<button class="btn ghost" type="button" id="apAdd">Add as player</button>') + '<button class="btn gold" type="button" id="apSave">Save status</button></div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap">' + (R4 ? '' : '<button class="btn red" type="button" id="apDel" style="margin-right:auto">Delete</button><button class="btn ghost" type="button" id="apAdd">Add as player</button>') + '<button class="btn gold" type="button" id="apSave">Save status</button></div>' +
       '<div id="apAddBox"></div>';
     var closeM = M.close; M.close = function () { urls.forEach(function (u) { URL.revokeObjectURL(u); }); closeM(); };
     M.el.addEventListener('click', function (e) { if (e.target === M.el || e.target.closest('[data-mdl-close]')) urls.forEach(function (u) { URL.revokeObjectURL(u); }); });
@@ -573,11 +590,37 @@
         });
       });
     }
+    function drawTicket() {
+      var k = a.ticket, box = M.body.querySelector('#apTk'); if (!box) return;
+      if (!k) { box.innerHTML = ''; return; }
+      var link = k.url ? '<a class="btn dcb sm" href="' + esc(k.url) + '" target="_blank" rel="noopener">Open ticket</a>' : '';
+      if (k.state === 'open') box.innerHTML = '<div class="tk"><span>💬 Discord ticket with <b>' + esc(k.user) + '</b> · open</span><span class="sp"></span>' + link + '<button class="btn ghost sm" type="button" data-tk="close">Close ticket</button></div>';
+      else if (k.state === 'closed') box.innerHTML = '<div class="tk off"><span>🔒 Ticket closed · <b>' + esc(k.user) + '</b> can’t see it</span><span class="sp"></span>' + link + '<button class="btn ghost sm" type="button" data-tk="reopen">Reopen</button></div>';
+      else if (k.state === 'failed') box.innerHTML = '<div class="tk bad"><span>⚠️ The Discord ticket for <b>' + esc(k.user) + '</b> couldn’t be created: ' + esc(k.error || 'unknown error') + '. Contact them on Discord directly.</span></div>';
+      else if (k.state === 'gone') box.innerHTML = '<div class="tk off"><span>The ticket channel for <b>' + esc(k.user) + '</b> was deleted in Discord.</span></div>';
+      else box.innerHTML = '';
+      var tb = box.querySelector('[data-tk]');
+      if (tb) tb.addEventListener('click', function () {
+        var op = tb.getAttribute('data-tk'); tb.disabled = true; tb.textContent = op === 'close' ? 'Closing…' : 'Reopening…';
+        api({ action: 'adminAppTicket', ref: a.ref, op: op }).then(function (res) {
+          a.ticket.state = res.state; drawTicket(); S.toast(op === 'close' ? 'Ticket closed' : 'Ticket reopened', '', 'good');
+        }).catch(function (x) { S.toast('Couldn’t change the ticket', x.message, 'bad'); tb.disabled = false; tb.textContent = op === 'close' ? 'Close ticket' : 'Reopen'; });
+      });
+    }
+    drawTicket();
+    var delBtn = M.body.querySelector('#apDel');
+    if (delBtn) delBtn.addEventListener('click', function () {
+      if (!delBtn.hasAttribute('data-armed')) { delBtn.setAttribute('data-armed', ''); delBtn.textContent = a.ticket && a.ticket.url && a.ticket.state !== 'gone' ? 'Tap again (ticket too)' : 'Tap again to delete for good'; return; }
+      delBtn.disabled = true; delBtn.textContent = 'Deleting…';
+      api({ action: 'adminAppDelete', ref: a.ref }).then(function (res) {
+        M.close(); S.toast('Application deleted', (d.name || a.ref) + (res.files ? ' · ' + res.files + ' screenshot' + (res.files === 1 ? '' : 's') + ' removed' : '') + (res.ticketDeleted ? ' · Discord ticket deleted' : ''), 'good'); st.apps = null; loadApps();
+      }).catch(function (x) { delBtn.disabled = false; delBtn.removeAttribute('data-armed'); delBtn.textContent = 'Delete'; S.toast('Couldn’t delete', x.message, 'bad'); });
+    });
     M.body.querySelector('#apSave').addEventListener('click', function () {
       var btn = this, status = M.body.querySelector('#apSt').value, note = M.body.querySelector('#apNote').value;
       btn.disabled = true;
       api({ action: 'adminAppSave', ref: a.ref, status: status, note: note }).then(function () {
-        M.close(); S.toast('Application saved', (d.name || a.ref) + ' → ' + status, 'good'); st.apps = null; loadApps();
+        M.close(); S.toast('Application saved', (d.name || a.ref) + ' → ' + status + (a.ticket && a.ticket.state === 'open' && status !== a.status ? ' · posted in their Discord ticket' : ''), 'good'); st.apps = null; loadApps();
       }).catch(function (x) { btn.disabled = false; S.toast('Couldn’t save', x.message, 'bad'); });
     });
   }

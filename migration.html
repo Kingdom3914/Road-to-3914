@@ -76,6 +76,16 @@
   .check{width:74px;height:74px;border-radius:50%;background:rgba(61,214,140,.14);color:var(--green);display:grid;place-items:center;animation:pop .5s cubic-bezier(.2,1.4,.4,1) both}
   @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
   .ref{font-family:'Barlow Condensed',sans-serif;font-size:30px;letter-spacing:.06em;color:var(--gold);background:#090A11;border:1px solid var(--line);border-radius:12px;padding:8px 18px}
+  .dc{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+  .dc p{color:var(--soft);font-size:15px;flex:1 1 320px;margin:0}
+  .btn.dcb{background:#5865F2;color:#fff;border-color:#5865F2;min-width:220px}
+  .btn.dcb:hover{background:#4752C4}
+  .dc-ok{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:var(--green)}
+  .dc-ok small{font-weight:500;color:var(--muted);font-size:13px}
+  .dc-ok a{color:var(--gold);font-weight:600;font-size:13px}
+  .locked{opacity:.4;pointer-events:none;filter:grayscale(.4)}
+  .lock-note{font-size:14px;color:#F3DAB0;background:rgba(231,198,144,.10);border:1px solid rgba(231,198,144,.35);border-radius:10px;padding:10px 12px}
+  .ticket-box{display:flex;flex-direction:column;gap:10px;align-items:center;background:rgba(88,101,242,.10);border:1px solid rgba(88,101,242,.45);border-radius:14px;padding:16px;width:100%}
 </style>
 </head>
 <body data-page="migrate">
@@ -89,8 +99,20 @@
   </div>
 
   <form class="form" id="form" novalidate>
-    <section class="card">
-      <h2><span class="step">1</span>About your account</h2>
+    <section class="card" id="dcCard" hidden>
+      <h2><span class="step">1</span>Discord ticket <span style="font-size:13px;color:var(--muted);font-family:Barlow,sans-serif;font-weight:600;letter-spacing:0">(optional, fastest)</span></h2>
+      <div class="dc" id="dcOff">
+        <p>After you apply, our officers review your application and chat with you in a <b>private Discord ticket</b>.<br><b>Fastest:</b> connect Discord and we’ll add you to our server and open the ticket automatically.<br><span style="color:var(--muted)">Prefer not to connect? Skip this. After sending, you’ll get a reference to paste in our Discord to open your ticket.</span></p>
+        <button class="btn dcb" type="button" id="dcGo">Connect Discord</button>
+      </div>
+      <div class="dc" id="dcOn" hidden>
+        <div class="dc-ok"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Connected as <span id="dcName"></span><br><small>Your ticket is created when you send the application.</small></span></div>
+        <a href="#" id="dcChange" style="font-size:13px;color:var(--gold);margin-left:auto">Use a different account</a>
+      </div>
+      <div class="err" id="dcErr" role="alert"></div>
+    </section>
+    <section class="card" data-lock>
+      <h2><span class="step" data-n="1">1</span>About your account</h2>
       <div class="grid2">
         <div class="field" data-f="govId"><label for="govId">Governor ID <span class="req">*</span></label><input id="govId" inputmode="numeric" autocomplete="off" maxlength="15" placeholder="e.g. 52446230"></div>
         <div class="field" data-f="govName"><label for="govName">Governor name <span class="req">*</span></label><input id="govName" autocomplete="off" maxlength="40"></div>
@@ -119,15 +141,15 @@
       <div class="hp" aria-hidden="true"><label for="website">Website</label><input id="website" tabindex="-1" autocomplete="off"></div>
     </section>
 
-    <section class="card">
-      <h2><span class="step">2</span>Upload your screenshots</h2>
+    <section class="card" data-lock>
+      <h2><span class="step" data-n="2">2</span>Upload your screenshots</h2>
       <div class="counter"><span id="count" style="font-size:14px;color:var(--soft)">0 images</span><div class="meter" aria-hidden="true"><i id="meter" style="width:0%"></i></div></div>
       <div class="shots" id="shots"></div>
       <span class="hint" style="font-size:13px;color:var(--muted)">At least one screenshot in each section. You can pick several images at once. Images are shrunk automatically before upload.</span>
     </section>
 
     <div class="err" id="err" role="alert"></div>
-    <div class="submit-row">
+    <div class="submit-row" data-lock>
       <button class="btn gold" type="submit" id="send">Send application</button>
       <span style="font-size:13px;color:var(--muted)">Your answers are kept on this device until you send them.</span>
     </div>
@@ -138,9 +160,27 @@
     <h2 style="font-size:26px">Application sent</h2>
     <p id="thanks" style="color:var(--soft);font-size:16px" data-text="migration_thanks">Thank you! Your application has been received. Our officers will review it and contact you.</p>
     <div style="font-size:13px;color:var(--muted)">Your reference</div>
-    <div class="ref" id="ref">—</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center"><div class="ref" id="ref">—</div><button class="btn ghost" type="button" id="copyRef" style="margin-top:0;width:auto">Copy</button></div>
+    <div class="ticket-box" id="ticketBox" hidden>
+      <b style="font-size:18px">Your private Discord ticket is ready</b>
+      <span style="color:var(--soft);font-size:14.5px">We added you to our Discord server. Our officers will review your application and chat with you there, and every status update is posted in your ticket.</span>
+      <a class="btn dcb" id="ticketLink" href="#" target="_blank" rel="noopener">Open my ticket</a>
+    </div>
+    <div class="ticket-box" id="ticketSelf" hidden>
+      <b style="font-size:18px">Now open your private Discord ticket</b>
+      <span id="ticketWhy" style="color:#FF9A9D;font-size:14px" hidden>We couldn’t open your ticket automatically, but you can open it yourself in two steps.</span>
+      <ol style="text-align:left;color:var(--soft);font-size:15px;margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px">
+        <li>Join our Discord server.</li>
+        <li>Press <b>Copy</b> next to your reference above.</li>
+        <li>In <b id="panelName">#immigration</b>, click <b>Open my migration ticket</b> and paste your reference.</li>
+      </ol>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
+        <a class="btn dcb" href="#" data-discord data-nolink target="_blank" rel="noopener">Join our Discord</a>
+        <a class="btn ghost" id="panelLink" href="#" target="_blank" rel="noopener" hidden>Go to #immigration</a>
+      </div>
+    </div>
     <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
-      <a class="btn gold" href="#" data-discord data-nolink target="_blank" rel="noopener">Join our Discord</a>
+      <a class="btn gold" href="#" id="joinBtn" data-discord data-nolink target="_blank" rel="noopener">Join our Discord</a>
       <a class="btn ghost" href="index.html">Back to Home</a>
     </div>
   </section>
@@ -340,7 +380,7 @@
     function progress(title, text) { step++; $('ovTitle').textContent = title; $('ovText').textContent = text; $('ovBar').style.width = Math.min(100, step / total * 100) + '%'; }
     function ok(res) { if (!res || !res.ok) throw new Error((res && res.error) || 'Something went wrong. Please try again.'); return res; }
     progress('Sending your answers…', 'Please keep this page open.');
-    S.api({ action: 'applyStart', answers: answers }).then(ok)
+    S.api({ action: 'applyStart', answers: answers, dc: dcRequired && dcName ? dcNonce() : '' }).then(ok)
       .then(function (res) {
         ref = res.ref; token = res.token;
         var n = {}, jobs = send.map(function (im) { n[im.cat] = (n[im.cat] || 0) + 1; return { im: im, idx: n[im.cat] }; });
@@ -366,9 +406,18 @@
         var pool = []; for (var w = 0; w < Math.min(6, jobs.length); w++) pool.push(worker());
         return Promise.all(pool);
       })
-      .then(function () { progress('Finishing…', 'Almost done.'); return S.api({ action: 'applyFinish', ref: ref, token: token }).then(ok); })
-      .then(function () {
+      .then(function () { progress(dcRequired && dcName ? 'Opening your Discord ticket…' : 'Finishing…', 'Almost done.'); return S.api({ action: 'applyFinish', ref: ref, token: token }).then(ok); })
+      .then(function (fin) {
         S.store.del('k3914-migration-draft');
+        if (dcRequired) {
+          S.store.del(DCK);
+          $('joinBtn').hidden = true;
+          if (fin.ticket) { $('ticketBox').hidden = false; $('ticketLink').href = fin.ticket; }
+          else {
+            $('ticketSelf').hidden = false; $('ticketWhy').hidden = !dcName;
+            if (dcPanel) { $('panelLink').href = dcPanel; $('panelLink').hidden = false; }
+          }
+        }
         $('ref').textContent = ref || '—';
         $('form').style.display = 'none'; $('head').style.display = 'none';
         $('done').classList.add('on'); window.scrollTo(0, 0);
@@ -376,6 +425,45 @@
       .catch(function (err) { showErr(err.message || 'Could not send. Check your connection and try again.'); })
       .then(function () { $('overlay').classList.remove('on'); $('send').disabled = false; });
   });
+
+  /* ---------- Discord connect (required when the server has Discord tickets turned on) ---------- */
+  var DCK = 'k3914-dc', dcRequired = false, dcName = '', dcPanel = '';
+  function dcNonce(fresh) {
+    var n = fresh ? '' : (S.store.get(DCK) || '');
+    if (!/^[a-f0-9]{32}$/.test(n)) {
+      var b = new Uint8Array(16); (window.crypto || window.msCrypto).getRandomValues(b);
+      n = Array.prototype.map.call(b, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+      S.store.set(DCK, n);
+    }
+    return n;
+  }
+  function dcShow() {
+    $('dcCard').hidden = !dcRequired;
+    $('dcOff').hidden = !!dcName; $('dcOn').hidden = !dcName; $('dcName').textContent = dcName;
+    Array.prototype.forEach.call(document.querySelectorAll('.step[data-n]'), function (el) { el.textContent = Number(el.getAttribute('data-n')) + (dcRequired ? 1 : 0); });
+  }
+  function dcErr(m) { $('dcErr').textContent = m || ''; $('dcErr').className = 'err' + (m ? ' on' : ''); }
+  (function () {
+    var q = (location.search.match(/[?&]dc=([a-z]+)/) || [])[1];
+    if (q) { try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+    if (q === 'denied') dcErr('Discord connection was cancelled. Please press Connect Discord and allow access to continue.');
+    if (q === 'error') dcErr('Discord connection didn’t work. Please try again.');
+    S.api({ action: 'discordWho', n: dcNonce() }).then(function (r) {
+      dcRequired = !!(r && r.on); dcName = (r && r.name) || ''; dcPanel = (r && r.panel) || ''; dcShow();
+      if (dcName && q === 'ok') S.toast('Discord connected', 'Connected as ' + dcName, 'good');
+    }).catch(function () {});
+  })();
+  $('dcGo').addEventListener('click', function () {
+    saveDraft();
+    location.href = String((window.CONFIG || {}).API_URL || '').replace(/[/]+$/, '') + '/discord/start?n=' + dcNonce();
+  });
+  $('copyRef').addEventListener('click', function () {
+    var v = $('ref').textContent, b = this;
+    function done() { b.textContent = 'Copied ✓'; S.toast('Reference copied', 'Paste it in Discord to open your ticket.', 'good'); setTimeout(function () { b.textContent = 'Copy'; }, 2500); }
+    try { navigator.clipboard.writeText(v).then(done, function () { S.toast('Copy didn’t work', 'Select the reference and copy it by hand.', 'warn'); }); }
+    catch (e) { S.toast('Copy didn’t work', 'Select the reference and copy it by hand.', 'warn'); }
+  });
+  $('dcChange').addEventListener('click', function (e) { e.preventDefault(); dcName = ''; dcNonce(true); dcShow(); });
 
   renderShots();
 })();
