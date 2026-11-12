@@ -1,4 +1,4 @@
-/* Built 2026-11-12T01:00Z — deployed automatically from GitHub (server/ folder) */
+/* Built 2026-11-13T00:30Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
@@ -245,8 +245,14 @@ function json(o, status) {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return json({ ok: true });
+    var path = new URL(req.url).pathname;
+    if (path === '/discord/interactions' && req.method === 'POST') return discordInteraction(env, req, ctx);
+    if (path === '/discord/start' || path === '/discord/callback') {
+      try { return await discordRoute(env, req, path); }
+      catch (err) { return Response.redirect(siteUrl(env) + '/migration.html?dc=error', 302); }
+    }
     var p = {};
     if (req.method === 'POST') { try { p = JSON.parse(await req.text()) || {}; } catch (e) { p = {}; } }
     else { new URL(req.url).searchParams.forEach(function (v, k) { p[k] = v; }); }
@@ -382,6 +388,7 @@ async function handle(env, p) {
   if (action === 'applyStart') return applyStart(env, p);
   if (action === 'applyImage') return applyImage(env, p);
   if (action === 'applyFinish') return applyFinish(env, p);
+  if (action === 'discordWho') return discordWho(env, p);
   if (action === 'adminImport') return adminImport(env, p);
   var s = await tables(env), t = s.t, text = Core.texts(t);
   if (action === 'text') return { ok: true, text: text };
@@ -393,8 +400,9 @@ async function handle(env, p) {
   if (action === 'bid') return placeBid(env, p, g.me);
   if (/^admin|^textSave$/.test(action)) {
     /* R4 officers: migration applications only */
-    if (r4 && /^adminApp(s|File|Save)?$/.test(action)) {
+    if (r4 && /^adminApp(s|File|Save|Ticket)?$/.test(action)) {
       if (action === 'adminApps') return adminApps(env);
+      if (action === 'adminAppTicket') return adminAppTicket(env, p, g.me);
       if (action === 'adminApp') return adminApp(env, p);
       if (action === 'adminAppFile') return adminAppFile(env, p);
       return adminAppSave(env, p, g.me);
@@ -414,6 +422,9 @@ async function handle(env, p) {
     if (action === 'adminApp') return adminApp(env, p);
     if (action === 'adminAppFile') return adminAppFile(env, p);
     if (action === 'adminAppSave') return adminAppSave(env, p, g.me);
+    if (action === 'adminAppDelete') return adminAppDelete(env, p, g.me);
+    if (action === 'adminAppTicket') return adminAppTicket(env, p, g.me);
+    if (action === 'adminDiscordPanel') return adminDiscordPanel(env, g.me);
     return { ok: false, error: 'Unknown action.' };
   }
   var res = action === 'calendar' ? { ok: true, calendar: Core.calendar(t) } : Core.state(t, p, Date.now());
@@ -828,6 +839,8 @@ async function applyStart(env, p) {
     if (!(fMin > 0)) bad.push('Weakest farm power');
     if (!(fMax > 0)) bad.push('Strongest farm power');
   }
+  var dc = null;
+  if (dcOn(env) && str(p.dc)) dc = await dcLink(env, p.dc); /* optional: if it expired, the player can still open the ticket from Discord */
   if (bad.length) return { ok: false, error: 'Please check: ' + bad.join(', ') + '.' };
   if (farms === 'Yes' && fMax > FARM_LIMIT) return { ok: false, error: 'Farms over 35M power are not allowed.' };
   if (farms === 'Yes' && fMin > fMax) return { ok: false, error: 'Weakest farm power can’t be higher than the strongest.' };
@@ -845,11 +858,14 @@ async function applyStart(env, p) {
   if (!(await allow(env, 'gov:' + gov, 2, 86400000))) return { ok: false, error: 'An application for this Governor ID was already sent today. Our officers will contact you.' };
   await appsTable(env);
   var now = new Date(), d = now.toISOString();
-  var ref = 'M' + d.slice(2, 4) + d.slice(5, 7) + d.slice(8, 10) + '-' + gov.slice(-4) + '-' + (100 + Math.floor(Math.random() * 900));
+  var AB = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', rnd = crypto.getRandomValues(new Uint8Array(5)), tail = '';
+  for (var ri = 0; ri < 5; ri++) tail += AB[rnd[ri] % AB.length];
+  var ref = 'M' + d.slice(2, 4) + d.slice(5, 7) + d.slice(8, 10) + '-' + gov.slice(-4) + '-' + tail;
   var token = crypto.randomUUID();
   var data = { gov: gov, name: name, power: power, kills: kills, vip: vip, kingdom: kd, why: why, spending: spend, role: role, buysRss: rss, hasFarms: farms,
     farmCount: farms === 'Yes' ? farmCount : '', farmMin: farms === 'Yes' ? fMin : '', farmMax: farms === 'Yes' ? fMax : '' };
   await env.DB.prepare('INSERT INTO apps (ref, ts, status, token, expect, data) VALUES (?, ?, ?, ?, ?, ?)').bind(ref, now.getTime(), 'Uploading', token, JSON.stringify(expect), JSON.stringify(data)).run();
+  if (dc) { await ticketsTable(env); await env.DB.prepare('INSERT OR REPLACE INTO tickets (ref, uid, uname, n, ch, state, err) VALUES (?, ?, ?, ?, NULL, ?, NULL)').bind(ref, dc.uid, dc.uname, dc.n, 'waiting').run(); }
   return { ok: true, ref: ref, token: token };
 }
 
@@ -899,8 +915,9 @@ async function applyFinish(env, p) {
   var keys = await appFiles(env, rec.ref), got = {};
   keys.forEach(function (k) { var c = k.split('/')[2]; got[c] = (got[c] || 0) + 1; });
   await env.DB.prepare('UPDATE apps SET status = ?, got = ? WHERE ref = ?').bind('Pending', JSON.stringify(got), rec.ref).run();
-  await notifyApp(env, rec, got);
-  return { ok: true };
+  var tk = await ticketFromWebsite(env, rec);
+  await notifyApp(env, rec, got, tk);
+  return { ok: true, ticket: tk && tk.url ? tk.url : '', ticketError: tk && tk.error ? tk.error : '' };
 }
 
 /* Tell the officers' Discord channel about a new application (secret DISCORD_APPS_WEBHOOK). Never blocks the applicant. */
@@ -911,7 +928,7 @@ function shortNum(v) {
   if (x >= 1e3) return (Math.round(x / 10) / 100) + 'K';
   return String(x);
 }
-async function notifyApp(env, rec, got) {
+async function notifyApp(env, rec, got, tk) {
   var hook = str(env.DISCORD_APPS_WEBHOOK);
   if (!/^https:[/][/](?:[a-z]+[.])?(?:discord|discordapp)[.]com[/]api[/]webhooks[/]/.test(hook)) return;
   try {
@@ -932,7 +949,7 @@ async function notifyApp(env, rec, got) {
         { name: 'Farms', value: farms, inline: true },
         { name: 'Screenshots', value: String(shots), inline: true },
         { name: 'Why they want to migrate', value: v(d.why, 1000) }
-      ],
+      ].concat(tk ? [{ name: 'Discord ticket', value: tk.url ? '<#' + tk.ch + '> · ' + v(tk.uname, 40) : '⚠️ Could not be created: ' + v(tk.error, 200) }] : []),
       footer: { text: 'Ref ' + rec.ref + ' · review in Admin → Applications' },
       timestamp: new Date(rec.ts || Date.now()).toISOString()
     };
@@ -946,8 +963,14 @@ async function adminApps(env) {
   if (!env.FILES) return { ok: true, apps: [], off: true };
   await appsTable(env);
   var res = await env.DB.prepare("SELECT ref, ts, status, data, got, note, by FROM apps WHERE status != 'Uploading' ORDER BY ts DESC LIMIT 500").all();
-  return { ok: true, statuses: APP_STATUSES, cats: APP_CATS, apps: res.results.map(function (r) {
-    return { ref: r.ref, ts: r.ts, status: r.status, data: JSON.parse(r.data || '{}'), got: JSON.parse(r.got || '{}'), note: r.note || '', by: r.by || '' };
+  var tks = {};
+  await ticketsTable(env);
+  (await env.DB.prepare('SELECT ref, uid, uname, ch, state, err FROM tickets').all()).results.forEach(function (x) { tks[x.ref] = x; });
+  var g = str(env.DISCORD_GUILD_ID);
+  return { ok: true, statuses: APP_STATUSES, cats: APP_CATS, discord: dcOn(env), panel: /^[0-9]{5,25}$/.test(str(env.DISCORD_PANEL_CHANNEL_ID)), apps: res.results.map(function (r) {
+    var k = tks[r.ref];
+    return { ref: r.ref, ts: r.ts, status: r.status, data: JSON.parse(r.data || '{}'), got: JSON.parse(r.got || '{}'), note: r.note || '', by: r.by || '',
+      ticket: k ? { user: k.uname || '', state: k.state || '', error: k.err || '', url: k.ch ? 'https://discord.com/channels/' + g + '/' + k.ch : '' } : null };
   }) };
 }
 async function adminApp(env, p) {
@@ -963,14 +986,259 @@ async function adminAppFile(env, p) {
   if (!o) return { ok: false, error: 'Not found.' };
   return { ok: true, type: (o.httpMetadata && o.httpMetadata.contentType) || 'image/jpeg', data: bytesToB64(await o.arrayBuffer()) };
 }
+/* Delete one application and all its screenshots (admins only) */
+async function adminAppDelete(env, p, who) {
+  await appsTable(env);
+  var ref = str(p.ref);
+  if (!/^[A-Za-z0-9-]{4,40}$/.test(ref)) return { ok: false, error: 'That application no longer exists.' };
+  var r = await env.DB.prepare('SELECT ref, data FROM apps WHERE ref = ?').bind(ref).first();
+  if (!r) return { ok: false, error: 'That application no longer exists.' };
+  var files = 0, bytes = 0, cursor;
+  do {
+    var list = await env.FILES.list({ prefix: 'apps/' + ref + '/', cursor: cursor, limit: 1000 });
+    var keys = list.objects.map(function (o) { bytes += o.size || 0; return o.key; });
+    if (keys.length) { await env.FILES.delete(keys); files += keys.length; }
+    cursor = list.truncated ? list.cursor : null;
+  } while (cursor);
+  await env.DB.prepare('DELETE FROM apps WHERE ref = ?').bind(ref).run();
+  await ticketsTable(env);
+  var tk = await env.DB.prepare('SELECT ch FROM tickets WHERE ref = ?').bind(ref).first(), chGone = false;
+  if (tk && tk.ch && dcOn(env)) { var dr = await dcApi(env, 'DELETE', '/channels/' + tk.ch); chGone = dr.ok || dr.status === 404; }
+  await env.DB.prepare('DELETE FROM tickets WHERE ref = ?').bind(ref).run();
+  var d = JSON.parse(r.data || '{}');
+  await log(env, who, 'application', 'deleted ' + ref + ' (' + str(d.name) + ', ' + str(d.gov) + ') and ' + files + ' screenshot' + (files === 1 ? '' : 's'));
+  return { ok: true, files: files, bytes: bytes, ticketDeleted: chGone };
+}
 async function adminAppSave(env, p, who) {
   await appsTable(env);
   var status = str(p.status), note = str(p.note).slice(0, 500), ref = str(p.ref);
   if (APP_STATUSES.indexOf(status) < 0) return { ok: false, error: 'Pick a status.' };
-  var r = await env.DB.prepare('SELECT ref, data FROM apps WHERE ref = ?').bind(ref).first();
+  var r = await env.DB.prepare('SELECT ref, data, status FROM apps WHERE ref = ?').bind(ref).first();
   if (!r) return { ok: false, error: 'That application no longer exists.' };
+  if (r.status !== status) await ticketStatus(env, ref, status);
   await env.DB.prepare('UPDATE apps SET status = ?, note = ?, by = ? WHERE ref = ?').bind(status, note, str(who.Name), ref).run();
   var d = JSON.parse(r.data || '{}');
   await log(env, who, 'application', ref + ' (' + str(d.name) + ', ' + str(d.gov) + ') → ' + status + (note ? ': ' + note : ''));
   return { ok: true };
+}
+
+/* ---------- Discord: "Connect Discord" on the Migrate page and an automatic private ticket per application ----------
+   Turned on only when these are set in Cloudflare:
+   secrets DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN · variables DISCORD_CLIENT_ID, DISCORD_PUBLIC_KEY, DISCORD_GUILD_ID,
+   DISCORD_CATEGORY_ID (where tickets go), DISCORD_STAFF_ROLES (role IDs that can see tickets, comma separated),
+   DISCORD_PANEL_CHANNEL_ID (where the "Open my migration ticket" button is posted) */
+var DC_API = 'https://discord.com/api/v10';
+var DC_SEE = '117760'; /* view, send, embed links, attach files, read history */
+function dcOn(env) { return !!(str(env.DISCORD_CLIENT_ID) && str(env.DISCORD_CLIENT_SECRET) && str(env.DISCORD_BOT_TOKEN) && str(env.DISCORD_GUILD_ID)); }
+function siteUrl(env) { return (str(env.SITE_URL) || 'https://kingdom3914.com').replace(/[/]+$/, ''); }
+function dcEsc(x, max) { x = str(x).replace(/[*_`~|>@#<]/g, function (c) { return '\\' + c; }); return (x || '—').slice(0, max || 100); }
+async function dcTables(env) {
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS dlink (n TEXT PRIMARY KEY, uid TEXT NOT NULL, uname TEXT, tok TEXT, ts INTEGER NOT NULL)').run();
+}
+async function ticketsTable(env) {
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS tickets (ref TEXT PRIMARY KEY, uid TEXT, uname TEXT, n TEXT, ch TEXT, state TEXT, err TEXT)').run();
+}
+async function dcApi(env, method, path, body) {
+  var r = await fetch(DC_API + path, { method: method, headers: { 'Authorization': 'Bot ' + str(env.DISCORD_BOT_TOKEN), 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body) });
+  var data = null; try { data = await r.json(); } catch (e) {}
+  return { ok: r.ok, status: r.status, data: data, error: (data && data.message) || ('Discord error ' + r.status) };
+}
+
+/* Discord login: /discord/start?n=<random id from the page> → Discord → /discord/callback → back to the Migrate page */
+async function discordRoute(env, req, path) {
+  var u = new URL(req.url), back = siteUrl(env) + '/migration.html';
+  if (!dcOn(env)) return Response.redirect(back + '?dc=off', 302);
+  var redirect = u.origin + '/discord/callback', secret = str(env.DISCORD_CLIENT_SECRET);
+  if (path === '/discord/start') {
+    var n = str(u.searchParams.get('n'));
+    if (!/^[a-f0-9]{32}$/.test(n)) return Response.redirect(back + '?dc=error', 302);
+    var state = n + '.' + (await hmacHex(secret, 'dc:' + n)).slice(0, 32);
+    return Response.redirect('https://discord.com/oauth2/authorize?' + new URLSearchParams({ client_id: str(env.DISCORD_CLIENT_ID), response_type: 'code',
+      redirect_uri: redirect, scope: 'identify guilds.join', state: state, prompt: 'none' }).toString(), 302);
+  }
+  var st = str(u.searchParams.get('state')).split('.'), code = str(u.searchParams.get('code'));
+  if (st.length !== 2 || !/^[a-f0-9]{32}$/.test(st[0]) || st[1] !== (await hmacHex(secret, 'dc:' + st[0])).slice(0, 32)) return Response.redirect(back + '?dc=error', 302);
+  if (!code) return Response.redirect(back + '?dc=denied', 302);
+  var tr = await fetch('https://discord.com/api/oauth2/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: str(env.DISCORD_CLIENT_ID), client_secret: secret, grant_type: 'authorization_code', code: code, redirect_uri: redirect }).toString() });
+  var tok = await tr.json().catch(function () { return {}; });
+  if (!tr.ok || !tok.access_token) return Response.redirect(back + '?dc=error', 302);
+  var me = await (await fetch(DC_API + '/users/@me', { headers: { 'Authorization': 'Bearer ' + tok.access_token } })).json().catch(function () { return {}; });
+  if (!me || !me.id) return Response.redirect(back + '?dc=error', 302);
+  await dcTables(env);
+  var now = Date.now();
+  await env.DB.prepare('INSERT OR REPLACE INTO dlink (n, uid, uname, tok, ts) VALUES (?, ?, ?, ?, ?)').bind(st[0], str(me.id), str(me.username).slice(0, 40), tok.access_token, now).run();
+  await env.DB.prepare('DELETE FROM dlink WHERE ts < ?').bind(now - 86400000).run();
+  return Response.redirect(back + '?dc=ok', 302);
+}
+async function dcLink(env, n) {
+  n = str(n);
+  if (!/^[a-f0-9]{32}$/.test(n)) return null;
+  await dcTables(env);
+  var r = await env.DB.prepare('SELECT n, uid, uname, tok, ts FROM dlink WHERE n = ?').bind(n).first();
+  return r && r.ts > Date.now() - 6 * 3600000 ? r : null;
+}
+/* The Migrate page asks: is Discord required, and is this browser connected? */
+async function discordWho(env, p) {
+  if (!dcOn(env)) return { ok: true, on: false };
+  var r = await dcLink(env, p.n);
+  var pc = str(env.DISCORD_PANEL_CHANNEL_ID);
+  return { ok: true, on: true, name: r ? r.uname : '', panel: /^[0-9]{5,25}$/.test(pc) ? 'https://discord.com/channels/' + str(env.DISCORD_GUILD_ID) + '/' + pc : '' };
+}
+
+/* Create the private ticket channel for one application and post the welcome. tok = the player's login token (website path) or '' (Discord button path). */
+async function createTicket(env, ref, d, uid, uname, tok) {
+  var g = str(env.DISCORD_GUILD_ID);
+  await ticketsTable(env);
+  async function fail(msg) {
+    await env.DB.prepare('INSERT INTO tickets (ref, uid, uname, state, err) VALUES (?, ?, ?, ?, ?) ON CONFLICT(ref) DO UPDATE SET uid = excluded.uid, uname = excluded.uname, state = excluded.state, err = excluded.err')
+      .bind(ref, uid, uname, 'failed', str(msg).slice(0, 300)).run();
+    return { error: msg, uname: uname };
+  }
+  try {
+    if (tok) {
+      var add = await dcApi(env, 'PUT', '/guilds/' + g + '/members/' + uid, { access_token: tok });
+      if (!add.ok) return fail('Could not add them to the Discord server (' + add.error + ')');
+    }
+    var slug = str(d.name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || str(d.gov);
+    var over = [{ id: g, type: 0, allow: '0', deny: '1024' }, { id: uid, type: 1, allow: DC_SEE, deny: '0' }, { id: str(env.DISCORD_CLIENT_ID), type: 1, allow: DC_SEE, deny: '0' }];
+    str(env.DISCORD_STAFF_ROLES).split(/[\s,]+/).forEach(function (id) { if (/^[0-9]{5,25}$/.test(id)) over.push({ id: id, type: 0, allow: DC_SEE, deny: '0' }); });
+    var body = { name: 'app-' + slug, type: 0, topic: 'Migration application ' + ref + ' · ' + str(d.name) + ' (' + str(d.gov) + ')', permission_overwrites: over };
+    if (/^[0-9]{5,25}$/.test(str(env.DISCORD_CATEGORY_ID))) body.parent_id = str(env.DISCORD_CATEGORY_ID);
+    var ch = await dcApi(env, 'POST', '/guilds/' + g + '/channels', body);
+    if (!ch.ok || !ch.data || !ch.data.id) return fail('Could not create the ticket channel (' + ch.error + ')');
+    var chId = str(ch.data.id);
+    await env.DB.prepare('INSERT INTO tickets (ref, uid, uname, ch, state, err) VALUES (?, ?, ?, ?, ?, NULL) ON CONFLICT(ref) DO UPDATE SET uid = excluded.uid, uname = excluded.uname, ch = excluded.ch, state = excluded.state, err = NULL')
+      .bind(ref, uid, uname, chId, 'open').run();
+    await dcApi(env, 'POST', '/channels/' + chId + '/messages', {
+      content: '<@' + uid + '>', allowed_mentions: { users: [uid] },
+      embeds: [{ color: 0xE7C690, title: 'Welcome, ' + dcEsc(d.name, 40) + '!',
+        description: 'This is your private migration ticket. Our officers have your application and screenshots. They will review it and reply here, and you can ask questions anytime.\n\n' +
+          '**Status:** 🕓 Received, waiting for review\n**Reference:** ' + ref,
+        fields: [
+          { name: 'Governor ID', value: dcEsc(d.gov, 20), inline: true },
+          { name: 'Power', value: shortNum(d.power), inline: true },
+          { name: 'Kill points', value: shortNum(d.kills), inline: true },
+          { name: 'VIP', value: dcEsc(d.vip, 20), inline: true },
+          { name: 'Kingdom', value: dcEsc(d.kingdom, 10), inline: true },
+          { name: 'Role', value: dcEsc(d.role, 40), inline: true }
+        ], footer: { text: 'Kingdom 3914 · status updates are posted here automatically' } }]
+    });
+    return { ch: chId, url: 'https://discord.com/channels/' + g + '/' + chId, uname: uname };
+  } catch (e) { return fail(String((e && e.message) || e)); }
+}
+/* Website path: the player connected Discord on the Migrate page */
+async function ticketFromWebsite(env, rec) {
+  if (!dcOn(env)) return null;
+  await ticketsTable(env);
+  var tk = await env.DB.prepare('SELECT * FROM tickets WHERE ref = ?').bind(rec.ref).first();
+  if (!tk || tk.state !== 'waiting') return null;
+  var link = await dcLink(env, tk.n);
+  var r = await createTicket(env, rec.ref, JSON.parse(rec.data || '{}'), tk.uid, tk.uname, link ? link.tok : '');
+  if (r.ch) await env.DB.prepare('DELETE FROM dlink WHERE n = ?').bind(tk.n).run();
+  return r;
+}
+
+/* Discord path: the player clicks "Open my migration ticket" in the Discord channel and pastes their application reference.
+   Discord sends the click here (Interactions endpoint URL = <server>/discord/interactions), signed with the app's public key. */
+function hexBytes(h) { var o = new Uint8Array(h.length / 2); for (var i = 0; i < o.length; i++) o[i] = parseInt(h.substr(i * 2, 2), 16); return o; }
+async function dcVerify(env, req, body) {
+  var sig = str(req.headers.get('X-Signature-Ed25519')), ts = str(req.headers.get('X-Signature-Timestamp')), pk = str(env.DISCORD_PUBLIC_KEY);
+  if (!/^[a-f0-9]{128}$/i.test(sig) || !ts || !/^[a-f0-9]{64}$/i.test(pk)) return false;
+  try {
+    var key = await crypto.subtle.importKey('raw', hexBytes(pk), { name: 'Ed25519' }, false, ['verify']);
+    return await crypto.subtle.verify('Ed25519', key, hexBytes(sig), new TextEncoder().encode(ts + body));
+  } catch (e) { return false; }
+}
+async function discordInteraction(env, req, ctx) {
+  var body = await req.text();
+  if (!(await dcVerify(env, req, body))) return new Response('Bad signature', { status: 401 });
+  var it = {}; try { it = JSON.parse(body); } catch (e) {}
+  if (it.type === 1) return json({ type: 1 });
+  var data = it.data || {};
+  if (it.type === 3 && data.custom_id === 'k3914_open') {
+    return json({ type: 9, data: { custom_id: 'k3914_ref', title: 'Open my migration ticket', components: [{ type: 1, components: [{ type: 4, custom_id: 'ref', label: 'Your application reference', style: 1, min_length: 8, max_length: 30, required: true, placeholder: 'Paste it from the website, e.g. M261113-4466-K7P2Q' }] }] } });
+  }
+  if (it.type === 5 && data.custom_id === 'k3914_ref') {
+    var ref = '';
+    (data.components || []).forEach(function (row) { (row.components || []).forEach(function (c) { if (c.custom_id === 'ref') ref = str(c.value); }); });
+    var user = (it.member && it.member.user) || it.user || {};
+    var work = (async function () {
+      var msg;
+      try { msg = await ticketFromButton(env, ref, str(user.id), str(user.username).slice(0, 40)); } catch (e) { msg = 'Something went wrong. Please try again or ask an officer.'; }
+      await fetch(DC_API + '/webhooks/' + str(env.DISCORD_CLIENT_ID) + '/' + it.token + '/messages/@original', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: msg, allowed_mentions: { parse: [] } }) });
+    })();
+    if (ctx && ctx.waitUntil) ctx.waitUntil(work); else await work;
+    return json({ type: 5, data: { flags: 64 } }); /* "thinking…", only visible to them */
+  }
+  return json({ type: 4, data: { content: 'Unknown action.', flags: 64 } });
+}
+async function ticketFromButton(env, refIn, uid, uname) {
+  if (!dcOn(env)) return 'Tickets are not set up yet. Please ask an officer.';
+  var ref = str(refIn).toUpperCase().replace(/[\s#:"'`]/g, '').replace(/^REF/, '');
+  if (!uid || !/^M[0-9]{6}-[0-9]{1,4}-[0-9A-Z]{3,6}$/.test(ref)) return 'That doesn’t look like an application reference. Copy it from the website (it looks like **M261113-4466-K7P2Q**) and try again.';
+  if (!(await allow(env, 'dct:' + uid, 5, 3600000))) return 'Too many tries. Please wait an hour or contact an officer.';
+  await appsTable(env); await ticketsTable(env);
+  var app = await env.DB.prepare("SELECT ref, data FROM apps WHERE ref = ? AND status != 'Uploading'").bind(ref).first();
+  if (!app) return 'We couldn’t find application **' + ref + '**. Check that you copied the whole reference, or apply first at ' + siteUrl(env) + '/migration.html.';
+  var tk = await env.DB.prepare('SELECT * FROM tickets WHERE ref = ?').bind(app.ref).first();
+  if (tk && tk.ch && (tk.state === 'open' || tk.state === 'closed')) {
+    if (tk.uid === uid) return tk.state === 'open' ? 'Your ticket is already open: <#' + tk.ch + '>' : 'Your ticket was closed by an officer. Please contact an officer if you need help.';
+    return 'A ticket for this application was already opened by another Discord account. If this is your application, please contact an officer.';
+  }
+  var r = await createTicket(env, app.ref, JSON.parse(app.data || '{}'), uid, uname, '');
+  return r.ch ? '✅ Your private ticket is ready: <#' + r.ch + '>' : 'We couldn’t create your ticket (' + r.error + '). Please contact an officer.';
+}
+/* Admin: post the "Open my migration ticket" button in the channel set as DISCORD_PANEL_CHANNEL_ID */
+async function adminDiscordPanel(env, who) {
+  if (!dcOn(env)) return { ok: false, error: 'Discord tickets are not set up.' };
+  var ch = str(env.DISCORD_PANEL_CHANNEL_ID);
+  if (!/^[0-9]{5,25}$/.test(ch)) return { ok: false, error: 'The channel for the button is not set (DISCORD_PANEL_CHANNEL_ID).' };
+  var r = await dcApi(env, 'POST', '/channels/' + ch + '/messages', {
+    embeds: [{ color: 0xE7C690, title: 'Migration to Kingdom 3914',
+      description: '**1.** Apply on our website: ' + siteUrl(env) + '/migration.html\n**2.** At the end, press **Copy** next to your application reference.\n**3.** Click the button below and paste your reference.\n\nA private ticket opens where our officers review your application and chat with you.' }],
+    components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Open my migration ticket', custom_id: 'k3914_open', emoji: { name: '🎫' } }] }]
+  });
+  if (!r.ok) return { ok: false, error: r.error };
+  await log(env, who, 'application', 'posted the ticket button in Discord');
+  return { ok: true };
+}
+
+var DC_STATUS = {
+  Pending: '🕓 **Status:** back to waiting for review.',
+  Contacted: '🔎 **Status:** under review. An officer is looking at your application.',
+  Accepted: '✅ **Status: ACCEPTED!** Welcome to Kingdom 3914. An officer will share the next steps here.',
+  Rejected: '❌ **Status:** not accepted this time. Thank you for applying to Kingdom 3914.'
+};
+async function ticketStatus(env, ref, status) {
+  if (!dcOn(env) || !DC_STATUS[status]) return;
+  try {
+    await ticketsTable(env);
+    var tk = await env.DB.prepare('SELECT uid, ch, state FROM tickets WHERE ref = ?').bind(ref).first();
+    if (!tk || !tk.ch || tk.state !== 'open') return;
+    await dcApi(env, 'POST', '/channels/' + tk.ch + '/messages', { content: '<@' + tk.uid + '> ' + DC_STATUS[status], allowed_mentions: { users: [tk.uid] } });
+  } catch (e) {}
+}
+
+/* Admin / R4: close or reopen a ticket. Closing hides it from the player and renames it closed-… */
+async function adminAppTicket(env, p, who) {
+  if (!dcOn(env)) return { ok: false, error: 'Discord tickets are not set up.' };
+  await ticketsTable(env);
+  var ref = str(p.ref), op = str(p.op);
+  var tk = await env.DB.prepare('SELECT * FROM tickets WHERE ref = ?').bind(ref).first();
+  if (!tk || !tk.ch) return { ok: false, error: 'This application has no Discord ticket.' };
+  if (op !== 'close' && op !== 'reopen') return { ok: false, error: 'Unknown action.' };
+  var info = await dcApi(env, 'GET', '/channels/' + tk.ch);
+  if (info.status === 404) { await env.DB.prepare('UPDATE tickets SET state = ? WHERE ref = ?').bind('gone', ref).run(); return { ok: false, error: 'The ticket channel was already deleted in Discord.' }; }
+  if (!info.ok) return { ok: false, error: info.error };
+  var name = str(info.data.name).replace(/^closed-/, '');
+  var perm = await dcApi(env, 'PUT', '/channels/' + tk.ch + '/permissions/' + tk.uid, op === 'close' ? { type: 1, allow: '0', deny: '1024' } : { type: 1, allow: DC_SEE, deny: '0' });
+  if (!perm.ok) return { ok: false, error: perm.error };
+  await dcApi(env, 'PATCH', '/channels/' + tk.ch, { name: (op === 'close' ? 'closed-' : '') + name });
+  await dcApi(env, 'POST', '/channels/' + tk.ch + '/messages', { content: (op === 'close' ? '🔒 Ticket closed by ' : '🔓 Ticket reopened by ') + dcEsc(who.Name, 40) + '.', allowed_mentions: { parse: [] } });
+  var state = op === 'close' ? 'closed' : 'open';
+  await env.DB.prepare('UPDATE tickets SET state = ? WHERE ref = ?').bind(state, ref).run();
+  await log(env, who, 'application', ref + ' ticket ' + (op === 'close' ? 'closed' : 'reopened'));
+  return { ok: true, state: state };
 }
