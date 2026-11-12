@@ -7,6 +7,14 @@ compatibility_date = "2026-11-08"
 workers_dev = true
 keep_vars = true
 
+# Discord tickets (public IDs only; the bot token, client secret and public key are set in the Cloudflare dashboard)
+[vars]
+DISCORD_CLIENT_ID = "1570555426179911932"
+DISCORD_GUILD_ID = "1557486982920282192"
+DISCORD_CATEGORY_ID = "1558210118271635476"
+DISCORD_PANEL_CHANNEL_ID = "1557673575685689394"
+DISCORD_STAFF_ROLES = "1557757079459070072,1557513988508483604"
+
 [observability]
 enabled = true
 
