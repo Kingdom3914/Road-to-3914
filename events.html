@@ -178,6 +178,7 @@
     <button class="btn gold sm" type="button" data-ed="auctionsMGE">MGE auctions</button>
     <button class="btn gold sm" type="button" data-ed="auctionsGH">GH auctions</button>
     <button class="btn gold sm" type="button" data-ed="locks">🔒 Locked ranks</button>
+    <button class="btn gold sm" type="button" data-ed="dctest">🔔 Test Discord</button>
     <button class="btn gold sm" type="button" data-ed="rules">Bidding rules</button>
   </div>
 
@@ -922,6 +923,21 @@
   }
   var EDITORS = {
     locks: editLocks,
+    dctest: function () {
+      var M = S.modal('🔔 Test Discord');
+      M.body.innerHTML = '<p style="color:var(--soft);font-size:14px;margin:0 0 12px">Sends one test message from 3914 BOT, in English and Vietnamese, so you can check it can post. The staff test also tags the R4 and King roles.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn gold" type="button" data-t="staff">Test staff channel</button><button class="btn ghost" type="button" data-t="announce">Test results channel</button></div>' +
+        '<div class="err" id="dtErr" style="margin-top:10px"></div>';
+      M.body.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-t]'); if (!b || b.disabled) return;
+        var t = b.getAttribute('data-t'), label = b.textContent; b.disabled = true; b.textContent = 'Sending…';
+        S.api({ action: 'adminDiscordTest', target: t }).then(function (r) {
+          if (!r || !r.ok) throw new Error((r && r.error) || 'Could not send.');
+          S.toast('Test sent', 'Check the ' + (t === 'staff' ? 'staff' : 'results') + ' channel in Discord.', 'good');
+          b.disabled = false; b.textContent = label;
+        }).catch(function (x) { var el = M.body.querySelector('#dtErr'); el.textContent = x.message; el.className = 'err on'; b.disabled = false; b.textContent = label; });
+      });
+    },
     auctionsMGE: function () { auctions('MGE'); },
     auctionsGH: function () { auctions('GH'); },
     rules: function () {
