@@ -1,4 +1,4 @@
-/* Built 2026-11-13T10:45Z — deployed automatically from GitHub (server/ folder) */
+/* Built 2026-11-13T10:50Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
@@ -1005,7 +1005,8 @@ async function adminPublish(env, p, who) {
   if (!ch || !str(env.DISCORD_BOT_TOKEN)) r.discord = 'off';
   else {
     try {
-      var d = await dcApi(env, 'POST', '/channels/' + ch + '/messages', { content: discordResults(env, info.ev, info.lines), allowed_mentions: { parse: [] } });
+      var ar = announceRoles(env);
+      var d = await dcApi(env, 'POST', '/channels/' + ch + '/messages', { content: withRoles(ar, discordResults(env, info.ev, info.lines)).slice(0, 2000), allowed_mentions: { parse: [], roles: ar } });
       r.discord = d.ok ? 'sent' : 'failed'; if (!d.ok) r.discordError = d.error;
     } catch (e) { r.discord = 'failed'; r.discordError = String((e && e.message) || e); }
   }
@@ -1078,6 +1079,10 @@ async function runReminders(env, now) {
   return { sent: sent };
 }
 
+/* Roles tagged on the results post (DISCORD_ANNOUNCE_ROLES, comma separated) */
+function announceRoles(env) { return str(env.DISCORD_ANNOUNCE_ROLES).split(',').map(function (x) { return x.trim(); }).filter(function (x) { return /^[0-9]{5,25}$/.test(x); }); }
+function withRoles(roles, text) { return roles.length ? roles.map(function (x) { return '<@&' + x + '>'; }).join(' ') + '\n' + text : text; }
+
 /* Admin: send one test message to the staff or the results channel, to check the bot can post (and ping the roles) */
 async function adminDiscordTest(env, p, who) {
   var staff = p.target !== 'announce', ch = str(staff ? env.DISCORD_STAFF_CHANNEL_ID : env.DISCORD_ANNOUNCE_CHANNEL_ID);
@@ -1086,7 +1091,7 @@ async function adminDiscordTest(env, p, who) {
   var nm = dcEsc(who && who.Name, 60), roles = str(env.DISCORD_STAFF_ROLES).split(',').map(function (x) { return x.trim(); }).filter(function (x) { return /^[0-9]{5,25}$/.test(x); });
   var body = staff
     ? { content: roles.map(function (x) { return '<@&' + x + '>'; }).join(' ') + '\n' + envn('✅ **3914 BOT test** · MGE/GH reminders are connected to this channel. Sent by ' + nm + '.', '**Thử nghiệm 3914 BOT** · nhắc nhở MGE/GH đã được kết nối với kênh này. Gửi bởi ' + nm + '.'), allowed_mentions: { parse: [], roles: roles } }
-    : { content: envn('✅ **3914 BOT test** · MGE/GH results will be posted in this channel. Sent by ' + nm + '.', '**Thử nghiệm 3914 BOT** · kết quả MGE/GH sẽ được đăng tại kênh này. Gửi bởi ' + nm + '.'), allowed_mentions: { parse: [] } };
+    : { content: withRoles(announceRoles(env), envn('✅ **3914 BOT test** · MGE/GH results will be posted in this channel. Sent by ' + nm + '.', '**Thử nghiệm 3914 BOT** · kết quả MGE/GH sẽ được đăng tại kênh này. Gửi bởi ' + nm + '.')), allowed_mentions: { parse: [], roles: announceRoles(env) } };
   var r = await dcApi(env, 'POST', '/channels/' + ch + '/messages', body);
   if (!r.ok) return { ok: false, error: 'Discord said: ' + r.error + (r.status === 403 ? ' (the bot needs View Channel and Send Messages there)' : '') };
   await log(env, who, 'auction', 'sent a Discord test message to the ' + (staff ? 'staff' : 'results') + ' channel');

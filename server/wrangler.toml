@@ -16,6 +16,7 @@ DISCORD_PANEL_CHANNEL_ID = "1557673575685689394"
 DISCORD_STAFF_ROLES = "1557757079459070072,1557513988508483604"
 DISCORD_STAFF_CHANNEL_ID = "1570728240132128808"     # staff reminders + cancel requests (tags R4 and King)
 DISCORD_ANNOUNCE_CHANNEL_ID = "1570727256798797834"  # MGE/GH results
+DISCORD_ANNOUNCE_ROLES = "1557756342855278613"       # role tagged on the results post
 
 # MGE/GH reminders for R4s and admins (checked every 15 minutes)
 [triggers]
