@@ -1,4 +1,4 @@
-/* Built 2026-11-13T10:30Z — deployed automatically from GitHub (server/ folder) */
+/* Built 2026-11-13T10:45Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
@@ -532,6 +532,7 @@ async function handle(env, p) {
     if (action === 'adminBids') return adminBids(t);
     if (action === 'adminBid') return adminBid(env, p, g.me);
     if (action === 'adminReserve') return adminReserve(env, p, g.me);
+    if (action === 'adminDiscordTest') return adminDiscordTest(env, p, g.me);
     if (action === 'adminApps') return adminApps(env);
     if (action === 'adminApp') return adminApp(env, p);
     if (action === 'adminAppFile') return adminAppFile(env, p);
@@ -1075,6 +1076,21 @@ async function runReminders(env, now) {
     if (res === 'sent') sent++; else await env.DB.prepare('DELETE FROM remind WHERE k = ?').bind(list[i].key).run();
   }
   return { sent: sent };
+}
+
+/* Admin: send one test message to the staff or the results channel, to check the bot can post (and ping the roles) */
+async function adminDiscordTest(env, p, who) {
+  var staff = p.target !== 'announce', ch = str(staff ? env.DISCORD_STAFF_CHANNEL_ID : env.DISCORD_ANNOUNCE_CHANNEL_ID);
+  if (!/^[0-9]{5,25}$/.test(ch)) return { ok: false, error: 'This channel is not set yet.' };
+  if (!str(env.DISCORD_BOT_TOKEN)) return { ok: false, error: 'The bot token is not set.' };
+  var nm = dcEsc(who && who.Name, 60), roles = str(env.DISCORD_STAFF_ROLES).split(',').map(function (x) { return x.trim(); }).filter(function (x) { return /^[0-9]{5,25}$/.test(x); });
+  var body = staff
+    ? { content: roles.map(function (x) { return '<@&' + x + '>'; }).join(' ') + '\n' + envn('✅ **3914 BOT test** · MGE/GH reminders are connected to this channel. Sent by ' + nm + '.', '**Thử nghiệm 3914 BOT** · nhắc nhở MGE/GH đã được kết nối với kênh này. Gửi bởi ' + nm + '.'), allowed_mentions: { parse: [], roles: roles } }
+    : { content: envn('✅ **3914 BOT test** · MGE/GH results will be posted in this channel. Sent by ' + nm + '.', '**Thử nghiệm 3914 BOT** · kết quả MGE/GH sẽ được đăng tại kênh này. Gửi bởi ' + nm + '.'), allowed_mentions: { parse: [] } };
+  var r = await dcApi(env, 'POST', '/channels/' + ch + '/messages', body);
+  if (!r.ok) return { ok: false, error: 'Discord said: ' + r.error + (r.status === 403 ? ' (the bot needs View Channel and Send Messages there)' : '') };
+  await log(env, who, 'auction', 'sent a Discord test message to the ' + (staff ? 'staff' : 'results') + ' channel');
+  return { ok: true };
 }
 
 /* ---------- Review window: cancel requests, staff cancels, penalty ---------- */
