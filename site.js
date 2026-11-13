@@ -11,10 +11,12 @@
   }
   function n(v) { return Number(v || 0).toLocaleString('en-US'); }
   function pad(v) { return String(v).padStart(2, '0'); }
-  function date(t) { var d = new Date(t); return d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+  var I = function () { return window.I18N || { on: false, lang: 'en', t: function (x) { return x; } }; };
+  function date(t) { var d = new Date(t); if (I().lang === 'vi') return d.getUTCDate() + '/' + (d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); return d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
   function dateTime(t) { var d = new Date(t); return date(t) + ' · ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ' UTC'; }
   function ago(t) {
     var s = Math.max(0, (Date.now() - t) / 1000);
+    if (I().lang === 'vi') return s < 60 ? 'vừa xong' : s < 3600 ? Math.floor(s / 60) + ' phút trước' : s < 86400 ? Math.floor(s / 3600) + ' giờ trước' : Math.floor(s / 86400) + ' ngày trước';
     if (s < 60) return 'just now';
     if (s < 3600) return Math.floor(s / 60) + ' min ago';
     if (s < 86400) return Math.floor(s / 3600) + ' h ago';
@@ -68,7 +70,8 @@
             '<div class="acct-head"><b>' + esc(who.name || 'Governor') + '</b><small>Governor ID ' + esc(who.gov) + '</small></div>' +
             (who.admin ? '<button type="button" class="edit-switch" role="menuitemcheckbox" data-edit-toggle aria-pressed="' + editOn() + '"><span class="knob"></span>Edit mode</button>' : '') +
             '<button type="button" class="acct-out" role="menuitem" data-signout><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</button>' +
-          '</div></div>' : '') +
+          '<div class="lang-row"><span>Language</span>' + (window.I18N ? I18N.switchHtml() : '') + '</div>' +
+          '</div></div>' : (window.I18N ? I18N.switchHtml() : '')) +
       '</div></header>' +
       (who && who.admin ? '<div class="edit-banner edit-block"><div class="wrap"><b>Edit mode is on.</b> Click any title or text with a dashed outline to change it. Use the gold buttons to edit dates, news and auctions. <button type="button" class="btn ghost sm" data-edit-discord>Discord link</button></div></div>' : '') +
       (C.API_URL ? '' : '<div class="demo-banner"><div class="wrap"><b>Demo mode:</b> showing sample data. Bids are saved only on this device until the Google Sheet link is added in config.js.</div></div>');
@@ -138,7 +141,7 @@
         '<div class="err" id="lkErr" role="alert"></div>' +
         '<button class="btn gold" type="submit" id="lkBtn">Sign in</button>' +
         '<div class="lock-links"><span>' + (C.API_URL ? 'No PIN yet? Ask an officer in Discord.' : 'Demo: ID <b>1001</b>, PIN <b>1234</b>') + '</span>' +
-        '<a href="migration.html">Not in 3914 yet? Apply to migrate →</a></div></form>';
+        '<a href="migration.html">Not in 3914 yet? Apply to migrate →</a></div>' + (window.I18N ? I18N.switchHtml() : '') + '</form>';
       document.body.appendChild(box);
       document.getElementById('lockForm').addEventListener('submit', function (e) {
         e.preventDefault();
@@ -187,6 +190,7 @@
   function setText(map, save) {
     text = map || {};
     if (save) store.set('k3914-text', JSON.stringify(text));
+    if (window.I18N) I18N.onText(text);
     applyText();
   }
   function onText(fn) { textHandlers.push(fn); try { fn(text); } catch (e) {} }
@@ -276,6 +280,7 @@
     if (on) store.set('k3914-edit', '1'); else store.del('k3914-edit');
     document.body.classList.toggle('edit-on', editOn());
     var b = document.querySelector('[data-edit-toggle]'); if (b) b.setAttribute('aria-pressed', String(editOn()));
+    if (window.I18N) I18N.refreshTools();
   }
   function isoDate(t) { return t ? new Date(t).toISOString().slice(0, 10) : ''; }
   function isoDT(t) { return t ? new Date(t).toISOString().slice(0, 16) : ''; }
@@ -418,6 +423,7 @@
     var el = e.target.closest && e.target.closest('[data-text]');
     if (!el || el.closest('.mdl-scrim')) return;
     e.preventDefault(); e.stopPropagation();
+    if (I().on) { I().fixFor(e); return; }
     var key = el.getAttribute('data-text'), long = el.textContent.length > 60;
     form({ title: 'Edit text', fields: [{ key: 'v', label: 'Text', type: long ? 'textarea' : 'text', value: (text[key] != null && String(text[key]).trim() !== '') ? text[key] : el.textContent, required: true, full: true, help: 'Shown on the website straight away.' }],
       onSave: function (v) { return saveText((function () { var o = {}; o[key] = v.v; return o; })()); },
@@ -437,6 +443,7 @@
     isAdmin: function () { var se = session.get(); return !!(se && se.admin); }, isR4: function () { var se = session.get(); return !!(se && se.r4 && !se.admin); }, editOn: editOn, form: form, manager: manager, modal: modal, saveText: saveText, refresh: refresh, isoDate: isoDate, isoDT: isoDT, config: C, demo: !C.API_URL };
   nav();
   if (editOn()) document.body.classList.add('edit-on');
+  if (window.I18N) I18N.refreshTools();
   if (membersPage() && !session.get()) {
     if (document.querySelector('main')) lock(''); else document.addEventListener('DOMContentLoaded', function () { lock(''); });
   }
