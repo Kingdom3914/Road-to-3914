@@ -1,4 +1,4 @@
-/* Built 2026-11-13T11:00Z — deployed automatically from GitHub (server/ folder) */
+/* Built 2026-11-13T11:05Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
@@ -1057,6 +1057,10 @@ function remindersDue(t, now, env) {
       '**Đấu giá ' + tt + '** · ' + (ev.secret ? '🔒 trả giá bí mật' : '👁 trả giá công khai') + '\nMở **' + vTime(ev.opens) + '** · Đóng **' + vTime(ev.closes) + '**\nHãy trả giá trên website.', l), true);
     due('mlast:' + ev.id, ev.closes - R_HOUR, R_HOUR, envn('⏰ **Last hour!** · ' + tt + '\nBidding closes at **' + rTime(ev.closes) + '** (in 1 hour). Make or change your offer now.',
       '**Giờ cuối!** · ' + tt + '\nĐấu giá đóng lúc **' + vTime(ev.closes) + '** (còn 1 giờ). Hãy trả giá hoặc thay đổi ngay.', l), true);
+    due('mopen:' + ev.id, ev.opens, 3 * R_HOUR, envn('🟢 **Bidding is now open!** · ' + tt + ' · ' + (ev.secret ? '🔒 secret bids' : '👁 open bids') + '\nCloses **' + rTime(ev.closes) + '**. Make your offer on the website.',
+      '**Đã mở đấu giá!** · ' + tt + ' · ' + (ev.secret ? '🔒 trả giá bí mật' : '👁 trả giá công khai') + '\nĐóng lúc **' + vTime(ev.closes) + '**. Hãy trả giá trên website.', l), true);
+    due('mclosed:' + ev.id, ev.closes, 3 * R_HOUR, envn('🔴 **Bidding is closed** · ' + tt + '\nLeaders are checking the offers. Results are expected **' + rTime(ev.resultsAt) + '**.',
+      '**Đã đóng đấu giá** · ' + tt + '\nBan lãnh đạo đang kiểm tra. Kết quả dự kiến lúc **' + vTime(ev.resultsAt) + '**.', l), true);
     due('open:' + ev.id, ev.opens, 3 * R_HOUR, envn('🟢 **Bidding is open** · ' + nm + '\nCloses ' + rTime(ev.closes) + '.',
       '**Đã mở đấu giá** · ' + nm + '\nĐóng lúc ' + vTime(ev.closes) + '.', l));
     due('c3h:' + ev.id, ev.closes - 3 * R_HOUR, 3 * R_HOUR, envn('⏰ **3 hours left** · ' + nm + '\n' + ev.bidders + ' player' + (ev.bidders === 1 ? ' has' : 's have') + ' made an offer so far.',
