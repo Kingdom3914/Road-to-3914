@@ -1,4 +1,4 @@
-/* Built 2026-11-13T00:30Z — deployed automatically from GitHub (server/ folder) */
+/* Built 2026-11-13T09:40Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
@@ -16,7 +16,15 @@ var Core = (function () {
     var s = str(v); if (!s) return [];
     return s.split(s.indexOf('|') > -1 ? '|' : ',').map(function (x) { return x.trim(); });
   }
-  function isValid(b) { return str(b.Status).toLowerCase() !== 'cancelled'; }
+  /* a bid counts while its status is empty or "valid" (not cancelled, replaced or withdrawn) */
+  function isValid(b) { var s = str(b.Status).toLowerCase(); return s === '' || s === 'valid'; }
+  /* Secret-bid auctions: each player has one hidden offer; at closing the highest offers fill the free ranks */
+  function isSealed(e) { return str(e.Format).toLowerCase() === 'sealed'; }
+  function parseReserved(v) {
+    var a = []; try { a = typeof v === 'string' ? JSON.parse(v || '[]') : (v || []); } catch (x) { a = []; }
+    return (Array.isArray(a) ? a : []).filter(function (x) { return x && num(x.rank) >= 1 && str(x.gov); })
+      .map(function (x) { return { rank: Math.floor(num(x.rank)), gov: str(x.gov), cost: Math.max(0, Math.floor(num(x.cost))), reason: str(x.reason) }; });
+  }
   function fmt(v) { return Number(v).toLocaleString('en-US'); }
 
   /* Build every event with its ranks, leaders and bid counts */
@@ -38,6 +46,36 @@ var Core = (function () {
         });
       }
       var people = {}, total = 0;
+      if (isSealed(e)) {
+        var names = {}; (t.players || []).forEach(function (p) { names[str(p.GovID)] = str(p.Name); });
+        var resv = parseReserved(e.Reserved).filter(function (x) { return x.rank <= count; }), held = {};
+        resv.forEach(function (x) { var r = ranks[x.rank - 1]; r.reserved = { gov: x.gov, name: names[x.gov] || x.gov, cost: x.cost, reason: x.reason }; held[x.gov] = x; });
+        var active = {}; /* latest valid offer per player (rows are in time order) */
+        t.bids.forEach(function (b) {
+          if (str(b.EventID) !== str(e.EventID)) return;
+          total++;
+          if (!isValid(b)) return;
+          var g = str(b.GovID); if (held[g]) return;
+          active[g] = { gov: g, name: str(b.Name) || names[g] || g, amount: num(b.Amount), time: toTime(b.Timestamp), row: b._row || 0 };
+        });
+        var pool = Object.keys(active).map(function (g) { return active[g]; });
+        var minBid = Math.max(1, mins.length ? mins[0] : 0);
+        var secret = !(e.Secret === false || /^(no|false|0)$/i.test(str(e.Secret)));
+        var published = toTime(e.Published) || 0, resultsAt = toTime(e.Results) || (closes ? closes + 6 * 3600000 : 0);
+        var out = { id: str(e.EventID), type: str(e.Type).toUpperCase() || 'MGE', title: str(e.Title), subject: str(e.Subject),
+          opens: opens, closes: closes, phase: phase, increment: 0, ranks: ranks, sealed: true, minBid: minBid,
+          secret: secret, published: published, publishedBy: str(e.PublishedBy), resultsAt: resultsAt, review: phase === 'closed' && !published,
+          bidders: pool.length, bids: total, pool: active, held: held, lost: {} };
+        if (phase !== 'upcoming') {
+          pool.sort(function (a, b) { return (b.amount - a.amount) || (a.time - b.time) || (a.row - b.row); });
+          var free = ranks.filter(function (r) { return !r.reserved; }), i2 = 0;
+          pool.forEach(function (p) {
+            if (i2 < free.length) { var r = free[i2++]; r.bid = p.amount; r.leader = p.name; r.leaderId = p.gov; r.count = 1; }
+            else out.lost[p.gov] = p.amount;
+          });
+        }
+        return out;
+      }
       t.bids.forEach(function (b) {
         if (str(b.EventID) !== str(e.EventID) || !isValid(b)) return;
         var r = ranks[num(b.Rank) - 1]; if (!r) return;
@@ -66,6 +104,26 @@ var Core = (function () {
     });
     var spent = 0, reserved = 0, positions = [];
     evs.forEach(function (ev) {
+      if (ev.sealed) {
+        var h = ev.held[gov], mineS = ev.pool[gov];
+        var lbl = ev.type + (ev.title ? ' · ' + ev.title : '');
+        var final = ev.phase === 'closed' && ev.published;
+        if (h) {
+          if (final) { spent += h.cost; ledger.push({ time: ev.closes, amount: -h.cost, reason: lbl + ' · locked rank #' + h.rank }); }
+          else reserved += h.cost;
+          if (!final) positions.push({ event: ev.id, type: ev.type, rank: h.rank, locked: true, myBid: h.cost, sealed: true, review: ev.review });
+        }
+        if (mineS) {
+          if (final) {
+            var won = null; ev.ranks.forEach(function (r) { if (r.leaderId === gov) won = r; });
+            if (won) { spent += won.bid; ledger.push({ time: ev.closes, amount: -won.bid, reason: lbl + ' · rank #' + won.rank + ' won' }); }
+          } else {
+            reserved += mineS.amount;
+            positions.push({ event: ev.id, type: ev.type, rank: 0, sealed: true, secret: ev.secret, myBid: mineS.amount, review: ev.review });
+          }
+        }
+        return;
+      }
       ev.ranks.forEach(function (r) {
         var mine = r.bidders[gov];
         if (r.leaderId === gov) {
@@ -109,7 +167,7 @@ var Core = (function () {
       me = auth(t, p.gov, p.pin);
       if (!me) out.authError = 'Wrong governor ID or PIN.';
     }
-    var gov = me ? str(me.GovID) : '';
+    var gov = me ? str(me.GovID) : '', staff = !!me && /^(admin|r4)$/i.test(str(me.Role));
     if (me) {
       var b = balance(gov, evs, t);
       out.me = {
@@ -121,6 +179,26 @@ var Core = (function () {
     out.events = evs.filter(function (ev) {
       return ev.phase !== 'closed' || now - ev.closes < 14 * 86400000;
     }).map(function (ev) {
+      if (ev.sealed) {
+        var mineOffer = gov && ev.pool[gov] ? ev.pool[gov].amount : 0, myLock = gov && ev.held[gov] ? ev.held[gov] : null, myWin = 0;
+        /* amounts and names show: open auctions while live, everyone once published, staff during review */
+        var reveal = ev.phase === 'closed' ? (ev.published || staff) : (ev.phase === 'open' && !ev.secret);
+        var res = {
+          id: ev.id, type: ev.type, title: ev.title, subject: ev.subject, opens: ev.opens, closes: ev.closes,
+          phase: ev.phase, sealed: true, secret: ev.secret, review: ev.review, published: ev.published, publishedBy: ev.published ? ev.publishedBy : '',
+          resultsAt: ev.resultsAt, provisional: reveal && !ev.published, minBid: ev.minBid, bidders: ev.bidders,
+          myBid: mineOffer, myLock: myLock ? { rank: myLock.rank, cost: myLock.cost } : null,
+          ranks: ev.ranks.map(function (r) {
+            var o = { rank: r.rank, reward: r.reward, min: 0, bid: 0, leader: '', count: 0, mine: '' };
+            if (r.reserved) { o.locked = { name: r.reserved.name, cost: r.reserved.cost }; o.mine = gov && r.reserved.gov === gov ? 'locked' : ''; }
+            if (reveal && r.leaderId) { o.bid = r.bid; o.leader = r.leader; if (staff && ev.phase === 'closed') o.gov = r.leaderId; o.mine = r.leaderId === gov ? (ev.phase === 'closed' ? 'won' : 'leading') : ''; if (r.leaderId === gov) myWin = r.rank; }
+            return o;
+          })
+        };
+        if (ev.phase === 'closed' && ev.published && mineOffer) res.myResult = myWin ? { rank: myWin } : { lost: true };
+        else if (reveal && mineOffer && ev.phase === 'open') res.myPlace = myWin;
+        return res;
+      }
       return {
         id: ev.id, type: ev.type, title: ev.title, subject: ev.subject, opens: ev.opens, closes: ev.closes,
         phase: ev.phase, increment: ev.increment, bidders: ev.bidders, bids: ev.bids,
@@ -132,8 +210,10 @@ var Core = (function () {
         })
       };
     });
-    var typeOf = {}; evs.forEach(function (ev) { typeOf[ev.id] = ev.type; });
-    out.feed = t.bids.filter(isValid).slice(-30).reverse().map(function (b) {
+    var typeOf = {}, sealedEv = {}; evs.forEach(function (ev) { typeOf[ev.id] = ev.type; if (ev.sealed) sealedEv[ev.id] = ev.secret ? 1 : 2; });
+    out.feed = t.bids.filter(function (b) { var s = str(b.Status).toLowerCase(); return isValid(b) || (sealedEv[str(b.EventID)] && s === 'replaced'); }).slice(-30).reverse().map(function (b) {
+      if (sealedEv[str(b.EventID)]) return sealedEv[str(b.EventID)] === 2 ? { sealed: true, open: true, name: str(b.Name), type: typeOf[str(b.EventID)] || '', event: str(b.EventID), rank: 0, amount: num(b.Amount), time: toTime(b.Timestamp) }
+        : { sealed: true, name: '', type: typeOf[str(b.EventID)] || '', event: str(b.EventID), rank: 0, amount: 0, time: toTime(b.Timestamp) };
       return { name: str(b.Name), type: typeOf[str(b.EventID)] || '', event: str(b.EventID), rank: num(b.Rank), amount: num(b.Amount), time: toTime(b.Timestamp) };
     });
     out.news = t.news.filter(function (x) { return str(x.Title) || str(x.Body); }).map(function (x) {
@@ -147,12 +227,28 @@ var Core = (function () {
     var me = auth(t, p.gov, p.pin);
     if (!me) return { error: 'Wrong governor ID or PIN.' };
     var gov = str(me.GovID), amount = Math.floor(num(p.amount));
-    if (!(amount > 0)) return { error: 'Enter a valid amount.' };
+    if (!(amount > 0) && !p.withdraw) return { error: 'Enter a valid amount.' };
     var evs = events(t, now), ev = null;
     evs.forEach(function (e) { if (e.id === str(p.event)) ev = e; });
     if (!ev) return { error: 'Event not found.' };
     if (ev.phase === 'upcoming') return { error: 'Bidding has not opened yet.' };
     if (ev.phase === 'closed') return { error: 'Bidding is closed for this event.' };
+    if (ev.sealed) {
+      if (ev.held[gov]) return { error: 'You have a locked rank (#' + ev.held[gov].rank + ') in this auction, so you can’t bid here.' };
+      var cur = ev.pool[gov];
+      if (p.withdraw) {
+        if (!cur) return { error: 'You have no offer in this auction.' };
+        return { withdraw: true, gov: gov, type: ev.type, eventId: ev.id, amount: cur.amount };
+      }
+      if (amount < ev.minBid) return { error: 'The minimum offer is ' + fmt(ev.minBid) + ' credits.' };
+      var bS = balance(gov, evs, t), availS = bS.available + (cur ? cur.amount : 0);
+      if (amount > availS) return { error: availS > 0 ? 'Not enough credits. You can offer up to ' + fmt(availS) + '.' : 'You have no credits available for this auction.' };
+      if (cur && cur.amount === amount) return { error: 'That is already your offer.' };
+      return {
+        row: { Timestamp: new Date(now), EventID: ev.id, Rank: 0, GovID: gov, Name: str(me.Name), Amount: amount, Status: 'valid' },
+        rank: 0, type: ev.type, sealed: true, previous: cur ? cur.amount : 0
+      };
+    }
     var r = ev.ranks[num(p.rank) - 1];
     if (!r) return { error: 'That rank does not exist.' };
     var need = r.bid > 0 ? Math.max(r.min, r.bid + ev.increment) : Math.max(r.min, 1);
@@ -204,7 +300,8 @@ var Core = (function () {
     return o;
   }
 
-  return { gate: gate, state: state, checkBid: checkBid, calendar: calendar, balances: balances, texts: texts, toTime: toTime };
+  return { gate: gate, state: state, checkBid: checkBid, calendar: calendar, balances: balances, texts: texts, toTime: toTime,
+    events: events, isSealed: isSealed, parseReserved: parseReserved, isValid: isValid };
 })();
 
 /* ============================================================
@@ -217,7 +314,7 @@ var Core = (function () {
 var TABS = {
   Players: ['GovID', 'Name', 'Alliance', 'PIN', 'Role'],
   Credits: ['GovID', 'Name', 'Balance'],
-  Events: ['EventID', 'Type', 'Title', 'Subject', 'Opens', 'Closes', 'Ranks', 'Increment', 'Rewards', 'Minimums', 'Status'],
+  Events: ['EventID', 'Type', 'Title', 'Subject', 'Opens', 'Closes', 'Ranks', 'Increment', 'Rewards', 'Minimums', 'Status', 'Format', 'Reserved', 'Secret', 'Results', 'Published', 'PublishedBy'],
   Bids: ['Timestamp', 'EventID', 'Rank', 'GovID', 'Name', 'Amount', 'Status'],
   News: ['Date', 'Type', 'Title', 'Body', 'Pinned'],
   Calendar: ['Event', 'Start', 'End', 'Details', 'Estimated'],
@@ -234,7 +331,7 @@ var EDIT = {
   'Event types': { Name: ['text', 1, 40], Group: ['group', 1], Color: ['color'], Short: ['text', 0, 12], Subtitles: ['text', 0, 600] },
   'Kingdoms': { Kingdom: ['digits', 1], Name: ['text', 0, 40], Color: ['color'], 'KvK start': ['date'], 'KvK end': ['date'], 'Build-up from': ['date'] },
   'News': { Date: ['date', 1], Type: ['enum', 1, ['Announcement', 'News']], Title: ['text', 1, 120], Body: ['text', 0, 6000], Pinned: ['bool'] },
-  'Events': { EventID: ['id', 1], Type: ['enum', 1, ['MGE', 'GH']], Title: ['text', 0, 80], Subject: ['text', 0, 80], Opens: ['datetime', 1], Closes: ['datetime', 1], Ranks: ['int', 1, [1, 50]], Increment: ['int', 1, [1, 1000000]], Rewards: ['text', 0, 1500], Minimums: ['text', 0, 800], Status: ['enum', 1, ['open', 'draft', 'closed']] }
+  'Events': { EventID: ['id', 1], Type: ['enum', 1, ['MGE', 'GH']], Title: ['text', 0, 80], Subject: ['text', 0, 80], Opens: ['datetime', 1], Closes: ['datetime', 1], Ranks: ['int', 1, [1, 50]], Increment: ['int', 1, [1, 1000000]], Rewards: ['text', 0, 1500], Minimums: ['text', 0, 800], Status: ['enum', 1, ['open', 'draft', 'closed']], Results: ['datetime'] }
 };
 
 function str(v) { return v == null ? '' : String(v).trim(); }
@@ -245,6 +342,8 @@ function json(o, status) {
 }
 
 export default {
+  /* every 15 minutes (wrangler.toml [triggers]): MGE/GH reminders for R4s and admins */
+  async scheduled(event, env, ctx) { ctx.waitUntil(runReminders(env, Date.now()).catch(function () {})); },
   async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return json({ ok: true });
     var path = new URL(req.url).pathname;
@@ -358,6 +457,11 @@ async function upgradePin(env, gov, oldStored, pin) {
 
 /* Shared rules (Core) compare PINs directly, so after checking the scrambled PIN we put
    the typed PIN back on this player in memory only, for this one request. */
+function isFinal(e, now) {
+  var closed = str(e.Status).toLowerCase() === 'closed' || (Core.toTime(e.Closes) && now >= Core.toTime(e.Closes));
+  if (!closed) return false;
+  return Core.isSealed(e) ? !!Core.toTime(e.Published) : true;
+}
 function unlock(t, gov, pin) { t.players.forEach(function (pl) { if (str(pl.GovID) === gov) pl.PIN = str(pin); }); }
 
 /* Sign-in check with a limit on wrong PINs: 5 wrong tries locks that Governor ID for 15 minutes */
@@ -398,6 +502,15 @@ async function handle(env, p) {
   var role = str(g.me.Role).toLowerCase(), admin = role === 'admin', r4 = role === 'r4';
   if (action === 'login') return { ok: true, me: { name: str(g.me.Name), gov: str(g.me.GovID), admin: admin, r4: r4 }, text: text };
   if (action === 'bid') return placeBid(env, p, g.me);
+  if (action === 'cancelRequest') return cancelRequest(env, p, g.me);
+  /* R4 officers and admins: review window of MGE/GH auctions */
+  if (/^(adminPublish|staffCancel|reqDecide|penaltySave)$/.test(action)) {
+    if (!admin && !r4) return { ok: false, error: 'Only R4 officers and admins can do this.' };
+    if (action === 'adminPublish') return adminPublish(env, p, g.me);
+    if (action === 'staffCancel') return staffCancel(env, p, g.me);
+    if (action === 'reqDecide') return reqDecide(env, p, g.me);
+    return penaltySave(env, p, g.me);
+  }
   if (/^admin|^textSave$/.test(action)) {
     /* R4 officers: migration applications only */
     if (r4 && /^adminApp(s|File|Save|Ticket)?$/.test(action)) {
@@ -418,6 +531,7 @@ async function handle(env, p) {
     if (action === 'adminCreditBulk') return adminCreditBulk(env, p, g.me);
     if (action === 'adminBids') return adminBids(t);
     if (action === 'adminBid') return adminBid(env, p, g.me);
+    if (action === 'adminReserve') return adminReserve(env, p, g.me);
     if (action === 'adminApps') return adminApps(env);
     if (action === 'adminApp') return adminApp(env, p);
     if (action === 'adminAppFile') return adminAppFile(env, p);
@@ -429,6 +543,7 @@ async function handle(env, p) {
   }
   var res = action === 'calendar' ? { ok: true, calendar: Core.calendar(t) } : Core.state(t, p, Date.now());
   if (p.cal && action !== 'calendar') res.calendar = Core.calendar(t);
+  if (res.events) await addRequests(env, res, str(g.me.GovID), admin || r4, text);
   res.admin = admin;
   res.r4 = r4;
   res.text = text;
@@ -443,15 +558,30 @@ async function placeBid(env, p, who) {
     unlock(t, str(p.gov), p.pin);
     c = Core.checkBid(t, p, now);
     if (c.error) return { ok: false, error: c.error };
-    c.row.Timestamp = now;
-    if (!(await commit(env, dv, [insertRow('Bids', c.row)]))) return RETRY;
-    t.bids.push(c.row);
+    var stmts = [], gov = c.withdraw ? c.gov : str(c.row && c.row.GovID), evId = c.withdraw ? c.eventId : str(c.row.EventID);
+    if (c.sealed || c.withdraw) {
+      /* a player has one secret offer per auction: the old one is marked replaced (or withdrawn) */
+      t.bids.forEach(function (b) {
+        if (str(b.EventID) === evId && str(b.GovID) === gov && Core.isValid(b)) { var o = clean(b); o.Status = c.withdraw ? 'withdrawn' : 'replaced'; stmts.push(updateRow(b._row, o)); b.Status = o.Status; }
+      });
+    }
+    if (!c.withdraw) { c.row.Timestamp = now; stmts.push(insertRow('Bids', c.row)); }
+    if (!(await commit(env, dv, stmts))) return RETRY;
+    if (!c.withdraw) t.bids.push(c.row);
     return null;
   });
   if (r) return r;
-  await log(env, who, 'bid', c.type + ' ' + c.row.EventID + ' rank #' + c.rank + ' — ' + c.row.Amount.toLocaleString('en-US'));
   var out = Core.state(t, p, now);
-  out.message = 'Bid placed on ' + c.type + ' rank #' + c.rank + '.';
+  if (c.withdraw) {
+    await log(env, who, 'bid', c.type + ' ' + c.eventId + ' — withdrew offer of ' + fmtN(c.amount));
+    out.message = 'Your offer was withdrawn. The credits are free again.';
+  } else if (c.sealed) {
+    await log(env, who, 'bid', c.type + ' ' + c.row.EventID + ' — offer ' + fmtN(c.row.Amount) + (c.previous ? ' (was ' + fmtN(c.previous) + ')' : ''));
+    out.message = 'Your offer of ' + fmtN(c.row.Amount) + ' credits is saved.';
+  } else {
+    await log(env, who, 'bid', c.type + ' ' + c.row.EventID + ' rank #' + c.rank + ' — ' + c.row.Amount.toLocaleString('en-US'));
+    out.message = 'Bid placed on ' + c.type + ' rank #' + c.rank + '.';
+  }
   return out;
 }
 
@@ -529,6 +659,25 @@ async function adminEdit(env, p, who) {
         }
         if (tab === 'Event types' && others('Name', out.Name)) throw new Error('There is already an event type called “' + out.Name + '”.');
         if (tab === 'Events') {
+          out.Format = cur ? str(cur.Format) : (str(vals.Format) === 'ranks' ? '' : 'sealed');
+          out.Reserved = cur ? (cur.Reserved || '') : '';
+          out.Published = cur ? (cur.Published || '') : '';
+          out.PublishedBy = cur ? (cur.PublishedBy || '') : '';
+          out.Secret = out.Format !== 'sealed' ? '' : (vals.Secret === false || /^(no|false|0)$/i.test(str(vals.Secret)) ? 'no' : 'yes');
+          if (!out.Results) out.Results = out.Closes + 6 * 3600000;
+          if (out.Results < out.Closes) throw new Error('Results time must be after the closing time.');
+          if (cur) {
+            var nowE = Date.now(), wasClosed = isFinal(cur, nowE);
+            if (wasClosed) {
+              var same = function (k) { if (k === 'Opens' || k === 'Closes') return Core.toTime(out[k]) === Core.toTime(cur[k]); if (k === 'Ranks' || k === 'Increment') return Number(out[k]) === Number(cur[k]); if (k === 'Secret') return !/^(no|false|0)$/i.test(str(out[k])) === !/^(no|false|0)$/i.test(str(cur[k])); return str(out[k]).toLowerCase() === str(cur[k]).toLowerCase(); };
+              var locked = ['EventID', 'Type', 'Opens', 'Closes', 'Ranks', 'Increment', 'Minimums', 'Status', 'Secret'].filter(function (k) { return !same(k); });
+              if (locked.length) throw new Error('The results of this auction are published, so they are final. Only the title, description and rewards can still change.');
+            }
+            var hiLock = 0; Core.parseReserved(cur.Reserved).forEach(function (x) { hiLock = Math.max(hiLock, x.rank); });
+            if (hiLock > out.Ranks) throw new Error('Rank #' + hiLock + ' is locked for a player. Remove that lock before lowering the number of ranks.');
+            var hiBid = 0; (t.bids || []).forEach(function (b) { if (str(b.EventID) === str(cur.EventID) && Core.isValid(b)) hiBid = Math.max(hiBid, Number(b.Rank) || 0); });
+            if (hiBid > out.Ranks) throw new Error('Rank #' + hiBid + ' already has bids. The number of ranks can’t go below ' + hiBid + '.');
+          }
           if (others('EventID', out.EventID)) throw new Error('Another auction already uses the code ' + out.EventID + '.');
           if (cur && str(cur.EventID) !== str(out.EventID) && (t.bids || []).some(function (b) { return str(b.EventID) === str(cur.EventID); })) throw new Error('This auction has bids, so its code can’t change.');
         }
@@ -758,12 +907,283 @@ async function adminCreditBulk(env, p, who) {
 
 /* Every bid, newest first, with the auctions they belong to */
 function adminBids(t) {
+  var now = Date.now(), full = {}; Core.events(t, now).forEach(function (e) { full[e.id] = e; });
   var bids = t.bids.filter(function (b) { return str(b.EventID); }).map(function (b) {
-    return { r: b._row, sig: String(b._ver), time: Core.toTime(b.Timestamp), event: str(b.EventID), rank: Number(b.Rank) || 0, gov: str(b.GovID), name: str(b.Name),
-      amount: Number(b.Amount) || 0, status: str(b.Status).toLowerCase() === 'cancelled' ? 'cancelled' : 'valid' };
+    var st = str(b.Status).toLowerCase(), ev = full[str(b.EventID)], o = { r: b._row, sig: String(b._ver), time: Core.toTime(b.Timestamp), event: str(b.EventID), rank: Number(b.Rank) || 0, gov: str(b.GovID), name: str(b.Name),
+      amount: Number(b.Amount) || 0, status: st === 'cancelled' ? 'cancelled' : (st === '' || st === 'valid') ? 'valid' : st };
+    if (ev && ev.sealed) {
+      o.sealed = true;
+      if (o.status !== 'valid') o.state = o.status;
+      else if (ev.phase !== 'closed') o.state = 'offer';
+      else { var won = 0; ev.ranks.forEach(function (r) { if (r.leaderId === o.gov) won = r.rank; }); o.state = won ? 'won' : 'lost'; if (won) o.rank = won; if (ev.review) o.review = true; }
+    }
+    return o;
   }).reverse();
-  var evs = Core.state(t, {}, Date.now()).events.map(function (e) { return { id: e.id, type: e.type, title: e.title, phase: e.phase, closes: e.closes }; });
+  var evs = Core.state(t, {}, now).events.map(function (e) { return { id: e.id, type: e.type, title: e.title, phase: e.phase, closes: e.closes, sealed: !!e.sealed, review: !!e.review, published: e.published || 0, secret: !!e.secret }; });
   return { ok: true, bids: bids, events: evs };
+}
+
+/* Lock ranks of a secret-bid auction for chosen players. items = [{ rank, gov, cost, reason }] (the full list) */
+async function adminReserve(env, p, who) {
+  var items = Array.isArray(p.items) ? p.items : [], info = null;
+  if (items.length > 50) return { ok: false, error: 'Too many locked ranks.' };
+  var r = await withRetry(env, async function (dv, t) {
+    var ev = null; (t.events || []).forEach(function (e) { if (str(e.EventID) === str(p.event)) ev = e; });
+    if (!ev) return { ok: false, error: 'Auction not found. Refresh the page.' };
+    if (!Core.isSealed(ev)) return { ok: false, error: 'Locked ranks are only for secret-bid auctions.' };
+    var now = Date.now();
+    if (isFinal(ev, now)) return { ok: false, error: 'The results of this auction are published, so its ranks can’t change.' };
+    var count = Math.max(1, Math.min(50, Number(ev.Ranks) || 15)), nm = {}, seenR = {}, seenG = {}, out = [];
+    t.players.forEach(function (pl) { nm[str(pl.GovID)] = str(pl.Name); });
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i] || {}, rank = Number(it.rank), gov = str(it.gov).replace(/[^0-9]/g, ''), cost = Number(String(it.cost).replace(/[, ]/g, ''));
+      if (!(rank % 1 === 0 && rank >= 1 && rank <= count)) return { ok: false, error: 'Pick a rank from 1 to ' + count + '.' };
+      if (!nm[gov]) return { ok: false, error: 'Governor ID ' + (gov || '(empty)') + ' is not a player.' };
+      if (!(cost % 1 === 0 && cost >= 0 && cost <= 100000000)) return { ok: false, error: 'Cost for rank #' + rank + ' must be a whole number (0 or more).' };
+      if (seenR[rank]) return { ok: false, error: 'Rank #' + rank + ' is locked twice.' };
+      if (seenG[gov]) return { ok: false, error: nm[gov] + ' is locked on two ranks. One rank per player.' };
+      if ((t.bids || []).some(function (b) { return str(b.EventID) === str(ev.EventID) && str(b.GovID) === gov && Core.isValid(b); }))
+        return { ok: false, error: nm[gov] + ' already placed an offer in this auction. Cancel it in Admin → Bids first.' };
+      seenR[rank] = 1; seenG[gov] = 1;
+      out.push({ rank: rank, gov: gov, cost: cost, reason: str(it.reason).slice(0, 100) });
+    }
+    out.sort(function (a, b) { return a.rank - b.rank; });
+    var row = clean(ev), oldList = Core.parseReserved(ev.Reserved);
+    row.Reserved = out.length ? JSON.stringify(out) : '';
+    if (!(await commit(env, dv, [updateRow(ev._row, row)]))) return RETRY;
+    var key = function (x) { return x.rank + ':' + x.gov + ':' + x.cost; }, oldK = {}, newK = {};
+    oldList.forEach(function (x) { oldK[key(x)] = x; }); out.forEach(function (x) { newK[key(x)] = x; });
+    info = { ev: str(ev.EventID), added: out.filter(function (x) { return !oldK[key(x)]; }), removed: oldList.filter(function (x) { return !newK[key(x)]; }), nm: nm };
+    return { ok: true, items: out.map(function (x) { return { rank: x.rank, gov: x.gov, name: nm[x.gov], cost: x.cost, reason: x.reason }; }) };
+  });
+  if (r.ok && info) {
+    for (var a = 0; a < info.added.length; a++) { var x = info.added[a]; await log(env, who, 'auction', info.ev + ': locked rank #' + x.rank + ' for ' + (info.nm[x.gov] || x.gov) + ' (' + fmtN(x.cost) + ' credits)' + (x.reason ? ': ' + x.reason : '')); }
+    for (var b2 = 0; b2 < info.removed.length; b2++) { var y = info.removed[b2]; await log(env, who, 'auction', info.ev + ': removed lock on rank #' + y.rank + ' (' + (info.nm[y.gov] || y.gov) + ')'); }
+  }
+  return r;
+}
+
+/* The results text: one line per rank. Used for the Home announcement and the Discord post. */
+function resultLines(ev) {
+  return ev.ranks.map(function (r) {
+    var who = r.reserved ? r.reserved.name + ' 🔒' : r.leader ? r.leader + ' · ' + fmtN(r.bid) : 'no winner';
+    return '#' + r.rank + ' — ' + who;
+  });
+}
+function resultTitle(ev) { return '🏆 ' + (ev.title || ev.id) + ' — results'; }
+function discordResults(env, ev, lines) {
+  var medal = ['🥇', '🥈', '🥉'], body = lines.map(function (l, i) { return (medal[i] || '▫️') + ' ' + dcEsc(l, 120); }).join('\n');
+  var msg = '**' + dcEsc(resultTitle(ev), 120) + '**\n' + (ev.subject ? dcEsc(ev.subject, 80) + '\n' : '') + '\n' + body +
+    '\n\nResults are final. Full list: ' + siteUrl(env) + '/events.html?event=' + encodeURIComponent(ev.id);
+  return msg.slice(0, 1990);
+}
+
+/* Publish the results of a closed auction: bid page + Home "Kingdom announcements" + Discord. Until then players only see "results coming".
+   dry = true only returns the text for the preview. */
+async function adminPublish(env, p, who) {
+  var info = null;
+  var r = await withRetry(env, async function (dv, t) {
+    var row = null, now = Date.now(); (t.events || []).forEach(function (e) { if (str(e.EventID) === str(p.event)) row = e; });
+    if (!row) return { ok: false, error: 'Auction not found. Refresh the page.' };
+    if (!Core.isSealed(row)) return { ok: false, error: 'This auction has no review step.' };
+    if (!(str(row.Status).toLowerCase() === 'closed' || (Core.toTime(row.Closes) && now >= Core.toTime(row.Closes)))) return { ok: false, error: 'Bidding is still open. Results can be published after it closes.' };
+    if (Core.toTime(row.Published)) return { ok: false, error: 'These results are already published.' };
+    var ev = Core.events({ events: [row], bids: t.bids, players: t.players }, now)[0];
+    if (!ev) return { ok: false, error: 'This auction is a draft. Set it to open or closed first.' };
+    var lines = resultLines(ev), title = resultTitle(ev), body = (ev.subject ? ev.subject + '\n' : '') + lines.join('\n');
+    if (p.dry) return { ok: true, preview: { title: title, body: body, discord: !!str(env.DISCORD_ANNOUNCE_CHANNEL_ID) } };
+    var upd = clean(row); upd.Published = now; upd.PublishedBy = str(who && who.Name);
+    var news = { Date: Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate()), Type: 'Announcement', Title: title.slice(0, 120), Body: body.slice(0, 6000), Pinned: '' };
+    if (!(await commit(env, dv, [updateRow(row._row, upd), insertRow('News', news)]))) return RETRY;
+    info = { ev: ev, lines: lines };
+    return { ok: true, published: now };
+  });
+  if (!r.ok || !info) return r;
+  /* Discord announcement (best effort: the results are already public on the website) */
+  var ch = str(env.DISCORD_ANNOUNCE_CHANNEL_ID);
+  if (!ch || !str(env.DISCORD_BOT_TOKEN)) r.discord = 'off';
+  else {
+    try {
+      var d = await dcApi(env, 'POST', '/channels/' + ch + '/messages', { content: discordResults(env, info.ev, info.lines), allowed_mentions: { parse: [] } });
+      r.discord = d.ok ? 'sent' : 'failed'; if (!d.ok) r.discordError = d.error;
+    } catch (e) { r.discord = 'failed'; r.discordError = String((e && e.message) || e); }
+  }
+  await staffNotify(env, '📣 **Results published** · ' + dcEsc(info.ev.title || info.ev.id, 80) + ' · by ' + dcEsc(who && who.Name, 60) + (r.discord === 'failed' ? '\n⚠️ The Discord announcement failed. Post it by hand.' : r.discord === 'off' ? '\n(The announcement channel is not set, so only the website and Home have it.)' : ''));
+  await log(env, who, 'auction', info.ev.id + ': results published (Home' + (r.discord === 'sent' ? ' + Discord' : r.discord === 'failed' ? ', Discord failed: ' + (r.discordError || '') : '') + ')');
+  return r;
+}
+
+/* ---------- Reminders for R4s and admins (staff channel, roles tagged). Each one is sent once. ---------- */
+var R_DAY = 86400000, R_HOUR = 3600000, R_WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], R_MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function rDay(t) { var d = new Date(t); return R_WD[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + R_MO[d.getUTCMonth()]; }
+function rTime(t) { return rDay(t) + ' ' + new Date(t).toISOString().slice(11, 16) + ' UTC'; }
+/* What is due right now: [{ key, at, text }]. A reminder is sent if its time has passed but not by more than its window. */
+function remindersDue(t, now, env) {
+  var out = [], link = siteUrl(env) + '/events.html';
+  function due(key, at, win, text) { if (now >= at && now < at + win) out.push({ key: key, at: at, text: text }); }
+  /* 1) calendar dates: prepare the auction */
+  var cal = Core.calendar(t), gOf = {};
+  cal.types.forEach(function (x) { gOf[x.n] = x.g; });
+  cal.dates.forEach(function (d) {
+    var g = gOf[d.e]; if ((g !== 'mge' && g !== 'gh') || !d.a) return;
+    var type = g.toUpperCase(), D = Math.floor(d.a / R_DAY) * R_DAY, name = type === 'MGE' ? (d.x ? d.x + ' MGE' : 'MGE') : 'GH';
+    var made = (t.events || []).filter(function (e) { return str(e.Type).toUpperCase() === type && Math.abs((Core.toTime(e.Closes) || 0) - (D - R_DAY + 13 * R_HOUR)) < 2 * R_DAY; })[0];
+    due('prep5:' + type + ':' + D, D - 5 * R_DAY + 9 * R_HOUR, 12 * R_HOUR, '📅 **' + name + ' starts in 5 days** (' + rDay(D) + ')\n' +
+      (made ? '✅ The auction is already made (' + str(made.EventID) + '). Check the locked ranks and rewards.' :
+        'Time to prepare: ' + type + ' auctions → New → pick ' + rDay(D) + '. Bidding opens ' + rTime(D - 2 * R_DAY) + '.') + '\n' + link);
+    if (!made) due('prep3:' + type + ':' + D, D - 3 * R_DAY + 9 * R_HOUR, 12 * R_HOUR, '⚠️ **' + name + ' starts in 3 days and there is no auction yet!**\nBidding should open ' + rTime(D - 2 * R_DAY) + '. Make it now: ' + type + ' auctions → New → pick ' + rDay(D) + '.\n' + link);
+  });
+  /* 2) auctions: open, 3 h left, closed, results due */
+  Core.events(t, now).forEach(function (ev) {
+    if (!ev.sealed) return;
+    var nm = ev.type + ' · ' + (ev.title || ev.id), l = link + '?event=' + encodeURIComponent(ev.id);
+    due('open:' + ev.id, ev.opens, 3 * R_HOUR, '🟢 **Bidding is open** · ' + nm + '\nCloses ' + rTime(ev.closes) + '.\n' + l);
+    due('c3h:' + ev.id, ev.closes - 3 * R_HOUR, 3 * R_HOUR, '⏰ **3 hours left** · ' + nm + '\n' + ev.bidders + ' player' + (ev.bidders === 1 ? ' has' : 's have') + ' made an offer so far.\n' + l);
+    if (ev.published) return;
+    due('closed:' + ev.id, ev.closes, 3 * R_HOUR, '🔴 **Bidding closed — review now** · ' + nm + '\nCheck the provisional results and any cancel requests, then press Publish. Results are due ' + rTime(ev.resultsAt) + '.\n' + l);
+    due('r2h:' + ev.id, ev.resultsAt - 2 * R_HOUR, 2 * R_HOUR, '⏳ **Results not published yet** · ' + nm + '\nThey are due in 2 hours (' + rTime(ev.resultsAt) + ').\n' + l);
+    due('rdue:' + ev.id, ev.resultsAt, 6 * R_HOUR, '🚨 **Results are due now** · ' + nm + '\nPlease review and press Publish results.\n' + l);
+  });
+  return out;
+}
+async function runReminders(env, now) {
+  if (!str(env.DISCORD_STAFF_CHANNEL_ID)) return { sent: 0 };
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS remind (k TEXT PRIMARY KEY, ts INTEGER NOT NULL)').run();
+  var t = (await tables(env)).t, list = remindersDue(t, now, env), sent = 0;
+  for (var i = 0; i < list.length; i++) {
+    /* claim first, so two runs can never send the same reminder twice */
+    var c = await env.DB.prepare('INSERT OR IGNORE INTO remind (k, ts) VALUES (?, ?)').bind(list[i].key, now).run();
+    if (!(c.meta && c.meta.changes)) continue;
+    var res = await staffNotify(env, list[i].text);
+    if (res === 'sent') sent++; else await env.DB.prepare('DELETE FROM remind WHERE k = ?').bind(list[i].key).run();
+  }
+  return { sent: sent };
+}
+
+/* ---------- Review window: cancel requests, staff cancels, penalty ---------- */
+function penaltyOf(text) { var v = str(text && text.cancel_penalty); return v === '' ? 200 : Math.max(0, Math.floor(Number(v)) || 0); }
+async function creqTable(env) {
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS creq (id INTEGER PRIMARY KEY AUTOINCREMENT, ev TEXT NOT NULL, gov TEXT NOT NULL, name TEXT, amount INTEGER, reason TEXT, state TEXT NOT NULL, ts INTEGER NOT NULL, by TEXT, done INTEGER, penalty INTEGER)').run();
+}
+/* Message to the staff channel, tagging the R4 and admin roles (needs DISCORD_STAFF_CHANNEL_ID) */
+async function staffNotify(env, text) {
+  var ch = str(env.DISCORD_STAFF_CHANNEL_ID); if (!ch || !str(env.DISCORD_BOT_TOKEN)) return 'off';
+  var roles = str(env.DISCORD_STAFF_ROLES).split(',').map(function (x) { return x.trim(); }).filter(function (x) { return /^[0-9]{5,25}$/.test(x); });
+  try {
+    var d = await dcApi(env, 'POST', '/channels/' + ch + '/messages', { content: (roles.map(function (x) { return '<@&' + x + '>'; }).join(' ') + '\n' + text).slice(0, 1990), allowed_mentions: { parse: [], roles: roles } });
+    return d.ok ? 'sent' : 'failed';
+  } catch (e) { return 'failed'; }
+}
+function reviewEvent(t, id, now) {
+  var row = null; (t.events || []).forEach(function (e) { if (str(e.EventID) === str(id)) row = e; });
+  if (!row) return { error: 'Auction not found. Refresh the page.' };
+  var ev = Core.events({ events: [row], bids: t.bids, players: t.players }, now)[0];
+  if (!ev || !ev.sealed) return { error: 'This auction has no review step.' };
+  if (ev.phase !== 'closed') return { error: 'Bidding is still open. Players can change or withdraw their own offers until it closes.' };
+  if (ev.published) return { error: 'The results are published, so they are final.' };
+  return { row: row, ev: ev };
+}
+/* Mark a player's offer cancelled, and optionally take the penalty from their credits. Runs inside withRetry. */
+async function cancelOffer(env, dv, t, ev, gov, penalty) {
+  var stmts = [], amount = 0;
+  t.bids.forEach(function (b) { if (str(b.EventID) === ev.id && str(b.GovID) === gov && Core.isValid(b)) { var o = clean(b); o.Status = 'cancelled'; stmts.push(updateRow(b._row, o)); amount = Number(b.Amount) || 0; } });
+  if (!stmts.length) return { error: 'This player has no offer in this auction any more.' };
+  if (penalty > 0) {
+    var rows = t.credits.filter(function (c) { return str(c.GovID) === gov; }), before = 0, nm = '';
+    rows.forEach(function (c) { before += Number(c.Balance) || 0; });
+    t.players.forEach(function (x) { if (str(x.GovID) === gov) nm = str(x.Name); });
+    if (rows.length) { var first = clean(rows[0]); first.Balance = before - penalty; stmts.push(updateRow(rows[0]._row, first)); rows.slice(1).forEach(function (c) { stmts.push(deleteRow(c._row)); }); }
+    else stmts.push(insertRow('Credits', { GovID: gov, Name: nm, Balance: -penalty }));
+  }
+  if (!(await commit(env, dv, stmts))) return RETRY;
+  return { ok: true, amount: amount };
+}
+
+/* Player: ask to cancel an offer during the review window */
+async function cancelRequest(env, p, who) {
+  var reason = str(p.reason).slice(0, 300), gov = str(who.GovID), now = Date.now();
+  if (reason.length < 3) return { ok: false, error: 'Write a short reason for the leaders.' };
+  await creqTable(env);
+  var t = (await tables(env)).t, x = reviewEvent(t, p.event, now);
+  if (x.error) return { ok: false, error: x.error };
+  var mine = x.ev.pool[gov];
+  if (!mine) return { ok: false, error: x.ev.held[gov] ? 'Your rank is locked by the leaders. Talk to an admin.' : 'You have no offer in this auction.' };
+  var dup = await env.DB.prepare("SELECT id FROM creq WHERE ev = ? AND gov = ? AND state = 'pending'").bind(x.ev.id, gov).first();
+  if (dup) return { ok: false, error: 'You already asked. The leaders will answer soon.' };
+  await env.DB.prepare("INSERT INTO creq (ev, gov, name, amount, reason, state, ts) VALUES (?, ?, ?, ?, ?, 'pending', ?)").bind(x.ev.id, gov, str(who.Name), mine.amount, reason, now).run();
+  var pen = penaltyOf(Core.texts(t));
+  await staffNotify(env, '🔔 **Cancel request** · ' + dcEsc(x.ev.title || x.ev.id, 80) + '\n**' + dcEsc(who.Name, 60) + '** wants to cancel their offer of **' + fmtN(mine.amount) + '** credits.\nReason: ' + dcEsc(reason, 300) +
+    '\nPenalty if accepted: ' + fmtN(pen) + ' credits.\nAccept or decline here: ' + siteUrl(env) + '/events.html?event=' + encodeURIComponent(x.ev.id));
+  await log(env, who, 'auction', x.ev.id + ': asked to cancel offer of ' + fmtN(mine.amount) + ': ' + reason);
+  return { ok: true, message: 'Request sent. The leaders will accept or decline it.' };
+}
+
+/* R4/admin: accept (cancel the offer + penalty) or decline a request */
+async function reqDecide(env, p, who) {
+  await creqTable(env);
+  var id = parseInt(p.id, 10) || 0, accept = p.accept === true, q = await env.DB.prepare('SELECT * FROM creq WHERE id = ?').bind(id).first();
+  if (!q) return { ok: false, error: 'Request not found. Refresh the page.' };
+  if (q.state !== 'pending') return { ok: false, error: 'This request was already answered.' };
+  var pen = 0, out = null;
+  if (accept) {
+    var r = await withRetry(env, async function (dv, t) {
+      var x = reviewEvent(t, q.ev, Date.now()); if (x.error) return { ok: false, error: x.error };
+      pen = penaltyOf(Core.texts(t));
+      var c = await cancelOffer(env, dv, t, x.ev, q.gov, pen);
+      if (c === RETRY) return RETRY; if (c.error) return { ok: false, error: c.error };
+      out = c; return { ok: true };
+    });
+    if (!r.ok) return r;
+  }
+  var ch = await env.DB.prepare("UPDATE creq SET state = ?, by = ?, done = ?, penalty = ? WHERE id = ? AND state = 'pending'").bind(accept ? 'accepted' : 'declined', str(who.Name), Date.now(), pen, id).run();
+  if (!(ch.meta && ch.meta.changes)) return { ok: false, error: 'This request was already answered.' };
+  await log(env, who, 'auction', q.ev + ': ' + (accept ? 'accepted' : 'declined') + ' cancel request of ' + q.name + ' (' + fmtN(q.amount) + ')' + (accept && pen ? ', penalty ' + fmtN(pen) : ''));
+  await staffNotify(env, (accept ? '✅' : '❌') + ' ' + dcEsc(who.Name, 60) + ' ' + (accept ? 'accepted' : 'declined') + ' the cancel request of **' + dcEsc(q.name, 60) + '** (' + q.ev + ')' + (accept && pen ? ' · penalty ' + fmtN(pen) + ' credits' : '') + '.');
+  return { ok: true, penalty: pen };
+}
+
+/* R4/admin: cancel a player's offer during review (no penalty unless ticked) */
+async function staffCancel(env, p, who) {
+  var reason = str(p.reason).slice(0, 200), gov = str(p.gov), info = null, pen = 0;
+  if (!reason) return { ok: false, error: 'Write a short reason (it goes in the activity log).' };
+  var r = await withRetry(env, async function (dv, t) {
+    var x = reviewEvent(t, p.event, Date.now()); if (x.error) return { ok: false, error: x.error };
+    pen = p.penalty === true ? penaltyOf(Core.texts(t)) : 0;
+    var c = await cancelOffer(env, dv, t, x.ev, gov, pen);
+    if (c === RETRY) return RETRY; if (c.error) return { ok: false, error: c.error };
+    info = { ev: x.ev.id, name: (x.ev.pool[gov] || {}).name || gov, amount: c.amount }; return { ok: true };
+  });
+  if (r.ok) {
+    await log(env, who, 'auction', info.ev + ': cancelled offer of ' + info.name + ' (' + fmtN(info.amount) + ')' + (pen ? ', penalty ' + fmtN(pen) : '') + ': ' + reason);
+    await creqTable(env);
+    await env.DB.prepare("UPDATE creq SET state = 'accepted', by = ?, done = ?, penalty = ? WHERE ev = ? AND gov = ? AND state = 'pending'").bind(str(who.Name), Date.now(), pen, info.ev, gov).run();
+  }
+  return r;
+}
+
+/* R4/admin: the cancel penalty (0 = no penalty) */
+async function penaltySave(env, p, who) {
+  var v = Number(String(p.amount).replace(/[, ]/g, ''));
+  if (!(v % 1 === 0 && v >= 0 && v <= 1000000)) return { ok: false, error: 'Enter a whole number (0 = no penalty).' };
+  var r = await textSave(env, { items: { cancel_penalty: String(v) } }, who);
+  return r.ok ? { ok: true, penalty: v } : r;
+}
+
+/* Adds cancel-request info to auctions under review: the player's own request, and the pending list for staff */
+async function addRequests(env, res, gov, staff, text) {
+  var ids = (res.events || []).filter(function (e) { return e.sealed && e.review; }).map(function (e) { return e.id; });
+  if (staff) res.penalty = penaltyOf(text);
+  if (!ids.length) return;
+  await creqTable(env);
+  var st = env.DB.prepare('SELECT id, ev, gov, name, amount, reason, state, ts, by, penalty FROM creq WHERE ev IN (' + ids.map(function () { return '?'; }).join(',') + ') ORDER BY id');
+  var rows = (await st.bind.apply(st, ids).all()).results || [];
+  res.events.forEach(function (e) {
+    if (ids.indexOf(e.id) < 0) return;
+    var mine = rows.filter(function (q) { return q.ev === e.id && q.gov === gov; }).pop();
+    if (mine) e.myRequest = { state: mine.state, reason: mine.reason, penalty: mine.penalty || 0 };
+    e.penalty = penaltyOf(text);
+    if (staff) e.requests = rows.filter(function (q) { return q.ev === e.id && q.state === 'pending'; }).map(function (q) { return { id: q.id, gov: q.gov, name: q.name, amount: q.amount, reason: q.reason, time: q.ts }; });
+  });
 }
 
 /* Cancel a bid (or undo a cancel). The next-highest bid then leads that rank again. */
@@ -775,7 +1195,20 @@ async function adminBid(env, p, who) {
     t.bids.forEach(function (b) { if (b._row === id) cur = b; });
     if (!cur) return { ok: false, error: 'That bid no longer exists. Refresh the page.' };
     if (String(cur._ver) !== String(p.sig || '')) return { ok: false, error: 'This bid changed in the meantime. Refresh the page and try again.' };
+    var now = Date.now(), evRow = null; (t.events || []).forEach(function (e) { if (str(e.EventID) === str(cur.EventID)) evRow = e; });
+    if (evRow && isFinal(evRow, now)) return { ok: false, error: 'The results of this auction are published, so they are final and bids can’t be changed.' };
+    var s0 = str(cur.Status).toLowerCase();
+    if (!cancel && s0 !== 'cancelled') return { ok: false, error: 'Only cancelled bids can be restored.' };
+    if (!cancel && evRow && Core.isSealed(evRow) && t.bids.some(function (b) { return b !== cur && str(b.EventID) === str(cur.EventID) && str(b.GovID) === str(cur.GovID) && Core.isValid(b); }))
+      return { ok: false, error: str(cur.Name) + ' already has a newer offer in this auction, so the old one can’t be restored.' };
     var out = clean(cur); out.Status = cancel ? 'cancelled' : 'valid';
+    /* safety: the change must not leave any player with negative credits who wasn't negative before */
+    var before = Core.balances(t, now); cur.Status = out.Status; var after = Core.balances(t, now); cur.Status = s0;
+    var hurt = Object.keys(after).filter(function (g) { return after[g].available < 0 && after[g].available < before[g].available; });
+    if (hurt.length) {
+      var nm = {}; t.players.forEach(function (pl) { nm[str(pl.GovID)] = str(pl.Name); });
+      return { ok: false, error: 'This would leave ' + hurt.map(function (g) { return nm[g] || g; }).join(', ') + ' with negative credits (they already used them elsewhere), so it was not done.' };
+    }
     if (!(await commit(env, dv, [updateRow(id, out)]))) return RETRY;
     o = out;
     return { ok: true };
