@@ -17,6 +17,14 @@
   if (on) {
     document.write('<script src="lang-' + lang + '.js?v=1"><\/script>');
     document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&display=swap">');
+    /* some letters (like ấ) need an extra part of the font: load it, then redraw the headings */
+    var pre = function () {
+      if (!document.fonts || !document.fonts.load) return;
+      Promise.all(['600', '700'].map(function (w) { return document.fonts.load(w + ' 1em "Cormorant SC"', '\u0301'); }))
+        .then(function () { document.documentElement.classList.add('vf'); }).catch(function () {});
+    };
+    window.addEventListener('DOMContentLoaded', pre);
+    window.addEventListener('load', pre);
   }
   var css = '.lang-sw{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;border:1px solid var(--line);background:var(--panel2)}' +
     '.lang-sw button{min-height:30px;min-width:38px;padding:4px 10px;border-radius:999px;border:0;background:none;color:var(--soft);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}' +
@@ -25,6 +33,7 @@
     '.topbar .lang-sw{order:2}@media(max-width:680px){.topbar .lang-sw{margin-left:auto}}' +
     '.lock-card .lang-sw{align-self:center}' +
     'html[lang=vi] h1,html[lang=vi] h2,html[lang=vi] .brand b,html[lang=vi] .acct-av,html[lang=vi] .lock-card h2,html[lang=vi] .rb3 .sec-head h2{font-family:"Cormorant SC","Cinzel",Georgia,serif!important;letter-spacing:.01em}' +
+    'html.vf[lang=vi] h1,html.vf[lang=vi] h2,html.vf[lang=vi] .brand b,html.vf[lang=vi] .lock-card h2,html.vf[lang=vi] .rb3 .sec-head h2{letter-spacing:.011em}' +
     'html[lang=vi] .rb3{--display:"Cormorant SC","Cinzel",Georgia,serif}' +
     'body.tr-fix [data-tr],body.tr-fix [data-tr-src]{outline:1.5px dashed rgba(143,179,255,.85);outline-offset:2px;cursor:text}' +
     'body.tr-fix [data-tr]:hover,body.tr-fix [data-tr-src]:hover{background:rgba(143,179,255,.12)}' +
@@ -241,4 +250,14 @@
     refreshTools: fixPill,
     fixFor: function (e) { if (!on) return false; var n = textNodeAt(e); if (!n) return false; fixDialog(n); return true; }
   };
+  /* keep the account menu inside the screen on narrow windows */
+  document.addEventListener('click', function () {
+    setTimeout(function () {
+      document.querySelectorAll('.acct-menu').forEach(function (m) {
+        m.style.left = ''; m.style.right = '';
+        var r = m.getBoundingClientRect();
+        if (r.width && r.left < 8) { m.style.left = '0'; m.style.right = 'auto'; }
+      });
+    }, 0);
+  }, true);
 })();
