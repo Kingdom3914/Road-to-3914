@@ -1,4 +1,4 @@
-/* Built 2026-11-13T09:40Z — deployed automatically from GitHub (server/ folder) */
+/* Built 2026-11-13T10:30Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
@@ -966,15 +966,15 @@ async function adminReserve(env, p, who) {
 /* The results text: one line per rank. Used for the Home announcement and the Discord post. */
 function resultLines(ev) {
   return ev.ranks.map(function (r) {
-    var who = r.reserved ? r.reserved.name + ' 🔒' : r.leader ? r.leader + ' · ' + fmtN(r.bid) : 'no winner';
+    var who = r.reserved ? r.reserved.name + ' 🔒' : r.leader ? r.leader + ' · ' + fmtN(r.bid) : 'no winner · không có';
     return '#' + r.rank + ' — ' + who;
   });
 }
 function resultTitle(ev) { return '🏆 ' + (ev.title || ev.id) + ' — results'; }
 function discordResults(env, ev, lines) {
   var medal = ['🥇', '🥈', '🥉'], body = lines.map(function (l, i) { return (medal[i] || '▫️') + ' ' + dcEsc(l, 120); }).join('\n');
-  var msg = '**' + dcEsc(resultTitle(ev), 120) + '**\n' + (ev.subject ? dcEsc(ev.subject, 80) + '\n' : '') + '\n' + body +
-    '\n\nResults are final. Full list: ' + siteUrl(env) + '/events.html?event=' + encodeURIComponent(ev.id);
+  var msg = '**' + dcEsc(resultTitle(ev), 120) + '**\n🇻🇳 **Kết quả ' + dcEsc(ev.title || ev.id, 80) + '**\n' + (ev.subject ? dcEsc(ev.subject, 80) + '\n' : '') + '\n' + body +
+    '\n\nResults are final. Full list:\n🇻🇳 Kết quả là cuối cùng. Xem đầy đủ:\n' + siteUrl(env) + '/events.html?event=' + encodeURIComponent(ev.id);
   return msg.slice(0, 1990);
 }
 
@@ -1008,7 +1008,9 @@ async function adminPublish(env, p, who) {
       r.discord = d.ok ? 'sent' : 'failed'; if (!d.ok) r.discordError = d.error;
     } catch (e) { r.discord = 'failed'; r.discordError = String((e && e.message) || e); }
   }
-  await staffNotify(env, '📣 **Results published** · ' + dcEsc(info.ev.title || info.ev.id, 80) + ' · by ' + dcEsc(who && who.Name, 60) + (r.discord === 'failed' ? '\n⚠️ The Discord announcement failed. Post it by hand.' : r.discord === 'off' ? '\n(The announcement channel is not set, so only the website and Home have it.)' : ''));
+  var pt = dcEsc(info.ev.title || info.ev.id, 80), pb = dcEsc(who && who.Name, 60);
+  await staffNotify(env, envn('📣 **Results published** · ' + pt + ' · by ' + pb + (r.discord === 'failed' ? '\n⚠️ The Discord announcement failed. Post it by hand.' : ''),
+    '**Đã công bố kết quả** · ' + pt + ' · bởi ' + pb + (r.discord === 'failed' ? '\n⚠️ Đăng thông báo Discord thất bại. Hãy đăng thủ công.' : '')));
   await log(env, who, 'auction', info.ev.id + ': results published (Home' + (r.discord === 'sent' ? ' + Discord' : r.discord === 'failed' ? ', Discord failed: ' + (r.discordError || '') : '') + ')');
   return r;
 }
@@ -1017,6 +1019,12 @@ async function adminPublish(env, p, who) {
 var R_DAY = 86400000, R_HOUR = 3600000, R_WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], R_MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function rDay(t) { var d = new Date(t); return R_WD[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + R_MO[d.getUTCMonth()]; }
 function rTime(t) { return rDay(t) + ' ' + new Date(t).toISOString().slice(11, 16) + ' UTC'; }
+/* Vietnamese: "T7 14/11", "00:00 UTC, T7 14/11" */
+var V_WD = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+function vDay(t) { var d = new Date(t); return V_WD[d.getUTCDay()] + ' ' + d.getUTCDate() + '/' + (d.getUTCMonth() + 1); }
+function vTime(t) { return new Date(t).toISOString().slice(11, 16) + ' UTC, ' + vDay(t); }
+/* one message, English first, then Vietnamese */
+function envn(en, vn, link) { return en + '\n🇻🇳 ' + vn + (link ? '\n' + link : ''); }
 /* What is due right now: [{ key, at, text }]. A reminder is sent if its time has passed but not by more than its window. */
 function remindersDue(t, now, env) {
   var out = [], link = siteUrl(env) + '/events.html';
@@ -1028,21 +1036,30 @@ function remindersDue(t, now, env) {
     var g = gOf[d.e]; if ((g !== 'mge' && g !== 'gh') || !d.a) return;
     var type = g.toUpperCase(), D = Math.floor(d.a / R_DAY) * R_DAY, name = type === 'MGE' ? (d.x ? d.x + ' MGE' : 'MGE') : 'GH';
     var made = (t.events || []).filter(function (e) { return str(e.Type).toUpperCase() === type && Math.abs((Core.toTime(e.Closes) || 0) - (D - R_DAY + 13 * R_HOUR)) < 2 * R_DAY; })[0];
-    due('prep5:' + type + ':' + D, D - 5 * R_DAY + 9 * R_HOUR, 12 * R_HOUR, '📅 **' + name + ' starts in 5 days** (' + rDay(D) + ')\n' +
-      (made ? '✅ The auction is already made (' + str(made.EventID) + '). Check the locked ranks and rewards.' :
-        'Time to prepare: ' + type + ' auctions → New → pick ' + rDay(D) + '. Bidding opens ' + rTime(D - 2 * R_DAY) + '.') + '\n' + link);
-    if (!made) due('prep3:' + type + ':' + D, D - 3 * R_DAY + 9 * R_HOUR, 12 * R_HOUR, '⚠️ **' + name + ' starts in 3 days and there is no auction yet!**\nBidding should open ' + rTime(D - 2 * R_DAY) + '. Make it now: ' + type + ' auctions → New → pick ' + rDay(D) + '.\n' + link);
+    due('prep5:' + type + ':' + D, D - 5 * R_DAY + 9 * R_HOUR, 12 * R_HOUR, envn(
+      '📅 **' + name + ' starts in 5 days** (' + rDay(D) + ')\n' + (made ? '✅ The auction is already made (' + str(made.EventID) + '). Check the locked ranks and rewards.' :
+        'Time to prepare: ' + type + ' auctions → New → pick ' + rDay(D) + '. Bidding opens ' + rTime(D - 2 * R_DAY) + '.'),
+      '**' + name + ' bắt đầu sau 5 ngày** (' + vDay(D) + ')\n' + (made ? '✅ Phiên đấu giá đã được tạo (' + str(made.EventID) + '). Hãy kiểm tra các hạng khóa và phần thưởng.' :
+        'Chuẩn bị ngay: ' + type + ' auctions → New → chọn ' + vDay(D) + '. Mở đấu giá lúc ' + vTime(D - 2 * R_DAY) + '.'), link));
+    if (!made) due('prep3:' + type + ':' + D, D - 3 * R_DAY + 9 * R_HOUR, 12 * R_HOUR, envn(
+      '⚠️ **' + name + ' starts in 3 days and there is no auction yet!**\nBidding should open ' + rTime(D - 2 * R_DAY) + '. Make it now: ' + type + ' auctions → New → pick ' + rDay(D) + '.',
+      '**' + name + ' bắt đầu sau 3 ngày nhưng chưa có phiên đấu giá!**\nPhải mở đấu giá lúc ' + vTime(D - 2 * R_DAY) + '. Tạo ngay: ' + type + ' auctions → New → chọn ' + vDay(D) + '.', link));
   });
   /* 2) auctions: open, 3 h left, closed, results due */
   Core.events(t, now).forEach(function (ev) {
     if (!ev.sealed) return;
     var nm = ev.type + ' · ' + (ev.title || ev.id), l = link + '?event=' + encodeURIComponent(ev.id);
-    due('open:' + ev.id, ev.opens, 3 * R_HOUR, '🟢 **Bidding is open** · ' + nm + '\nCloses ' + rTime(ev.closes) + '.\n' + l);
-    due('c3h:' + ev.id, ev.closes - 3 * R_HOUR, 3 * R_HOUR, '⏰ **3 hours left** · ' + nm + '\n' + ev.bidders + ' player' + (ev.bidders === 1 ? ' has' : 's have') + ' made an offer so far.\n' + l);
+    due('open:' + ev.id, ev.opens, 3 * R_HOUR, envn('🟢 **Bidding is open** · ' + nm + '\nCloses ' + rTime(ev.closes) + '.',
+      '**Đã mở đấu giá** · ' + nm + '\nĐóng lúc ' + vTime(ev.closes) + '.', l));
+    due('c3h:' + ev.id, ev.closes - 3 * R_HOUR, 3 * R_HOUR, envn('⏰ **3 hours left** · ' + nm + '\n' + ev.bidders + ' player' + (ev.bidders === 1 ? ' has' : 's have') + ' made an offer so far.',
+      '**Còn 3 giờ** · ' + nm + '\nĐã có ' + ev.bidders + ' người chơi trả giá.', l));
     if (ev.published) return;
-    due('closed:' + ev.id, ev.closes, 3 * R_HOUR, '🔴 **Bidding closed — review now** · ' + nm + '\nCheck the provisional results and any cancel requests, then press Publish. Results are due ' + rTime(ev.resultsAt) + '.\n' + l);
-    due('r2h:' + ev.id, ev.resultsAt - 2 * R_HOUR, 2 * R_HOUR, '⏳ **Results not published yet** · ' + nm + '\nThey are due in 2 hours (' + rTime(ev.resultsAt) + ').\n' + l);
-    due('rdue:' + ev.id, ev.resultsAt, 6 * R_HOUR, '🚨 **Results are due now** · ' + nm + '\nPlease review and press Publish results.\n' + l);
+    due('closed:' + ev.id, ev.closes, 3 * R_HOUR, envn('🔴 **Bidding closed — review now** · ' + nm + '\nCheck the provisional results and any cancel requests, then press Publish. Results are due ' + rTime(ev.resultsAt) + '.',
+      '**Đã đóng đấu giá — kiểm tra ngay** · ' + nm + '\nXem kết quả tạm thời và các yêu cầu hủy, rồi bấm Publish. Hạn công bố kết quả: ' + vTime(ev.resultsAt) + '.', l));
+    due('r2h:' + ev.id, ev.resultsAt - 2 * R_HOUR, 2 * R_HOUR, envn('⏳ **Results not published yet** · ' + nm + '\nThey are due in 2 hours (' + rTime(ev.resultsAt) + ').',
+      '**Chưa công bố kết quả** · ' + nm + '\nCòn 2 giờ đến hạn (' + vTime(ev.resultsAt) + ').', l));
+    due('rdue:' + ev.id, ev.resultsAt, 6 * R_HOUR, envn('🚨 **Results are due now** · ' + nm + '\nPlease review and press Publish results.',
+      '**Đã đến hạn công bố kết quả** · ' + nm + '\nVui lòng kiểm tra và bấm Publish results.', l));
   });
   return out;
 }
@@ -1112,8 +1129,10 @@ async function cancelRequest(env, p, who) {
   if (dup) return { ok: false, error: 'You already asked. The leaders will answer soon.' };
   await env.DB.prepare("INSERT INTO creq (ev, gov, name, amount, reason, state, ts) VALUES (?, ?, ?, ?, ?, 'pending', ?)").bind(x.ev.id, gov, str(who.Name), mine.amount, reason, now).run();
   var pen = penaltyOf(Core.texts(t));
-  await staffNotify(env, '🔔 **Cancel request** · ' + dcEsc(x.ev.title || x.ev.id, 80) + '\n**' + dcEsc(who.Name, 60) + '** wants to cancel their offer of **' + fmtN(mine.amount) + '** credits.\nReason: ' + dcEsc(reason, 300) +
-    '\nPenalty if accepted: ' + fmtN(pen) + ' credits.\nAccept or decline here: ' + siteUrl(env) + '/events.html?event=' + encodeURIComponent(x.ev.id));
+  var tl = dcEsc(x.ev.title || x.ev.id, 80), nmq = dcEsc(who.Name, 60);
+  await staffNotify(env, envn('🔔 **Cancel request** · ' + tl + '\n**' + nmq + '** wants to cancel their offer of **' + fmtN(mine.amount) + '** credits.\nReason: ' + dcEsc(reason, 300) + '\nPenalty if accepted: ' + fmtN(pen) + ' credits.',
+    '**Yêu cầu hủy** · ' + tl + '\n**' + nmq + '** muốn hủy giá đã trả **' + fmtN(mine.amount) + '** credits (lý do ở trên).\nPhạt nếu chấp nhận: ' + fmtN(pen) + ' credits.',
+    'Accept / decline · Chấp nhận / từ chối: ' + siteUrl(env) + '/events.html?event=' + encodeURIComponent(x.ev.id)));
   await log(env, who, 'auction', x.ev.id + ': asked to cancel offer of ' + fmtN(mine.amount) + ': ' + reason);
   return { ok: true, message: 'Request sent. The leaders will accept or decline it.' };
 }
@@ -1138,7 +1157,9 @@ async function reqDecide(env, p, who) {
   var ch = await env.DB.prepare("UPDATE creq SET state = ?, by = ?, done = ?, penalty = ? WHERE id = ? AND state = 'pending'").bind(accept ? 'accepted' : 'declined', str(who.Name), Date.now(), pen, id).run();
   if (!(ch.meta && ch.meta.changes)) return { ok: false, error: 'This request was already answered.' };
   await log(env, who, 'auction', q.ev + ': ' + (accept ? 'accepted' : 'declined') + ' cancel request of ' + q.name + ' (' + fmtN(q.amount) + ')' + (accept && pen ? ', penalty ' + fmtN(pen) : ''));
-  await staffNotify(env, (accept ? '✅' : '❌') + ' ' + dcEsc(who.Name, 60) + ' ' + (accept ? 'accepted' : 'declined') + ' the cancel request of **' + dcEsc(q.name, 60) + '** (' + q.ev + ')' + (accept && pen ? ' · penalty ' + fmtN(pen) + ' credits' : '') + '.');
+  var by = dcEsc(who.Name, 60), whoq = dcEsc(q.name, 60);
+  await staffNotify(env, envn((accept ? '✅ ' : '❌ ') + by + ' ' + (accept ? 'accepted' : 'declined') + ' the cancel request of **' + whoq + '** (' + q.ev + ')' + (accept && pen ? ' · penalty ' + fmtN(pen) + ' credits' : '') + '.',
+    by + ' đã ' + (accept ? 'chấp nhận' : 'từ chối') + ' yêu cầu hủy của **' + whoq + '**' + (accept && pen ? ' · phạt ' + fmtN(pen) + ' credits' : '') + '.'));
   return { ok: true, penalty: pen };
 }
 
