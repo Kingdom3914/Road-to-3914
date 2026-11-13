@@ -380,7 +380,7 @@
     function list() {
       M.title(o.title);
       M.body.innerHTML = '<div class="mdl-bar"><span>' + esc(o.intro || 'Changes save straight to the kingdom sheet.') + '</span><button class="btn gold sm" type="button" data-add>+ ' + esc(o.addLabel || 'Add') + '</button></div><div class="mdl-list"><div class="empty">Loading…</div></div>';
-      M.body.querySelector('[data-add]').onclick = function () { edit(null); };
+      M.body.querySelector('[data-add]').onclick = function () { if (o.add) o.add(function (r, preset) { M = modal(o.title); edit(r, preset); M.body.addEventListener('click', rowClick); }, M.rows || []); else edit(null); };
       api({ action: 'adminLoad', tab: o.tab }).then(function (res) {
         if (!res || !res.ok) throw new Error((res && res.error) || 'Could not load.');
         var rows = res.rows.slice(); if (o.filter) rows = rows.filter(function (r) { return o.filter(r.v); }); if (o.sort) rows.sort(o.sort);
@@ -391,17 +391,18 @@
         }).join('') : '<div class="empty">Nothing here yet. Use “+ ' + esc(o.addLabel || 'Add') + '”.</div>';
       }).catch(function (x) { M.body.querySelector('.mdl-list').innerHTML = '<div class="empty"><b>Couldn’t load</b>' + esc(x.message) + '</div>'; });
     }
-    function edit(r) {
+    function edit(r, preset) {
       form({
         title: r ? (o.editTitle ? o.editTitle(r.v) : 'Edit') : (o.addTitle || 'Add'),
-        fields: o.fields(r ? r.v : (o.defaults ? o.defaults() : {})),
+        fields: o.fields(r ? r.v : (preset || (o.defaults ? o.defaults() : {}))),
         check: o.check,
         onBack: list,
         onSave: function (v) { return api({ action: 'adminSave', tab: o.tab, row: r ? r.r : 0, sig: r ? r.sig : '', values: o.toSheet ? o.toSheet(v) : v }); },
         onDelete: r && o.canDelete !== false ? function () { return api({ action: 'adminDelete', tab: o.tab, row: r.r, sig: r.sig }); } : null
       }, M);
     }
-    M.body.addEventListener('click', function (e) { var b = e.target.closest('[data-edit]'); if (b && M.rows) edit(M.rows[Number(b.getAttribute('data-edit'))]); });
+    function rowClick(e) { var b = e.target.closest('[data-edit]'); if (b && M.rows) edit(M.rows[Number(b.getAttribute('data-edit'))]); }
+    M.body.addEventListener('click', rowClick);
     list();
     return M;
   }

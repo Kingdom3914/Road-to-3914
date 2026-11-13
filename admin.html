@@ -242,8 +242,8 @@
 <footer class="foot"><div class="wrap">Kingdom 3914 · admin tools</div></footer>
 
 <script src="config.js?v=20"></script>
-<script src="core.js?v=20"></script>
-<script src="site.js?v=20"></script>
+<script src="core.js?v=21"></script>
+<script src="site.js?v=21"></script>
 <script>
 (function () {
   var S = window.Site, esc = S.esc, n = S.n, $ = function (id) { return document.getElementById(id); };
@@ -411,10 +411,11 @@
     return api({ action: 'adminBids' }).then(function (r) {
       st.bids = r.bids; st.events = r.events;
       var phase = {}, top = {};
-      r.events.forEach(function (ev) { phase[ev.id] = ev.phase; });
+      r.events.forEach(function (ev) { phase[ev.id] = ev.review ? 'review' : ev.phase; }); st.bidPhase = phase;
       /* who leads each rank: highest valid bid (earliest wins a tie) */
-      r.bids.slice().reverse().forEach(function (b) { if (b.status !== 'valid') return; var k = b.event + '#' + b.rank; if (!top[k] || b.amount > top[k].amount) top[k] = b; });
+      r.bids.slice().reverse().forEach(function (b) { if (b.status !== 'valid' || b.sealed) return; var k = b.event + '#' + b.rank; if (!top[k] || b.amount > top[k].amount) top[k] = b; });
       r.bids.forEach(function (b) {
+        if (b.sealed) return; /* secret-bid auctions: the server already worked out each offer's state */
         if (b.status === 'cancelled') b.state = 'cancelled';
         else if (top[b.event + '#' + b.rank] === b) b.state = phase[b.event] === 'closed' ? 'won' : 'leading';
         else b.state = 'outbid';
@@ -429,18 +430,19 @@
   function bidRows() {
     var ev = $('fEvent').value, f = $('fStatus').value, q = $('qBids').value;
     return st.bids.filter(function (b) {
-      return (!ev || b.event === ev) && has(q, [b.name, b.gov]) && (!f || (f === 'lead' ? (b.state === 'leading' || b.state === 'won') : f === 'out' ? b.state === 'outbid' : b.state === 'cancelled'));
+      return (!ev || b.event === ev) && has(q, [b.name, b.gov]) && (!f || (f === 'lead' ? (b.state === 'leading' || b.state === 'won' || b.state === 'offer') : f === 'out' ? (b.state === 'outbid' || b.state === 'lost' || b.state === 'replaced' || b.state === 'withdrawn') : b.state === 'cancelled'));
     });
   }
-  var STATE = { leading: ['b-ok', 'Leading'], won: ['b-admin', 'Won'], outbid: ['b-mute', 'Outbid'], cancelled: ['b-bad', 'Cancelled'] };
+  var STATE = { leading: ['b-ok', 'Leading'], won: ['b-admin', 'Won'], outbid: ['b-mute', 'Outbid'], cancelled: ['b-bad', 'Cancelled'],
+    offer: ['b-ok', 'Secret offer'], lost: ['b-mute', 'No rank'], replaced: ['b-mute', 'Changed'], withdrawn: ['b-mute', 'Withdrawn'] };
   function renderBids() {
     if (!st.bids) return;
     var rows = bidRows(), shown = rows.slice(0, st.bidLimit);
     $('tBids').innerHTML = shown.length ? shown.map(function (b) {
       var s = STATE[b.state];
-      return '<tr class="' + b.state + '"><td class="n hide-sm">' + when(b.time) + '</td><td class="hide-sm">' + esc(b.event) + '</td><td class="n r">#' + b.rank + '</td><td><b>' + esc(b.name) + '</b><span class="sub">ID ' + esc(b.gov) + '</span><span class="sub show-sm nowrap">' + esc(b.event) + '</span><span class="sub show-sm nowrap">' + when(b.time).replace(/ 20[0-9]{2}/, '') + '</span></td>' +
+      return '<tr class="' + b.state + '"><td class="n hide-sm">' + when(b.time) + '</td><td class="hide-sm">' + esc(b.event) + '</td><td class="n r">' + (b.rank ? '#' + b.rank : '🔒') + '</td><td><b>' + esc(b.name) + '</b><span class="sub">ID ' + esc(b.gov) + '</span><span class="sub show-sm nowrap">' + esc(b.event) + '</span><span class="sub show-sm nowrap">' + when(b.time).replace(/ 20[0-9]{2}/, '') + '</span></td>' +
         '<td class="n r">' + n(b.amount) + '<span class="show-sm" style="display:block;margin-top:4px"><span class="badge ' + s[0] + '">' + s[1] + '</span></span></td><td class="hide-sm"><span class="badge ' + s[0] + '">' + s[1] + '</span></td><td class="act">' +
-        (b.state === 'cancelled' ? '<button class="btn ghost sm" type="button" data-restore="' + b.r + '">Restore</button>' : '<button class="btn ghost sm" type="button" data-cancel="' + b.r + '">Cancel</button>') + '</td></tr>';
+        ((st.bidPhase || {})[b.event] === 'closed' ? '<span class="sub">Final</span>' : b.state === 'cancelled' ? '<button class="btn ghost sm" type="button" data-restore="' + b.r + '">Restore</button>' : (b.state === 'replaced' || b.state === 'withdrawn') ? '' : '<button class="btn ghost sm" type="button" data-cancel="' + b.r + '">Cancel</button>') + '</td></tr>';
     }).join('') : '<tr><td colspan="7"><div class="empty">No bids match.</div></td></tr>';
     $('moreBids').hidden = rows.length <= st.bidLimit;
   }
@@ -452,7 +454,7 @@
     S.form({
       title: (c ? 'Cancel bid · ' : 'Restore bid · ') + b.name,
       fields: [{ key: 'reason', label: 'Reason', value: '', required: !!c, full: true, max: 200, placeholder: c ? 'e.g. Bid for another governor' : '',
-        help: b.event + ' rank #' + b.rank + ' · ' + n(b.amount) + ' credits · ' + when(b.time) + ' UTC. ' + (c ? 'Their credits are freed and the next-highest bid leads again.' : 'The bid counts again.') }],
+        help: b.event + ' rank #' + b.rank + ' · ' + n(b.amount) + ' credits · ' + when(b.time) + ' UTC. ' + (c ? (b.sealed ? 'The offer is removed and the credits are freed.' : 'Their credits are freed and the next-highest bid leads again.') : 'The bid counts again.') + ' Bids of auctions that have ended can’t be changed.' }],
       saveLabel: c ? 'Cancel this bid' : 'Restore this bid',
       onSave: function (v) { return S.api({ action: 'adminBid', row: b.r, sig: b.sig, cancel: !!c, reason: v.reason }); },
       after: function (res, M) { M.close(); S.toast(c ? 'Bid cancelled' : 'Bid restored', b.name + ' · ' + b.event + ' rank #' + b.rank, 'good'); st.people = null; loadBids(); }

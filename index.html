@@ -141,8 +141,8 @@
 </main>
 
 <script src="config.js?v=20"></script>
-<script src="core.js?v=20"></script>
-<script src="site.js?v=20"></script>
+<script src="core.js?v=21"></script>
+<script src="site.js?v=21"></script>
 <script src="kvk.js?v=20"></script>
 <script>
 (function () {
@@ -216,8 +216,10 @@
         '<div class="live-top"><span class="type">' + esc(e.type) + '</span><span class="pill ' + e.phase + '"><i></i>' + (e.phase === 'open' ? 'Bidding open' : 'Opens soon') + '</span></div>' +
         '<h3>' + esc(e.title || e.id) + '</h3>' +
         '<div class="live-stats"><span><b class="num" data-until="' + target + '">' + S.shortLeft(target - now) + '</b>' + (e.phase === 'open' ? 'left' : 'until open') + '</span>' +
-        '<span><b class="num">' + e.bidders + '</b>bidders</span><span><b class="num">' + e.bids + '</b>bids</span></div>' +
-        '<div class="leader">' + (r1.bid ? 'Rank 1: <b>' + esc(r1.leader) + '</b> · ' + S.n(r1.bid) + ' credits' : 'Rank 1 has no bids yet') + '</div></a>';
+        (e.sealed ? '<span><b class="num">' + e.bidders + '</b>offers</span><span><b class="num">' + e.ranks.filter(function (r) { return !r.locked; }).length + '</b>open ranks</span></div>' +
+          '<div class="leader">' + (e.secret === false ? '👁 Open bids · ' : '🔒 Secret bids · ') + (e.myBid ? 'your offer: <b>' + S.n(e.myBid) + '</b>' : e.myLock ? 'rank <b>#' + e.myLock.rank + '</b> is locked for you' : 'make your offer before the timer ends') + '</div></a>'
+        : '<span><b class="num">' + e.bidders + '</b>bidders</span><span><b class="num">' + e.bids + '</b>bids</span></div>' +
+        '<div class="leader">' + (r1.bid ? 'Rank 1: <b>' + esc(r1.leader) + '</b> · ' + S.n(r1.bid) + ' credits' : 'Rank 1 has no bids yet') + '</div></a>');
     }).join('') : '<div class="empty"><b>No live auctions</b>The next MGE or GH bidding will show here.</div>';
   }
   function load(first) {
