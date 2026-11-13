@@ -747,7 +747,7 @@
     $('cRankRow').hidden = $('cRewardRow').hidden = !!c.ev.sealed;
     $('confTitle').textContent = c.ev.sealed ? (c.ev.secret === false ? 'Confirm your offer' : 'Confirm your secret offer') : 'Confirm your bid';
     $('lAmt').textContent = c.ev.sealed ? 'Your offer' : 'Your bid';
-    $('cFine').textContent = c.ev.sealed ? 'Nobody else can see your offer. The credits are held until bidding closes. If you don’t get a rank, you pay nothing.' : 'Credits stay reserved while you lead. If someone outbids you, they come back to you automatically.';
+    $('cFine').textContent = c.ev.sealed ? (c.ev.secret === false ? 'Everyone can see your name and offer.' : 'Nobody else can see your offer.') + ' The credits are held until bidding closes. If you don’t get a rank, you pay nothing.' : 'Credits stay reserved while you lead. If someone outbids you, they come back to you automatically.';
     $('confGo').textContent = c.ev.sealed ? 'Confirm offer' : 'Confirm bid';
     $('cRank').textContent = '#' + c.r.rank;
     $('cReward').textContent = c.r.reward || '—';
