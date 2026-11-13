@@ -123,7 +123,41 @@
   .sheet-cta{display:flex;gap:8px;margin-top:16px}
   .sheet-cta .btn{flex:1}
   .fine{font-size:12.5px;color:var(--muted);margin-top:12px}
+  .offer{margin-top:18px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;background:rgba(231,198,144,.08);border:1px solid rgba(231,198,144,.3)}
+  .offer .ot{flex:1 1 240px;min-width:0;font-size:15px;color:var(--soft)}
+  .offer .ot b{color:var(--text)}
+  .offer .ob{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;color:var(--gold);line-height:1.1}
+  .offer.lockd{background:rgba(88,140,255,.08);border-color:rgba(88,140,255,.35)}
+  .offer.won{background:rgba(61,214,140,.10);border-color:rgba(61,214,140,.4)}
+  .how{margin-top:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .how div{font-size:13px;color:var(--soft);background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:10px 12px}
+  .how b{display:block;color:var(--gold);font-size:12px;letter-spacing:.06em;margin-bottom:2px}
+  @media(max-width:640px){.how{grid-template-columns:1fr}}
+  .rank.locked{box-shadow:inset 4px 0 0 #6E9BFF}
+  .tag.lock{background:rgba(110,155,255,.16);color:#9DB8FF}
+  .lk-row{display:grid;grid-template-columns:90px 150px minmax(0,1fr) 120px 36px;gap:8px;align-items:start;padding:10px 0;border-top:1px solid var(--line2)}
+  .lk-row:first-child{border-top:none}
+  .lk-row select,.lk-row input{width:100%;background:#090A11;border:1px solid var(--line);border-radius:10px;padding:9px 10px;color:var(--text);font-size:15px;min-height:42px}
+  .lk-row .nm{font-size:12.5px;margin-top:4px;color:var(--green)}
+  .lk-row .nm.bad{color:var(--red)}
+  .lk-row .x{min-height:42px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font-size:18px}
+  .lk-head{display:grid;grid-template-columns:90px 150px minmax(0,1fr) 120px 36px;gap:8px;font-size:12px;color:var(--muted);font-weight:700}
+  @media(max-width:640px){.lk-row,.lk-head{grid-template-columns:70px 1fr 90px 36px}.lk-row .rs,.lk-head .rs{grid-column:1/-1}}
   @keyframes flash{0%{border-color:var(--gold);box-shadow:0 0 0 3px rgba(231,198,144,.35)}100%{}}
+.offer.prov{border-color:var(--gold);background:rgba(231,198,144,.08)}
+.pk-row{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.pk-row.used{opacity:.55}.pk-d b{display:block;font-size:16px}.pk-d span{color:var(--soft);font-size:13px}
+.pk-t{display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--soft)}.pk-t b{color:var(--ink,#fff)}
+.pk-used{font-size:12px;color:var(--muted)}
+.offer.staffq{flex-direction:column;align-items:stretch}
+.offer .pen{float:right;font-size:13px}.offer .pen .btn{margin-left:6px}
+.rq{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}.rq>div{flex:1;min-width:0;font-size:14px}.rq small{display:block;color:var(--muted);font-size:12.5px}
+.rank .xc{margin-left:6px;padding:4px 10px}
+#axR,#axA{background:rgba(255,255,255,.04);color:var(--text,#fff);font:inherit;font-size:15px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-sizing:border-box}
+.pub-card{border:1px solid var(--gold);border-radius:12px;padding:14px 16px;background:rgba(231,198,144,.06)}
+.pub-card b{font-size:16px}.pub-card pre{margin:8px 0 0;white-space:pre-wrap;font:inherit;font-size:14px;line-height:1.6;color:var(--soft)}
+.pub-where{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:13px;color:var(--soft)}
+@media(max-width:560px){.pk-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-page="events">
@@ -143,6 +177,7 @@
     <b>Edit:</b>
     <button class="btn gold sm" type="button" data-ed="auctionsMGE">MGE auctions</button>
     <button class="btn gold sm" type="button" data-ed="auctionsGH">GH auctions</button>
+    <button class="btn gold sm" type="button" data-ed="locks">🔒 Locked ranks</button>
     <button class="btn gold sm" type="button" data-ed="rules">Bidding rules</button>
   </div>
 
@@ -189,14 +224,14 @@
     <h2 id="bidTitle">Place bid</h2>
     <p class="sub" id="bidSub"></p>
     <div class="box">
-      <div class="kv"><span>Current bid</span><b id="bCur">—</b></div>
-      <div class="kv"><span>Minimum next bid</span><b id="bMin" style="color:var(--gold)">—</b></div>
-      <div class="kv"><span>Available for this rank</span><b id="bAvail">—</b></div>
+      <div class="kv"><span id="lCur">Current bid</span><b id="bCur">—</b></div>
+      <div class="kv"><span id="lMin">Minimum next bid</span><b id="bMin" style="color:var(--gold)">—</b></div>
+      <div class="kv"><span id="lAvail">Available for this rank</span><b id="bAvail">—</b></div>
     </div>
     <label for="bidInput" class="sr" style="position:absolute;left:-9999px">Your bid</label>
     <input class="bid-input" type="number" id="bidInput" inputmode="numeric" min="1" step="1">
     <div class="quick" id="quick"></div>
-    <div class="kv" style="margin-top:10px"><span>Credits left after this bid</span><b id="bAfter">—</b></div>
+    <div class="kv" style="margin-top:10px"><span id="lAfter">Credits left after this bid</span><b id="bAfter">—</b></div>
     <div class="err" id="bidErr" style="margin-top:10px"></div>
     <div class="sheet-cta">
       <button class="btn ghost" type="button" id="bidCancel">Cancel</button>
@@ -212,11 +247,11 @@
     <p class="sub">Check the numbers before you commit.</p>
     <div class="box">
       <div class="kv"><span>Event</span><b id="cEv" style="font-size:16px;font-family:Barlow">—</b></div>
-      <div class="kv"><span>Rank</span><b id="cRank">—</b></div>
-      <div class="kv"><span>Reward</span><b id="cReward" style="font-size:15px;font-family:Barlow">—</b></div>
-      <div class="kv"><span>Your bid</span><b id="cAmt" style="color:var(--gold)">—</b></div>
+      <div class="kv" id="cRankRow"><span>Rank</span><b id="cRank">—</b></div>
+      <div class="kv" id="cRewardRow"><span>Reward</span><b id="cReward" style="font-size:15px;font-family:Barlow">—</b></div>
+      <div class="kv"><span id="lAmt">Your bid</span><b id="cAmt" style="color:var(--gold)">—</b></div>
     </div>
-    <p class="fine">Credits stay reserved while you lead. If someone outbids you, they come back to you automatically.</p>
+    <p class="fine" id="cFine">Credits stay reserved while you lead. If someone outbids you, they come back to you automatically.</p>
     <div class="err" id="confErr" style="margin-top:10px"></div>
     <div class="sheet-cta">
       <button class="btn ghost" type="button" id="confBack">Back</button>
@@ -226,8 +261,8 @@
 </div>
 
 <script src="config.js?v=20"></script>
-<script src="core.js?v=20"></script>
-<script src="site.js?v=20"></script>
+<script src="core.js?v=21"></script>
+<script src="site.js?v=21"></script>
 <script>
 (function () {
   "use strict";
@@ -255,7 +290,8 @@
     return e;
   }
   function me() { return st.data && st.data.me; }
-  function minNext(e, r) { return r.bid > 0 ? Math.max(r.min, r.bid + e.increment) : Math.max(r.min, 1); }
+  function minNext(e, r) { if (e.sealed) return e.minBid || 1; return r.bid > 0 ? Math.max(r.min, r.bid + e.increment) : Math.max(r.min, 1); }
+  function now() { return Date.now() + (st.skew || 0); } /* server time, so a wrong phone clock doesn't matter */
   function availFor(r) { var m = me(); if (!m) return 0; return m.available + (r.mine === 'leading' ? r.bid : 0); }
   function tier(k) { return k === 1 ? 't1' : k === 2 ? 't2' : k === 3 ? 't3' : ''; }
 
@@ -275,6 +311,7 @@
   function apply(res) {
     var old = st.prevLead;
     st.data = res;
+    if (res && res.now) st.skew = res.now - Date.now();
     // outbid alerts: compare what I led before vs now
     var now = {};
     if (res.me) res.me.positions.forEach(function (p) { if (p.leading) now[p.event + '#' + p.rank] = p; });
@@ -322,24 +359,112 @@
       return;
     }
     var list = eventsOfType(st.type);
-    var label = e.phase === 'open' ? 'Bidding open' : e.phase === 'upcoming' ? 'Opens soon' : 'Bidding closed';
-    var target = e.phase === 'open' ? e.closes : e.phase === 'upcoming' ? e.opens : 0;
+    var label = e.phase === 'open' ? 'Bidding open' : e.phase === 'upcoming' ? 'Opens soon' : e.review ? 'Under review' : 'Results out';
+    var target = e.phase === 'open' ? e.closes : e.phase === 'upcoming' ? e.opens : (e.review && e.resultsAt > now() ? e.resultsAt : 0);
     var committed = e.ranks.reduce(function (t, r) { return t + r.bid; }, 0);
     $('evHero').innerHTML = '<div class="ev">' +
       '<div class="ev-top"><div><div class="ev-type">' + esc(e.type) + ' AUCTION</div><h2>' + esc(e.title || e.id) + '</h2>' +
       (e.subject ? '<p class="subj">' + esc(e.subject) + '</p>' : '') + '</div>' +
-      '<div><span class="pill ' + e.phase + '"><i></i>' + label + '</span></div></div>' +
-      (target ? '<div class="cd-label" style="margin-top:18px">' + (e.phase === 'open' ? 'CLOSES IN' : 'OPENS IN') + ' · ' + esc(S.dateTime(target)) + '</div>' +
+      '<div><span class="pill ' + (e.review ? 'upcoming' : e.phase) + '"><i></i>' + label + '</span></div></div>' +
+      (target ? '<div class="cd-label" style="margin-top:18px">' + (e.phase === 'open' ? 'CLOSES IN' : e.phase === 'upcoming' ? 'OPENS IN' : 'RESULTS EXPECTED IN') + ' · ' + esc(S.dateTime(target)) + '</div>' +
         '<div class="cd-digits" data-target="' + target + '">' + ['DAYS', 'HRS', 'MIN', 'SEC'].map(function (c, i) {
           return '<div class="cd-unit"><span class="cd-num" data-u="' + i + '">00</span><div class="cd-cap">' + c + '</div></div>';
         }).join('') + '</div>'
-        : '<p class="subj" style="margin-top:14px">Closed ' + esc(S.dateTime(e.closes)) + '. Winners are final.</p>') +
-      '<div class="ev-meta"><span><b>' + e.bidders + '</b> bidders</span><span><b>' + e.bids + '</b> bids</span><span><b>' + n(committed) + '</b> credits on the board</span><span>Min. step <b>' + n(e.increment) + '</b></span></div>' +
+        : '<p class="subj" style="margin-top:14px">' + (e.review ? 'Bidding closed ' + esc(S.dateTime(e.closes)) + '. Results are coming soon.' : e.published ? 'Results published ' + esc(S.dateTime(e.published)) + '. They are final.' : 'Closed ' + esc(S.dateTime(e.closes)) + '. Winners are final.') + '</p>') +
+      (e.sealed ? sealedHero(e) :
+      '<div class="ev-meta"><span><b>' + e.bidders + '</b> bidders</span><span><b>' + e.bids + '</b> bids</span><span><b>' + n(committed) + '</b> credits on the board</span><span>Min. step <b>' + n(e.increment) + '</b></span></div>') +
       (list.length > 1 ? '<div class="ev-pick">' + list.map(function (x) {
         return '<button type="button" data-ev="' + esc(x.id) + '" aria-pressed="' + (x.id === e.id) + '">' + esc(x.title || x.id) + ' · ' + (x.phase === 'open' ? 'open' : x.phase) + '</button>';
       }).join('') + '</div>' : '') +
       '</div>';
     tickHero();
+  }
+
+  /* ---------- secret-bid auctions ---------- */
+  function sealedHero(e) {
+    var locked = e.ranks.filter(function (r) { return r.locked; }).length, free = e.ranks.length - locked, m = me(), box, sec = e.secret !== false;
+    var word = sec ? 'secret offer' : 'offer';
+    var meta = '<div class="ev-meta"><span>' + (sec ? '🔒 <b>Secret bids</b>' : '👁 <b>Open bids</b>') + '</span><span><b>' + e.bidders + '</b> player' + (e.bidders === 1 ? ' has' : 's have') + ' made an offer</span><span><b>' + free + '</b> rank' + (free === 1 ? '' : 's') + ' open' + (locked ? ' · ' + locked + ' locked' : '') + '</span><span>Minimum offer <b>' + n(e.minBid) + '</b></span></div>';
+    if (e.phase === 'closed' && e.review) {
+      var rq = e.myRequest;
+      if (e.myLock) box = '<div class="offer lockd"><div class="ot">🔒 Your locked rank: <b>#' + e.myLock.rank + '</b> · ' + n(e.myLock.cost) + ' credits</div></div>';
+      else if (rq && rq.state === 'accepted') box = '<div class="offer"><div class="ot">✅ <b>Your offer was cancelled</b> as you asked.' + (rq.penalty ? ' A penalty of <b>' + n(rq.penalty) + '</b> credits was taken.' : '') + '</div></div>';
+      else if (e.myBid) box = '<div class="offer"><div class="ot">⏳ <b>Bidding is closed.</b> Leaders are checking the offers.<br>Your offer: <b>' + n(e.myBid) + '</b> credits (held until the results are out).' +
+        (rq && rq.state === 'pending' ? '<br>🕓 <b>Cancel request sent.</b> Waiting for the leaders.' : rq && rq.state === 'declined' ? '<br>❌ Your cancel request was declined. Your offer stays.' : '') + '</div>' +
+        (!rq || rq.state === 'declined' ? '<button class="btn ghost" type="button" data-creq>Request to cancel my offer</button>' : '') + '</div>';
+      else box = '<div class="offer"><div class="ot">⏳ <b>Bidding is closed.</b> Leaders are checking the offers. Results are expected ' + esc(S.dateTime(e.resultsAt)) + '.</div></div>';
+      if (e.provisional) box += '<div class="offer prov"><div class="ot">👀 <b>Staff only:</b> the ranks below are the provisional results. Players can’t see them until they are published.</div>' +
+        '<button class="btn gold" type="button" data-publish>Publish results</button></div>' + staffBox(e);
+    } else if (e.phase === 'closed') {
+      if (e.myLock) box = '<div class="offer lockd"><div class="ot">🔒 Your locked rank: <b>#' + e.myLock.rank + '</b> · ' + n(e.myLock.cost) + ' credits</div></div>';
+      else if (e.myResult && e.myResult.rank) box = '<div class="offer won"><div class="ot">🎉 You won <b>rank #' + e.myResult.rank + '</b> with your offer of <b>' + n(e.myBid) + '</b> credits.</div></div>';
+      else if (e.myResult) box = '<div class="offer"><div class="ot">Your offer of <b>' + n(e.myBid) + '</b> didn’t reach a rank this time. Your credits are free again.</div></div>';
+      else box = '';
+    } else if (!m) box = '<div class="offer"><div class="ot">Sign in to make your ' + word + '.</div></div>';
+    else if (e.myLock) box = '<div class="offer lockd"><div class="ot">🔒 Rank <b>#' + e.myLock.rank + '</b> is locked for you (' + n(e.myLock.cost) + ' credits). You can’t make an offer in this auction.</div></div>';
+    else if (e.phase === 'upcoming') box = '<div class="offer"><div class="ot">Offers open when the timer ends.</div></div>';
+    else if (e.myBid) box = '<div class="offer"><div class="ot">Your ' + word + '<div class="ob">' + n(e.myBid) + ' <span style="font-size:15px;color:var(--muted)">credits</span></div>' +
+      (sec ? 'Only you can see it. ' : (e.myPlace ? 'You are <b>' + ordinal(e.myPlace) + '</b> right now. ' : 'You are below the ranks right now. ')) + 'You can change it until bidding closes.</div>' +
+      '<button class="btn gold" type="button" data-offer>Change offer</button><button class="btn ghost" type="button" data-withdraw>Withdraw</button></div>';
+    else box = '<div class="offer"><div class="ot"><b>You haven’t made an offer yet.</b><br>Offer any amount from ' + n(e.minBid) + ' credits.' + (sec ? ' Only you can see it.' : ' Everyone can see offers.') + '</div><button class="btn gold" type="button" data-offer>Make ' + (sec ? 'a secret offer' : 'an offer') + '</button></div>';
+    var how = e.phase === 'closed' ? '' : '<div class="how"><div><b>1 · OFFER</b>' + (sec ? 'Each player makes one secret offer. Nobody sees the amounts.' : 'Each player makes one offer. Everyone sees the names and amounts.') + '</div><div><b>2 · CHANGE</b>Raise, lower or withdraw it any time before the timer ends.</div><div><b>3 · RESULT</b>Leaders check the offers, then publish the results. Highest offer gets the best open rank. No rank = you pay nothing.</div></div>';
+    return meta + box + how;
+  }
+  function staffBox(e) {
+    var rq = e.requests || [];
+    return '<div class="offer staffq"><div class="ot" style="flex-basis:100%"><b>Cancel requests</b> ' + (rq.length ? '<span class="tag out">' + rq.length + ' WAITING</span>' : '· none') +
+      '<span class="pen">Penalty if accepted: <b>' + n(e.penalty || 0) + '</b> credits <button class="btn ghost sm" type="button" data-pen>Change</button></span></div>' +
+      rq.map(function (q) {
+        return '<div class="rq"><div><b>' + esc(q.name) + '</b> · offer ' + n(q.amount) + '<small>“' + esc(q.reason) + '” · ' + S.ago(q.time) + '</small></div>' +
+          '<button class="btn gold sm" type="button" data-rq="' + q.id + '" data-ok="1">Accept</button><button class="btn ghost sm" type="button" data-rq="' + q.id + '" data-ok="0">Decline</button></div>';
+      }).join('') + '</div>';
+  }
+  function sealedCard(e, r, i, idx) {
+    var label = r.rank === 1 ? 'GOLD' : r.rank === 2 ? 'SILVER' : r.rank === 3 ? 'BRONZE' : 'RANK', amt, who, tag = '';
+    if (r.locked) {
+      amt = '🔒 <span style="font-size:15px">Locked</span>'; who = '<b>' + esc(r.locked.name) + '</b> · ' + n(r.locked.cost) + ' credits';
+      tag = r.mine === 'locked' ? '<span class="tag lock">YOU</span>' : '<span class="tag lock">RESERVED</span>';
+    } else if (e.phase === 'closed' && e.review && !e.provisional) {
+      amt = '<span style="font-size:15px">⏳ Results coming</span>'; who = 'Goes to the ' + ordinal(idx) + ' highest offer';
+    } else if (e.phase === 'closed') {
+      amt = r.leader ? n(r.bid) + ' <span>credits</span>' : '<span style="font-size:15px">No winner</span>';
+      who = r.leader ? '<b>' + esc(r.leader) + '</b>' : 'Not enough offers';
+      if (r.mine === 'won') tag = '<span class="tag win">YOU</span>';
+      if (e.provisional) tag = '<span class="tag lock">PROVISIONAL</span>' + tag + (r.gov && e.review ? '<button class="btn ghost sm xc" type="button" data-xc="' + esc(r.gov) + '" data-nm="' + esc(r.leader) + '">Cancel</button>' : '');
+    } else if (e.secret === false && r.leader) {
+      amt = n(r.bid) + ' <span>credits</span>'; who = '<b>' + esc(r.leader) + '</b> · ' + ordinal(idx) + ' highest right now';
+      if (r.mine === 'leading') tag = '<span class="tag win">YOU</span>';
+    } else { amt = '<span style="font-size:15px">' + (e.secret === false ? 'No offer yet' : 'Secret') + '</span>'; who = 'Goes to the ' + ordinal(idx) + ' highest offer'; }
+    return '<article class="rank ' + tier(r.rank) + (r.locked ? ' locked' : '') + (r.mine === 'won' || r.mine === 'leading' ? ' leading' : '') + '" id="rank-' + r.rank + '" style="animation-delay:' + Math.min(i * 0.03, 0.45) + 's">' +
+      '<div class="rk">' + r.rank + '<small>' + label + '</small></div>' +
+      '<div style="min-width:0"><p class="reward">' + esc(r.reward || 'Rank ' + r.rank) + '</p><p class="amt">' + amt + '</p><p class="who">' + who + '</p></div>' +
+      '<div class="ra">' + tag + '</div></article>';
+  }
+  function ordinal(k) { var s = ['th', 'st', 'nd', 'rd'], v = k % 100; return k + (s[(v - 20) % 10] || s[v] || s[0]); }
+  function openOffer() {
+    var e = currentEvent(); if (!e || !e.sealed) return;
+    if (!me()) { S.toast('Sign in first', 'Enter your governor ID and PIN to make an offer.', 'warn'); var g = $('gov'); if (g) { g.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(function () { g.focus(); }, 300); } return; }
+    if (e.phase !== 'open') { S.toast('Bidding not open', 'This auction is not accepting offers.', 'warn'); return; }
+    if (e.myLock) { S.toast('You have a locked rank', 'You can’t make an offer in this auction.', 'warn'); return; }
+    var r = { rank: 0, bid: e.myBid || 0, mine: e.myBid ? 'leading' : '', reward: '' };
+    st.current = { ev: e, r: r };
+    $('bidTitle').textContent = e.secret === false ? 'Your offer' : 'Your secret offer'; $('bidSub').textContent = (e.title || e.id) + (e.secret === false ? ' · everyone can see offers' : ' · only you can see it');
+    $('lAfter').textContent = 'Credits left after this offer'; $('bidNext').textContent = 'Review offer';
+    $('lCur').textContent = 'Your offer now'; $('lMin').textContent = 'Minimum offer'; $('lAvail').textContent = 'You can offer up to';
+    $('bCur').textContent = e.myBid ? n(e.myBid) : 'No offer yet'; $('bMin').textContent = n(e.minBid); $('bAvail').textContent = n(availFor(r));
+    $('bidInput').value = e.myBid || e.minBid;
+    $('quick').innerHTML = [100, 500, 1000].map(function (x) { return '<button type="button" data-inc="' + x + '">+' + n(x) + '</button>'; }).join('') + '<button type="button" data-inc="max">Max</button>';
+    showErr('bidErr', ''); updateAfter(); $('bidScrim').classList.add('on');
+    setTimeout(function () { $('bidInput').focus(); $('bidInput').select(); }, 80);
+  }
+  function withdrawOffer(btn) {
+    var e = currentEvent(); if (!e || st.busy) return;
+    if (!btn.hasAttribute('data-armed')) { btn.setAttribute('data-armed', ''); btn.textContent = 'Tap again to withdraw'; return; }
+    st.busy = true; btn.disabled = true;
+    S.api({ action: 'bid', withdraw: true, gov: st.sess.gov, pin: st.sess.pin, event: e.id }).then(function (res) {
+      if (!res || !res.ok) { S.toast('Couldn’t withdraw', (res && res.error) || 'Try again.', 'bad'); load(true); return; }
+      apply(res); S.toast('Offer withdrawn', 'Your credits are free again.', 'good');
+    }).catch(function (x) { S.toast('Couldn’t withdraw', x.message, 'bad'); }).then(function () { st.busy = false; });
   }
 
   function rankCard(e, r, i) {
@@ -363,6 +488,14 @@
     var F = [['all', 'All ranks'], ['top3', 'Top 3'], ['free', 'No bids yet'], ['mine', 'My bids']];
     $('chips').innerHTML = F.map(function (f) { return '<button class="chip" type="button" data-filter="' + f[0] + '" aria-pressed="' + (st.filter === f[0]) + '">' + f[1] + '</button>'; }).join('');
     if (!e) { $('ranks').innerHTML = ''; $('ranksNote').textContent = ''; return; }
+    $('chips').hidden = !!e.sealed;
+    if (e.sealed) {
+      var nl = e.ranks.filter(function (r) { return r.locked; }).length, k = 0;
+      $('ranksTitle').textContent = e.type + (e.phase === 'closed' && !e.review ? ' results' : ' ranks');
+      $('ranksNote').textContent = e.ranks.length + ' ranks' + (nl ? ' · ' + nl + ' locked' : '') + (e.phase === 'closed' ? (e.review ? (e.provisional ? ' · provisional (staff only)' : ' · results coming') : ' · final') : e.secret === false ? ' · live order, can still change' : ' · winners shown when results are published');
+      $('ranks').innerHTML = e.ranks.map(function (r, i) { if (!r.locked) k++; return sealedCard(e, r, i, k); }).join('');
+      return;
+    }
     $('ranksTitle').textContent = e.type + ' ranks';
     $('ranksNote').textContent = e.ranks.length + ' ranks · highest bid wins';
     var list = e.ranks.filter(function (r) {
@@ -375,6 +508,8 @@
   function renderFeed() {
     var f = ((st.data && st.data.feed) || []).filter(function (x) { return x.type === st.type; }).slice(0, 10);
     $('feed').innerHTML = f.length ? f.map(function (x) {
+      if (x.sealed && x.open) return '<div class="row"><span class="badge">👁</span><div class="main-t"><p><b>' + esc(x.name) + '</b> offered ' + n(x.amount) + '</p><small>' + esc(x.type) + ' · ' + S.ago(x.time) + '</small></div></div>';
+      if (x.sealed) return '<div class="row"><span class="badge">🔒</span><div class="main-t"><p>A secret offer was made</p><small>' + esc(x.type) + ' · ' + S.ago(x.time) + '</small></div></div>';
       return '<div class="row"><span class="badge">#' + x.rank + '</span><div class="main-t"><p><b>' + esc(x.name) + '</b> bid ' + n(x.amount) + '</p><small>' + esc(x.type) + ' · ' + S.ago(x.time) + '</small></div></div>';
     }).join('') : '<div class="empty">No ' + esc(st.type) + ' bids yet. Be the first.</div>';
   }
@@ -403,6 +538,8 @@
     var pos = m.positions || [];
     $('myPanel').hidden = false;
     $('myBids').innerHTML = pos.length ? pos.map(function (p) {
+      if (p.locked) return '<div class="row"><span class="badge">' + esc(p.type) + ' #' + p.rank + '</span><div class="main-t"><p><span class="tag lock">LOCKED</span> ' + n(p.myBid) + '</p><small>Rank reserved for you</small></div></div>';
+      if (p.sealed) return '<div class="row"><span class="badge">' + esc(p.type) + '</span><div class="main-t"><p><span class="tag lock">' + (p.secret === false ? 'OFFER' : 'SECRET') + '</span> ' + n(p.myBid) + '</p><small>' + (p.review ? 'Under review · results coming' : 'Your offer · ranks decided at closing') + '</small></div></div>';
       return '<div class="row"><span class="badge">' + esc(p.type) + ' #' + p.rank + '</span><div class="main-t"><p>' + (p.leading ? '<span class="tag win">WINNING</span>' : '<span class="tag out">OUTBID</span>') + ' ' + n(p.leading ? p.bid : p.myBid) + '</p>' +
         '<small>' + (p.leading ? 'Your bid is on top' : 'Top bid now ' + n(p.bid)) + '</small></div>' +
         (p.leading ? '' : '<button class="btn red sm" type="button" data-rebid="' + esc(p.event) + '|' + p.rank + '">Rebid</button>') + '</div>';
@@ -416,7 +553,7 @@
   /* ---------- countdown ---------- */
   function tickHero() {
     var box = document.querySelector('[data-target]'); if (!box) return;
-    var target = Number(box.getAttribute('data-target')), ms = target - Date.now();
+    var target = Number(box.getAttribute('data-target')), ms = target - now();
     if (ms <= 0) { load(true); box.removeAttribute('data-target'); return; }
     var l = S.left(ms), v = [String(l.d).padStart(2, '0'), S.pad(l.h), S.pad(l.m), S.pad(l.s)];
     Array.prototype.forEach.call(box.querySelectorAll('[data-u]'), function (el) {
@@ -448,6 +585,8 @@
     }
     if (e.phase !== 'open') { S.toast('Bidding not open', 'This auction is not accepting bids.', 'warn'); return; }
     st.current = { ev: e, r: r };
+    $('lAfter').textContent = 'Credits left after this bid'; $('bidNext').textContent = 'Review bid';
+    $('lCur').textContent = 'Current bid'; $('lMin').textContent = 'Minimum next bid'; $('lAvail').textContent = 'Available for this rank';
     var need = minNext(e, r), av = availFor(r);
     $('bidTitle').textContent = e.type + ' · rank #' + r.rank;
     $('bidSub').textContent = r.reward || ('Rank ' + r.rank);
@@ -472,8 +611,9 @@
     var c = st.current; if (!c) return 'Pick a rank first.';
     var v = parseInt($('bidInput').value, 10), need = minNext(c.ev, c.r), av = availFor(c.r);
     if (isNaN(v) || v <= 0) return 'Enter a bid of at least ' + n(need) + ' credits.';
-    if (v < need) return 'Rank #' + c.r.rank + ' needs at least ' + n(need) + ' credits.';
-    if (v > av) return 'Not enough credits. You have ' + n(av) + ' available for this rank.';
+    if (v < need) return c.ev.sealed ? 'The minimum offer is ' + n(need) + ' credits.' : 'Rank #' + c.r.rank + ' needs at least ' + n(need) + ' credits.';
+    if (c.ev.sealed && v === c.r.bid) return 'That is already your offer.';
+    if (v > av) return 'Not enough credits. You have ' + n(av) + ' available' + (c.ev.sealed ? '.' : ' for this rank.');
     return '';
   }
   function showErr(id, msg) { var b = $(id); b.textContent = msg; b.className = 'err' + (msg ? ' on' : ''); }
@@ -492,18 +632,91 @@
       closeSheets();
       st.prevLead = null; apply(res);
       var el = $('rank-' + rank); if (el) { el.classList.add('flash'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-      S.toast('Bid placed', 'You lead rank #' + rank + ' with ' + n(amount) + ' credits.', 'good');
+      if (c.ev.sealed) S.toast('Offer saved', 'Your ' + (c.ev.secret === false ? '' : 'secret ') + 'offer is ' + n(amount) + ' credits.', 'good');
+      else S.toast('Bid placed', 'You lead rank #' + rank + ' with ' + n(amount) + ' credits.', 'good');
     }).catch(function (err) { showErr('confErr', err.message); })
-      .then(function () { st.busy = false; $('confGo').disabled = false; $('confGo').textContent = 'Confirm bid'; });
+      .then(function () { st.busy = false; $('confGo').disabled = false; $('confGo').textContent = c.ev.sealed ? 'Confirm offer' : 'Confirm bid'; });
   }
 
   /* ---------- events ---------- */
+  /* Publish: show exactly what will be announced, then publish on a second button */
+  /* Review window: player asks to cancel; staff answer, cancel, or change the penalty */
+  function act(payload, okMsg, M) {
+    return S.api(payload).then(function (r) {
+      if (!r || !r.ok) throw new Error((r && r.error) || 'Could not save.');
+      if (M) M.close(); S.toast('Done', okMsg, 'good'); load(true);
+    });
+  }
+  function askForm(title, intro, fields, send) {
+    var M = S.modal(title);
+    M.body.innerHTML = '<p style="color:var(--soft);font-size:14px;margin:0 0 12px">' + intro + '</p>' + fields +
+      '<div class="err" id="axErr" style="margin-top:10px"></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn ghost" type="button" data-mdl-close>Back</button><button class="btn gold" type="button" id="axGo">Send</button></div>';
+    M.body.querySelector('#axGo').addEventListener('click', function () {
+      var go = this; go.disabled = true;
+      send(M).catch(function (x) { var el = M.body.querySelector('#axErr'); el.textContent = x.message; el.className = 'err on'; go.disabled = false; });
+    });
+    return M;
+  }
+  function requestCancel() {
+    var e = currentEvent(); if (!e) return;
+    askForm('Request to cancel my offer', 'Bidding is closed, so only the leaders can remove your offer. Tell them why.' + (e.penalty ? ' <b>If they accept, a penalty of ' + n(e.penalty) + ' credits is taken.</b>' : ''),
+      '<textarea id="axR" rows="3" maxlength="300" style="width:100%" placeholder="e.g. I will be travelling during the event"></textarea>',
+      function (M) { return act({ action: 'cancelRequest', event: e.id, reason: M.body.querySelector('#axR').value.trim() }, 'Request sent to the leaders.', M); });
+  }
+  function staffCancelOffer(gov, name) {
+    var e = currentEvent(); if (!e) return;
+    askForm('Cancel ' + name + '’s offer', 'Their offer is removed and the next offers move up. This is written in the activity log.',
+      '<textarea id="axR" rows="2" maxlength="200" style="width:100%" placeholder="Reason"></textarea><label class="chk" style="margin-top:8px"><input type="checkbox" id="axP"> Take the penalty (' + n(e.penalty || 0) + ' credits)</label>',
+      function (M) { return act({ action: 'staffCancel', event: e.id, gov: gov, reason: M.body.querySelector('#axR').value.trim(), penalty: M.body.querySelector('#axP').checked }, name + '’s offer was cancelled.', M); });
+  }
+  function changePenalty() {
+    var e = currentEvent();
+    askForm('Cancel penalty', 'Credits taken when a cancel request is accepted. 0 = no penalty. It applies to every MGE and GH auction.',
+      '<input id="axA" inputmode="numeric" value="' + ((e && e.penalty) || 0) + '" style="width:160px">',
+      function (M) { return act({ action: 'penaltySave', amount: M.body.querySelector('#axA').value }, 'Penalty saved.', M); });
+  }
+  function decide(btn) {
+    var ok = btn.getAttribute('data-ok') === '1';
+    if (!btn.getAttribute('data-sure')) { btn.setAttribute('data-sure', '1'); btn.textContent = ok ? 'Tap again to accept' : 'Tap again to decline'; return; }
+    btn.disabled = true;
+    act({ action: 'reqDecide', id: Number(btn.getAttribute('data-rq')), accept: ok }, ok ? 'Accepted. The offer is removed.' : 'Declined. The offer stays.').catch(function (x) { btn.disabled = false; S.toast('Couldn’t save', x.message, 'bad'); });
+  }
+  function publishResults(btn) {
+    var e = currentEvent(); if (!e) return;
+    btn.disabled = true;
+    S.api({ action: 'adminPublish', event: e.id, dry: true }).then(function (r) {
+      btn.disabled = false;
+      if (!r || !r.ok) throw new Error((r && r.error) || 'Could not load the results.');
+      var P = r.preview, M = S.modal('Publish results · ' + (e.title || e.id));
+      M.body.innerHTML = '<p style="color:var(--soft);font-size:14px;margin:0 0 12px">Read it once. After publishing, the results are <b>final</b> and can’t be changed.</p>' +
+        '<div class="pub-card"><b>' + esc(P.title) + '</b><pre>' + esc(P.body) + '</pre></div>' +
+        '<div class="pub-where"><span>✅ MGE &amp; GH page</span><span>✅ Home · Kingdom announcements</span><span>' + (P.discord ? '✅ Discord announcement channel' : '⚪ Discord (channel not set yet)') + '</span></div>' +
+        '<div class="err" id="pubErr" style="margin-top:10px"></div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn ghost" type="button" data-mdl-close>Not yet</button><button class="btn gold" type="button" id="pubGo">Publish now (final)</button></div>';
+      M.body.querySelector('#pubGo').addEventListener('click', function () {
+        var go = this; go.disabled = true; go.textContent = 'Publishing…';
+        S.api({ action: 'adminPublish', event: e.id }).then(function (x) {
+          if (!x || !x.ok) throw new Error((x && x.error) || 'Could not publish.');
+          M.close();
+          S.toast('Results published', x.discord === 'sent' ? 'On the website, Home and Discord.' : x.discord === 'failed' ? 'On the website and Home. Discord post failed: ' + (x.discordError || '') : 'On the website and Home.', x.discord === 'failed' ? 'warn' : 'good');
+          load(true);
+        }).catch(function (x) { var el = M.body.querySelector('#pubErr'); el.textContent = x.message; el.className = 'err on'; go.disabled = false; go.textContent = 'Publish now (final)'; });
+      });
+    }).catch(function (x) { btn.disabled = false; S.toast('Couldn’t publish', x.message, 'bad'); });
+  }
   document.addEventListener('click', function (ev) {
+    var pb = ev.target.closest && ev.target.closest('[data-publish]'); if (pb) { publishResults(pb); return; }
+    if (ev.target.closest('[data-creq]')) { requestCancel(); return; }
+    if (ev.target.closest('[data-pen]')) { changePenalty(); return; }
+    var dq = ev.target.closest('[data-rq]'); if (dq) { decide(dq); return; }
+    var xc = ev.target.closest('[data-xc]'); if (xc) { staffCancelOffer(xc.getAttribute('data-xc'), xc.getAttribute('data-nm')); return; }
     var t;
     if ((t = ev.target.closest('[data-type]'))) { st.type = t.getAttribute('data-type'); st.typeChosen = true; st.eventId = null; st.filter = 'all'; render(); return; }
     if ((t = ev.target.closest('[data-ev]'))) { st.eventId = t.getAttribute('data-ev'); render(); return; }
     if ((t = ev.target.closest('[data-filter]'))) { st.filter = t.getAttribute('data-filter'); renderRanks(); return; }
     if ((t = ev.target.closest('[data-bid]'))) { openBid(parseInt(t.getAttribute('data-bid'), 10)); return; }
+    if ((t = ev.target.closest('[data-offer]'))) { openOffer(); return; }
+    if ((t = ev.target.closest('[data-withdraw]'))) { withdrawOffer(t); return; }
     if ((t = ev.target.closest('[data-rebid]'))) {
       var p = t.getAttribute('data-rebid').split('|'), e = events().filter(function (x) { return x.id === p[0]; })[0];
       if (e) { st.type = e.type; st.eventId = e.id; render(); openBid(parseInt(p[1], 10)); }
@@ -531,6 +744,11 @@
     var e = validate(); if (e) { showErr('bidErr', e); return; }
     var c = st.current;
     $('cEv').textContent = c.ev.title || c.ev.id;
+    $('cRankRow').hidden = $('cRewardRow').hidden = !!c.ev.sealed;
+    $('confTitle').textContent = c.ev.sealed ? (c.ev.secret === false ? 'Confirm your offer' : 'Confirm your secret offer') : 'Confirm your bid';
+    $('lAmt').textContent = c.ev.sealed ? 'Your offer' : 'Your bid';
+    $('cFine').textContent = c.ev.sealed ? 'Nobody else can see your offer. The credits are held until bidding closes. If you don’t get a rank, you pay nothing.' : 'Credits stay reserved while you lead. If someone outbids you, they come back to you automatically.';
+    $('confGo').textContent = c.ev.sealed ? 'Confirm offer' : 'Confirm bid';
     $('cRank').textContent = '#' + c.r.rank;
     $('cReward').textContent = c.r.reward || '—';
     $('cAmt').textContent = n(parseInt($('bidInput').value, 10));
@@ -568,13 +786,31 @@
   function auctions(type) {
     S.manager({
       title: type + ' auctions', tab: 'Events', addLabel: 'New ' + type + ' auction', addTitle: 'New ' + type + ' auction',
-      intro: 'Times are server time (UTC, 24-hour). Draft = hidden from players. Auctions with bids can be closed but not deleted.',
+      intro: 'Pick a date from the calendar and the times fill in by themselves. Times are UTC. After bidding closes, check the results and press Publish.',
+      add: function (edit, rows) { pickDate(type, edit, rows); },
       filter: function (v) { return String(v.Type || '').toUpperCase() === type; },
       sort: function (p, q) { return (q.v.Opens || 0) - (p.v.Opens || 0); },
       label: function (v) { return { t: v.EventID + ' · ' + (v.Title || v.Type), sub: v.Status + ' · ' + (v.Opens ? S.dateTime(v.Opens) : '?') + ' → ' + (v.Closes ? S.dateTime(v.Closes) : '?'), color: v.Status === 'open' ? 'var(--green)' : v.Status === 'draft' ? 'var(--blue)' : '#6E6859' }; },
       editTitle: function (v) { return 'Edit ' + v.EventID; },
-      defaults: function () { var h = Math.ceil(Date.now() / 3600000) * 3600000; return { EventID: nextId(type), Type: type, Opens: h, Closes: h + 3 * 86400000, Ranks: type === 'GH' ? 10 : 15, Increment: 50, Status: 'draft' }; },
+      defaults: function () { var h = Math.ceil(Date.now() / 3600000) * 3600000; return { EventID: nextId(type), Type: type, Opens: h, Closes: h + 3 * 86400000, Ranks: type === 'GH' ? 10 : 15, Increment: 50, Status: 'draft', Format: 'sealed', Minimums: '100' }; },
       fields: function (v) {
+        edSealed = String(v.Format || '') === 'sealed';
+        if (edSealed) return [
+          { key: 'EventID', label: 'Code', required: true, value: v.EventID || '', placeholder: type + '-03', help: 'Short and unique.' },
+          { key: 'Status', label: 'Status', type: 'select', required: true, value: v.Status || 'draft', options: [{ v: 'draft', l: 'Draft (hidden)' }, { v: 'open', l: 'Open (live on the website)' }, { v: 'closed', l: 'Closed (ended early)' }] },
+          { key: 'Title', label: 'Title', full: true, value: v.Title || '', placeholder: type === 'MGE' ? 'MGE · Infantry week' : 'GH bidding' },
+          { key: 'Subject', label: type === 'MGE' ? 'Commander' : 'Prize', full: true, value: v.Subject || '' },
+          { key: 'OpensDate', label: 'Bidding opens — date', type: 'date', required: true, value: S.isoDate(v.Opens) },
+          { key: 'OpensTime', label: 'Bidding opens — time (UTC)', type: 'time24', required: true, value: hhmm(v.Opens) },
+          { key: 'ClosesDate', label: 'Bidding closes — date', type: 'date', required: true, value: S.isoDate(v.Closes) },
+          { key: 'ClosesTime', label: 'Bidding closes — time (UTC)', type: 'time24', required: true, value: hhmm(v.Closes) },
+          { key: 'ResultsDate', label: 'Results announced — date', type: 'date', required: true, value: S.isoDate(v.Results || (v.Closes ? v.Closes + 6 * 3600000 : 0)), help: 'The time between closing and results is for leaders to check the offers.' },
+          { key: 'ResultsTime', label: 'Results announced — time (UTC)', type: 'time24', required: true, value: hhmm(v.Results || (v.Closes ? v.Closes + 6 * 3600000 : 0)) },
+          { key: 'Secret', label: 'Secret bids (players can’t see each other’s offers). Untick for open bids.', type: 'checkbox', full: true, value: String(v.Secret || '').toLowerCase() !== 'no' },
+          { key: 'Ranks', label: 'Number of ranks', type: 'number', required: true, value: String(v.Ranks || 15) },
+          { key: 'MinOffer', label: 'Minimum offer (credits)', type: 'number', required: true, value: String(String(v.Minimums || '100').split('|')[0] || 100) },
+          { key: 'Rewards', label: 'Reward per rank (one per line, rank 1 first)', type: 'textarea', full: true, rows: 5, value: lines(v.Rewards), help: 'Lock ranks for chosen players with the 🔒 Locked ranks button after saving.' }
+        ];
         return [
           { key: 'EventID', label: 'Code', required: true, value: v.EventID || '', placeholder: type + '-03', help: 'Short and unique.' },
           { key: 'Status', label: 'Status', type: 'select', required: true, value: v.Status || 'draft', options: [{ v: 'draft', l: 'Draft (hidden)' }, { v: 'open', l: 'Open (live on the website)' }, { v: 'closed', l: 'Closed (ended early)' }] },
@@ -590,14 +826,102 @@
           { key: 'Minimums', label: 'Minimum first bid per rank (one per line)', type: 'textarea', full: true, rows: 3, value: lines(v.Minimums), help: 'If there are fewer lines than ranks, the last one is used for the rest.' }
         ];
       },
-      check: function (v) { return (v.ClosesDate + 'T' + v.ClosesTime) <= (v.OpensDate + 'T' + v.OpensTime) ? 'Closing time must be after the opening time.' : ''; },
+      check: function (v) {
+        if ((v.ClosesDate + 'T' + v.ClosesTime) <= (v.OpensDate + 'T' + v.OpensTime)) return 'Closing time must be after the opening time.';
+        if (edSealed && (v.ResultsDate + 'T' + v.ResultsTime) < (v.ClosesDate + 'T' + v.ClosesTime)) return 'Results time must be after the closing time.';
+        return '';
+      },
       toSheet: function (v) {
+        if (edSealed) return { EventID: v.EventID, Type: type, Title: v.Title, Subject: v.Subject, Opens: v.OpensDate + 'T' + v.OpensTime, Closes: v.ClosesDate + 'T' + v.ClosesTime,
+          Ranks: v.Ranks, Increment: 50, Rewards: joinLines(v.Rewards), Minimums: String(v.MinOffer), Status: v.Status, Format: 'sealed', Secret: v.Secret ? 'yes' : 'no', Results: v.ResultsDate + 'T' + v.ResultsTime };
         return { EventID: v.EventID, Type: type, Title: v.Title, Subject: v.Subject, Opens: v.OpensDate + 'T' + v.OpensTime, Closes: v.ClosesDate + 'T' + v.ClosesTime,
           Ranks: v.Ranks, Increment: v.Increment, Rewards: joinLines(v.Rewards), Minimums: joinLines(v.Minimums), Status: v.Status };
       }
     });
   }
+  var edSealed = false, peopleCache = null;
+  /* New auction: pick the event date from the calendar; the bidding times fill in by themselves */
+  var DAY = 86400000, WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function dayName(t) { var d = new Date(t); return WD[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MO[d.getUTCMonth()]; }
+  function plan(type, d) {
+    var D = Math.floor(d.a / DAY) * DAY, ymd = new Date(D).toISOString().slice(2, 10).replace(/-/g, '');
+    return { EventID: type + '-' + ymd, Type: type, Title: type === 'MGE' ? (d.x ? d.x + ' MGE' : 'MGE') : 'Gold Head (GH)', Subject: '',
+      Opens: D - 2 * DAY, Closes: D - DAY + 13 * 3600000, Results: D - DAY + 19 * 3600000, Ranks: type === 'GH' ? 10 : 15, Increment: 50,
+      Status: 'open', Format: 'sealed', Secret: 'yes', Minimums: '100', _start: D, _end: d.b ? Math.floor(d.b / DAY) * DAY : D + 5 * DAY };
+  }
+  function pickDate(type, edit, rows) {
+    var group = type.toLowerCase();
+    S.api({ action: 'calendar' }).then(function (res) {
+      var cal = (res && res.calendar) || { dates: [], types: [] }, gOf = {};
+      cal.types.forEach(function (x) { gOf[x.n] = x.g; });
+      var t0 = now(), list = cal.dates.filter(function (d) { return gOf[d.e] === group && d.a && d.a - 2 * DAY > t0 - DAY; })
+        .sort(function (a, b) { return a.a - b.a; }).slice(0, 6);
+      var taken = function (P) { return (rows || []).some(function (r) { return String(r.v.Type).toUpperCase() === type && Math.abs((Number(r.v.Closes) || 0) - P.Closes) < 2 * DAY; }); };
+      var M = S.modal('New ' + type + ' auction · pick the date');
+      M.body.innerHTML = '<p style="color:var(--soft);font-size:14px;margin:0 0 12px">Next ' + type + ' dates from the calendar. Pick one and everything fills in. You can still change any time before saving.</p>' +
+        (list.length ? list.map(function (d, i) {
+          var P = plan(type, d), used = taken(P);
+          return '<div class="pk-row' + (used ? ' used' : '') + '"><div class="pk-d"><b>' + esc(dayName(P._start)) + '</b><span>' + esc(P.Title) + '</span></div>' +
+            '<div class="pk-t"><span>🟢 Opens <b>' + esc(dayName(P.Opens)) + ' 00:00</b></span><span>🔴 Closes <b>' + esc(dayName(P.Closes)) + ' 13:00</b></span><span>📣 Results <b>' + esc(dayName(P.Results)) + ' 19:00</b></span></div>' +
+            (used ? '<span class="pk-used">Already has an auction</span>' : '<button class="btn gold sm" type="button" data-pk="' + i + '">Use this date</button>') + '</div>';
+        }).join('') : '<div class="empty">No upcoming ' + type + ' dates on the calendar.</div>') +
+        '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px"><button class="btn ghost" type="button" data-mdl-close>Cancel</button><button class="btn ghost" type="button" data-pk="custom">Custom dates instead</button></div>';
+      M.body.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-pk]'); if (!b) return;
+        var k = b.getAttribute('data-pk'); M.close();
+        edit(null, k === 'custom' ? null : plan(type, list[Number(k)]));
+      });
+    }).catch(function (x) { S.toast('Couldn’t load the calendar', x.message, 'bad'); edit(null); });
+  }
+  /* Locked ranks: give chosen ranks to chosen players for a set cost */
+  function editLocks() {
+    var e = currentEvent();
+    if (!e) { S.toast('No auction selected', 'Pick an auction first.', 'warn'); return; }
+    if (!e.sealed) { S.toast('Old-style auction', 'Locked ranks work with secret-bid auctions.', 'warn'); return; }
+    if (e.phase === 'closed' && !e.review) { S.toast('Results published', 'Its ranks are final.', 'warn'); return; }
+    Promise.all([peopleCache ? Promise.resolve(peopleCache) : S.api({ action: 'adminPeople' }).then(function (r) { peopleCache = r.people || []; return peopleCache; }),
+      S.api({ action: 'adminLoad', tab: 'Events' })]).then(function (res) {
+      var byGov = {}; res[0].forEach(function (p) { byGov[p.gov] = p; });
+      var row = (res[1].rows || []).filter(function (x) { return x.v.EventID === e.id; })[0], cur = [];
+      try { cur = JSON.parse((row && row.v.Reserved) || '[]'); } catch (x) { cur = []; }
+      var M = S.modal('🔒 Locked ranks · ' + (e.title || e.id)), N = e.ranks.length;
+      M.body.innerHTML = '<p style="color:var(--soft);font-size:14px;margin:0 0 12px">Give a rank to a chosen player for a set cost. The cost is held from their credits straight away and <b>can go below zero</b>. A locked player can’t make an offer in this auction. Everyone sees the rank as 🔒 with the player’s name.</p>' +
+        '<div class="lk-head"><span>Rank</span><span>Governor ID</span><span class="rs">Reason (optional)</span><span>Cost</span><span></span></div><div id="lkRows"></div>' +
+        '<button class="btn ghost sm" type="button" id="lkAdd" style="margin-top:10px">+ Lock another rank</button>' +
+        '<div class="err" id="lkErr" style="margin-top:10px"></div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn ghost" type="button" data-mdl-close>Cancel</button><button class="btn gold" type="button" id="lkSave">Save locked ranks</button></div>';
+      var B = M.body, box = B.querySelector('#lkRows');
+      function opts(sel) { var o = ''; for (var i = 1; i <= N; i++) o += '<option' + (i === sel ? ' selected' : '') + '>' + i + '</option>'; return o; }
+      function nameFor(inp) { var g = inp.value.replace(/[^0-9]/g, ''), el = inp.parentNode.querySelector('.nm'), p = byGov[g]; el.className = 'nm' + (g && !p ? ' bad' : ''); el.textContent = !g ? '' : p ? '✓ ' + p.name + (p.alliance ? ' · ' + p.alliance : '') + ' · ' + n(p.available) + ' available' : 'Not a player'; }
+      function addRow(x) {
+        var used = {}; box.querySelectorAll('select').forEach(function (s) { used[s.value] = 1; });
+        var rk = x ? x.rank : (function () { for (var i = 1; i <= N; i++) if (!used[i]) return i; return 1; })();
+        var d = document.createElement('div'); d.className = 'lk-row';
+        d.innerHTML = '<select aria-label="Rank">' + opts(rk) + '</select><div><input inputmode="numeric" placeholder="Governor ID" value="' + esc(x ? x.gov : '') + '"><div class="nm"></div></div>' +
+          '<input class="rs" maxlength="100" placeholder="e.g. Rally lead" value="' + esc(x ? x.reason || '' : '') + '"><input inputmode="numeric" placeholder="Cost" value="' + (x ? x.cost : '') + '"><button class="x" type="button" aria-label="Remove">×</button>';
+        box.appendChild(d); nameFor(d.querySelector('div input'));
+      }
+      cur.forEach(addRow); if (!cur.length) addRow();
+      B.addEventListener('input', function (ev2) { if (ev2.target.closest('.lk-row div') && ev2.target.tagName === 'INPUT') nameFor(ev2.target); });
+      B.addEventListener('click', function (ev2) { var x = ev2.target.closest('.x'); if (x) x.closest('.lk-row').remove(); });
+      B.querySelector('#lkAdd').addEventListener('click', function () { addRow(); });
+      B.querySelector('#lkSave').addEventListener('click', function () {
+        var btn = this, items = [];
+        box.querySelectorAll('.lk-row').forEach(function (d) {
+          var ins = d.querySelectorAll('input'), gov = ins[0].value.replace(/[^0-9]/g, '');
+          if (!gov && !ins[2].value.trim()) return;
+          items.push({ rank: Number(d.querySelector('select').value), gov: gov, reason: ins[1].value.trim(), cost: ins[2].value.replace(/[, ]/g, '') });
+        });
+        btn.disabled = true; btn.textContent = 'Saving…';
+        S.api({ action: 'adminReserve', event: e.id, items: items }).then(function (r) {
+          if (!r || !r.ok) throw new Error((r && r.error) || 'Could not save.');
+          M.close(); S.toast('Locked ranks saved', r.items.length ? r.items.map(function (x) { return '#' + x.rank + ' ' + x.name; }).join(' · ') : 'No locked ranks', 'good'); peopleCache = null; load(true);
+        }).catch(function (x) { B.querySelector('#lkErr').textContent = x.message; B.querySelector('#lkErr').className = 'err on'; btn.disabled = false; btn.textContent = 'Save locked ranks'; });
+      });
+    }).catch(function (x) { S.toast('Couldn’t open locked ranks', x.message, 'bad'); });
+  }
   var EDITORS = {
+    locks: editLocks,
     auctionsMGE: function () { auctions('MGE'); },
     auctionsGH: function () { auctions('GH'); },
     rules: function () {
