@@ -1,4 +1,4 @@
-/* Built 2026-11-13T10:50Z — deployed automatically from GitHub (server/ folder) */
+/* Built 2026-11-13T11:00Z — deployed automatically from GitHub (server/ folder) */
 /* ============================================================
    Kingdom 3914 — bidding & credits logic
    The same code runs in the Google Apps Script backend (Code.gs)
@@ -1030,7 +1030,7 @@ function envn(en, vn, link) { return en + '\n🇻🇳 ' + vn + (link ? '\n' + li
 /* What is due right now: [{ key, at, text }]. A reminder is sent if its time has passed but not by more than its window. */
 function remindersDue(t, now, env) {
   var out = [], link = siteUrl(env) + '/events.html';
-  function due(key, at, win, text) { if (now >= at && now < at + win) out.push({ key: key, at: at, text: text }); }
+  function due(key, at, win, text, members) { if (now >= at && now < at + win) out.push({ key: key, at: at, text: text, members: !!members }); }
   /* 1) calendar dates: prepare the auction */
   var cal = Core.calendar(t), gOf = {};
   cal.types.forEach(function (x) { gOf[x.n] = x.g; });
@@ -1051,6 +1051,12 @@ function remindersDue(t, now, env) {
   Core.events(t, now).forEach(function (ev) {
     if (!ev.sealed) return;
     var nm = ev.type + ' · ' + (ev.title || ev.id), l = link + '?event=' + encodeURIComponent(ev.id);
+    /* members (results channel, members role): 24 h before opening, and the last hour */
+    var tt = ev.title || ev.id;
+    due('mstart:' + ev.id, ev.opens - 24 * R_HOUR, 24 * R_HOUR, envn('📢 **' + tt + ' bidding** · ' + (ev.secret ? '🔒 secret bids' : '👁 open bids') + '\nOpens **' + rTime(ev.opens) + '** · Closes **' + rTime(ev.closes) + '**\nMake your offer on the website.',
+      '**Đấu giá ' + tt + '** · ' + (ev.secret ? '🔒 trả giá bí mật' : '👁 trả giá công khai') + '\nMở **' + vTime(ev.opens) + '** · Đóng **' + vTime(ev.closes) + '**\nHãy trả giá trên website.', l), true);
+    due('mlast:' + ev.id, ev.closes - R_HOUR, R_HOUR, envn('⏰ **Last hour!** · ' + tt + '\nBidding closes at **' + rTime(ev.closes) + '** (in 1 hour). Make or change your offer now.',
+      '**Giờ cuối!** · ' + tt + '\nĐấu giá đóng lúc **' + vTime(ev.closes) + '** (còn 1 giờ). Hãy trả giá hoặc thay đổi ngay.', l), true);
     due('open:' + ev.id, ev.opens, 3 * R_HOUR, envn('🟢 **Bidding is open** · ' + nm + '\nCloses ' + rTime(ev.closes) + '.',
       '**Đã mở đấu giá** · ' + nm + '\nĐóng lúc ' + vTime(ev.closes) + '.', l));
     due('c3h:' + ev.id, ev.closes - 3 * R_HOUR, 3 * R_HOUR, envn('⏰ **3 hours left** · ' + nm + '\n' + ev.bidders + ' player' + (ev.bidders === 1 ? ' has' : 's have') + ' made an offer so far.',
@@ -1066,14 +1072,14 @@ function remindersDue(t, now, env) {
   return out;
 }
 async function runReminders(env, now) {
-  if (!str(env.DISCORD_STAFF_CHANNEL_ID)) return { sent: 0 };
+  if (!str(env.DISCORD_STAFF_CHANNEL_ID) && !str(env.DISCORD_ANNOUNCE_CHANNEL_ID)) return { sent: 0 };
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS remind (k TEXT PRIMARY KEY, ts INTEGER NOT NULL)').run();
   var t = (await tables(env)).t, list = remindersDue(t, now, env), sent = 0;
   for (var i = 0; i < list.length; i++) {
     /* claim first, so two runs can never send the same reminder twice */
     var c = await env.DB.prepare('INSERT OR IGNORE INTO remind (k, ts) VALUES (?, ?)').bind(list[i].key, now).run();
     if (!(c.meta && c.meta.changes)) continue;
-    var res = await staffNotify(env, list[i].text);
+    var res = list[i].members ? await memberNotify(env, list[i].text) : await staffNotify(env, list[i].text);
     if (res === 'sent') sent++; else await env.DB.prepare('DELETE FROM remind WHERE k = ?').bind(list[i].key).run();
   }
   return { sent: sent };
@@ -1082,6 +1088,14 @@ async function runReminders(env, now) {
 /* Roles tagged on the results post (DISCORD_ANNOUNCE_ROLES, comma separated) */
 function announceRoles(env) { return str(env.DISCORD_ANNOUNCE_ROLES).split(',').map(function (x) { return x.trim(); }).filter(function (x) { return /^[0-9]{5,25}$/.test(x); }); }
 function withRoles(roles, text) { return roles.length ? roles.map(function (x) { return '<@&' + x + '>'; }).join(' ') + '\n' + text : text; }
+
+/* Message to the results channel, tagging the members role */
+async function memberNotify(env, text) {
+  var ch = str(env.DISCORD_ANNOUNCE_CHANNEL_ID); if (!ch || !str(env.DISCORD_BOT_TOKEN)) return 'off';
+  var ar = announceRoles(env);
+  try { var d = await dcApi(env, 'POST', '/channels/' + ch + '/messages', { content: withRoles(ar, text).slice(0, 2000), allowed_mentions: { parse: [], roles: ar } }); return d.ok ? 'sent' : 'failed'; }
+  catch (e) { return 'failed'; }
+}
 
 /* Admin: send one test message to the staff or the results channel, to check the bot can post (and ping the roles) */
 async function adminDiscordTest(env, p, who) {
